@@ -1,3 +1,7 @@
+---
+permalink: /index.html
+---
+
 # New Smile of Compassion Site
 
 New redesigned site for Smile of Compassion Projects using React.
