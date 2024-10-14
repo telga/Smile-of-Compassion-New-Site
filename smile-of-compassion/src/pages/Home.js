@@ -45,11 +45,11 @@ function Home() {
           transition={{ duration: 0.5 }}
         >
           <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 4 } }}>
-            <Typography variant="h5" component="p" gutterBottom sx={{ mb: 2 }}>
-              Placeholder slogan here
+          <Typography variant="h4" component="h2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
+          Our Mission
             </Typography>
             <Typography variant="body1" component="p" gutterBottom sx={{ mb: 2 }}>
-              Placeholder text
+              Smile of Compassion Project Association is a non-profit organization with the main mission of providing medical, health, and educational support to underprivileged people in Vietnam in order to improve and enhance their overall quality of life.
             </Typography>
             <Button
               component={Link}
@@ -67,8 +67,8 @@ function Home() {
         <Divider sx={{ my: { xs: 4, sm: 6 } }} />
         
         <Box sx={{ mt: { xs: 2, sm: 4 }, pb: { xs: 4, sm: 6 } }}>
-          <Typography variant="h6" component="h3" gutterBottom sx={{ mb: 3, textAlign: 'center' }}>
-            Featured Projects
+        <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, textAlign: 'center', color: '#1976d2', fontWeight: 'bold' }}>
+        Featured Projects
           </Typography>
           <Grid container spacing={3}>
             {projects[2023].map((project) => (

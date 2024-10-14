@@ -5,7 +5,7 @@ import { useLanguage } from './LanguageContext';
 
 const languages = [
   { code: 'en', name: 'English' },
-  { code: 'vi', name: 'Vietnamese' },
+  { code: 'vn', name: 'Vietnamese' },
 ];
 
 function LanguageSwitcher() {

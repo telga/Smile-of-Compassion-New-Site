@@ -6,12 +6,12 @@ const translations = {
       contact: 'Contact',
       donate: 'Donate',
     },
-    vi: {
-      home: 'Trang Chủ',
+    vn: {
+      home: 'Chủ',
       about: 'Giới Thiệu',
       projects: 'Dự Án',
       contact: 'Liên Hệ',
-      donate: 'Quyên Góp',
+      donate: 'Hỗ trợ',
     },
   };
   
