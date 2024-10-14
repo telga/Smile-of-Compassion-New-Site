@@ -43,7 +43,7 @@ function Header() {
             <Link to="/">
               <Box
                 component="img"
-                src="./Smile-of-Compassion-New-Site/assets/soc-logo.png"
+                src="assets/soc-logo.png"
                 alt="logo"
                 sx={{
                   height: { xs: 40, sm: 50 }, 
