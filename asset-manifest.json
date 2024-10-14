@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/static/css/main.bbbcf0fe.css",
-    "main.js": "/static/js/main.2ad34474.js",
-    "index.html": "/index.html",
-    "main.bbbcf0fe.css.map": "/static/css/main.bbbcf0fe.css.map",
-    "main.2ad34474.js.map": "/static/js/main.2ad34474.js.map"
+    "main.css": "/Smile-of-Compassion-New-Site/static/css/main.bbbcf0fe.css",
+    "main.js": "/Smile-of-Compassion-New-Site/static/js/main.2ad34474.js",
+    "index.html": "/Smile-of-Compassion-New-Site/index.html",
+    "main.bbbcf0fe.css.map": "/Smile-of-Compassion-New-Site/static/css/main.bbbcf0fe.css.map",
+    "main.2ad34474.js.map": "/Smile-of-Compassion-New-Site/static/js/main.2ad34474.js.map"
   },
   "entrypoints": [
     "static/css/main.bbbcf0fe.css",
