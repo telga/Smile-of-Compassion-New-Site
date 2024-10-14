@@ -4,7 +4,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
 import hygraphClient from '../lib/hygraph';
 import { gql } from 'graphql-request';
-import { useLanguage } from '../components/LanguageContext'; 
+import { useLanguage } from '../components/LanguageContext';
+import { Link } from 'react-router-dom';
 
 const GET_PROJECTS = gql`
   query GetProjects($language: Locale!) {
@@ -54,11 +55,6 @@ function Projects() {
     setExpandedYear(isExpanded ? year : null);
   };
 
-  const handleProjectClick = (project) => {
-    // TODO: Implement project click functionality
-    console.log(`Clicked project: ${project.title}`);
-  };
-
   const getImageUrl = (project) => {
     if (!project.image) return null;
     
@@ -90,33 +86,37 @@ function Projects() {
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {yearProjects.map((project) => (
                   <Box key={project.id} sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 10.667px)', lg: 'calc(25% - 12px)' } }}>
-                    <Button
-                      onClick={() => handleProjectClick(project)}
-                      sx={{
-                        display: 'block',
-                        textAlign: 'left',
-                        width: '100%',
-                        height: '100%',
-                        p: 0,
-                        '&:hover': { opacity: 0.9 },
-                      }}
+                    <Link
+                      to={`/projects/${project.id}`}
+                      style={{ textDecoration: 'none', display: 'block', width: '100%', height: '100%' }}
                     >
-                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                        <CardMedia
-                          sx={{ paddingTop: '56.25%' }}
-                          image={getImageUrl(project) || `https://source.unsplash.com/random?${project.id}`}
-                          title={project.title}
-                        />
-                        <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
-                          <Typography gutterBottom variant="subtitle1" component="h2">
-                            {project.title}
-                          </Typography>
-                          <Typography variant="body2">
-                            {project.description}
-                          </Typography>
-                        </CardContent>
-                      </Card>
-                    </Button>
+                      <Button
+                        sx={{
+                          display: 'block',
+                          textAlign: 'left',
+                          width: '100%',
+                          height: '100%',
+                          p: 0,
+                          '&:hover': { opacity: 0.9 },
+                        }}
+                      >
+                        <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <CardMedia
+                            sx={{ paddingTop: '56.25%' }}
+                            image={getImageUrl(project) || `https://source.unsplash.com/random?${project.id}`}
+                            title={project.title}
+                          />
+                          <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
+                            <Typography gutterBottom variant="subtitle1" component="h2">
+                              {project.title}
+                            </Typography>
+                            <Typography variant="body2">
+                              {project.description}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Button>
+                    </Link>
                   </Box>
                 ))}
               </Box>

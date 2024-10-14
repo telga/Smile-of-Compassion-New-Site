@@ -1,20 +1,53 @@
-import React from 'react';
-import { Typography, Button, Box, Container, Card, CardContent, CardMedia, CardActionArea, useTheme, useMediaQuery, Divider } from '@mui/material';
-import Grid from '@mui/material/Grid';
+import React, { useState, useEffect } from 'react';
+import { Typography, Button, Box, Container, Card, CardContent, CardMedia, CardActionArea, useTheme, useMediaQuery, Divider, Grid } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { gql } from 'graphql-request';
+import hygraphClient from '../lib/hygraph';
+import { useLanguage } from '../components/LanguageContext';
 
-const projects = {
-  2023: [
-    { id: 1, title: 'Lorem Ipsum Dolor', description: 'Sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
-    { id: 2, title: 'Ut Enim Ad Minim', description: 'Veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
-    { id: 3, title: 'Duis Aute Irure', description: 'Dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
-  ],
+const GET_RECENT_PROJECTS = gql`
+  query GetRecentProjects($language: Locale!) {
+    projects(locales: [$language], orderBy: year_DESC, first: 3) {
+      id
+      title
+      description
+      year
+      image {
+        url
+        localizations(includeCurrent: true) {
+          locale
+          url
+        }
+      }
+    }
+  }
+`;
+
+const getImageUrl = (project, language) => {
+  if (!project.image) return null;
+  
+  const localizedImage = project.image.localizations.find(l => l.locale === language);
+  return localizedImage ? localizedImage.url : project.image.url;
 };
 
 function Home() {
+  const [recentProjects, setRecentProjects] = useState([]);
+  const { language } = useLanguage();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  useEffect(() => {
+    async function fetchRecentProjects() {
+      try {
+        const data = await hygraphClient.request(GET_RECENT_PROJECTS, { language });
+        setRecentProjects(data.projects);
+      } catch (error) {
+        console.error('Error fetching recent projects:', error);
+      }
+    }
+    fetchRecentProjects();
+  }, [language]);
 
   return (
     <Box sx={{ position: 'relative' }}>
@@ -71,18 +104,18 @@ function Home() {
         Featured Projects
           </Typography>
           <Grid container spacing={3}>
-            {projects[2023].map((project) => (
+            {recentProjects.map((project) => (
               <Grid item xs={12} sm={4} key={project.id}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardActionArea 
                     component={Link} 
-                    to={`#`}
+                    to={`/projects#${project.year}`}
                     sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}
                   >
                     <CardMedia
                       component="img"
                       height="140"
-                      image={`/assets/project${project.id}.jpg`}
+                      image={getImageUrl(project, language) || `https://source.unsplash.com/random?${project.id}`}
                       alt={project.title}
                     />
                     <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
