@@ -1,29 +1,44 @@
 import React from 'react';
-import { Typography, Container, Button, Box } from '@mui/material';
+import { Typography, Button, Box, Container } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 function Home() {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 'calc(100vh - 64px)', 
+      }}
     >
-      <Container maxWidth="md" sx={{ py: 8 }}>
-        <Box sx={{
-          minHeight: '70vh',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          textAlign: 'center',
-        }}>
-          <Typography variant="h2" component="h1" gutterBottom>
+      <Box
+        sx={{
+          flexGrow: 1,
+          backgroundImage: 'url("/assets/group.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+      <Container 
+        maxWidth="md" 
+        sx={{ 
+          textAlign: 'center', 
+          py: 4, 
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Typography variant="h2" component="h1" gutterBottom color="primary" sx={{ fontWeight: 'bold', mb: 2 }}>
             Smile of Compassion
           </Typography>
-          <Typography variant="h5" component="p" gutterBottom sx={{ mb: 4 }}>
-            Placeholder text
+          <Typography variant="h5" component="p" gutterBottom sx={{ mb: 4 }} color="text.primary">
+            Placeholder slogan here
           </Typography>
           <Button
             component={Link}
@@ -31,13 +46,13 @@ function Home() {
             variant="contained"
             color="primary"
             size="large"
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, px: 4, py: 1.5, fontSize: '1.1rem' }}
           >
             Our Projects
           </Button>
-        </Box>
+        </motion.div>
       </Container>
-    </motion.div>
+    </Box>
   );
 }
 

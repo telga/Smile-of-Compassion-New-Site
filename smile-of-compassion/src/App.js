@@ -8,22 +8,25 @@ import About from './pages/About';
 import Projects from './pages/Projects';
 import Contact from './pages/Contact';
 import Donate from './pages/Donate';
+import { LanguageProvider } from './components/LanguageContext';
 
 function App() {
   return (
-    <Router>
-      <motion.div>
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/donate" element={<Donate />} />
-        </Routes>
-        <Footer />
-      </motion.div>
-    </Router>
+    <LanguageProvider>
+      <Router>
+        <motion.div>
+          <Header />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/donate" element={<Donate />} />
+          </Routes>
+          <Footer />
+        </motion.div>
+      </Router>
+    </LanguageProvider>
   );
 }
 
