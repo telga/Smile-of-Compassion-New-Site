@@ -13,7 +13,7 @@ import { LanguageProvider } from './components/LanguageContext';
 
 function App() {
   return (
-    <Router>
+    <Router basename="/Smile-of-Compassion-New-Site">
       <LanguageProvider>
         <motion.div>
           <Header />
