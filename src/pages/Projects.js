@@ -1,34 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Container, Box, Card, CardContent, CardMedia, Accordion, AccordionSummary, AccordionDetails, Button } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
+import hygraphClient from '../lib/hygraph';
+import { gql } from 'graphql-request';
 
-const projectsByYear = {
-  2023: [
-    { id: 1, title: 'Lorem Ipsum Dolor', description: 'Sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
-    { id: 2, title: 'Ut Enim Ad Minim', description: 'Veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.' },
-    { id: 3, title: 'Duis Aute Irure', description: 'Dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.' },
-    { id: 4, title: 'Excepteur Sint Occaecat', description: 'Cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.' },
-    { id: 5, title: 'Sed Ut Perspiciatis', description: 'Unde omnis iste natus error sit voluptatem accusantium doloremque laudantium.' },
-  ],
-  2022: [
-    { id: 6, title: 'Totam Rem Aperiam', description: 'Eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.' },
-    { id: 7, title: 'Nemo Enim Ipsam', description: 'Voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos.' },
-    { id: 8, title: 'Qui Ratione Voluptatem', description: 'Sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur.' },
-    { id: 9, title: 'Adipisci Velit', description: 'Sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.' },
-    { id: 10, title: 'Ut Enim Ad Minima', description: 'Veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur.' },
-  ],
-  2021: [
-    { id: 11, title: 'Quis Autem Vel Eum', description: 'Iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.' },
-    { id: 12, title: 'Vel Iyllum Qui Dolorem', description: 'Eum fugiat quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus.' },
-    { id: 13, title: 'Qui Blanditiis Praesentium', description: 'Voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.' },
-    { id: 14, title: 'Similique Sunt In Culpa', description: 'Qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.' },
-    { id: 15, title: 'Nam Libero Tempore', description: 'Cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus.' },
-  ],
-};
+const GET_PROJECTS = gql`
+  query GetProjects {
+    projects {
+      id
+      title
+      description
+      year
+      image {
+        url
+      }
+    }
+  }
+`;
 
 function Projects() {
+  const [projects, setProjects] = useState([]);
   const [expandedYear, setExpandedYear] = useState(null);
+
+  useEffect(() => {
+    async function fetchProjects() {
+      try {
+        const { projects } = await hygraphClient.request(GET_PROJECTS);
+        setProjects(projects);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      }
+    }
+    fetchProjects();
+  }, []);
+
+  const projectsByYear = projects.reduce((acc, project) => {
+    const year = project.year;
+    if (!acc[year]) {
+      acc[year] = [];
+    }
+    acc[year].push(project);
+    return acc;
+  }, {});
 
   const handleYearChange = (year) => (event, isExpanded) => {
     setExpandedYear(isExpanded ? year : null);
@@ -49,7 +63,7 @@ function Projects() {
         <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 3 }}>
           Projects by Year
         </Typography>
-        {Object.entries(projectsByYear).map(([year, projects]) => (
+        {Object.entries(projectsByYear).map(([year, yearProjects]) => (
           <Accordion 
             key={year} 
             expanded={expandedYear === year} 
@@ -61,7 +75,7 @@ function Projects() {
             </AccordionSummary>
             <AccordionDetails>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                {projects.map((project) => (
+                {yearProjects.map((project) => (
                   <Box key={project.id} sx={{ width: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.333% - 10.667px)', lg: 'calc(25% - 12px)' } }}>
                     <Button
                       onClick={() => handleProjectClick(project)}
@@ -77,7 +91,7 @@ function Projects() {
                       <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <CardMedia
                           sx={{ paddingTop: '56.25%' }}
-                          image={`https://source.unsplash.com/random?${project.id}`}
+                          image={project.image?.url || `https://source.unsplash.com/random?${project.id}`}
                           title={project.title}
                         />
                         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
