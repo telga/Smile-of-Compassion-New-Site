@@ -12,6 +12,7 @@ import { LanguageProvider } from './components/LanguageContext';
 
 function App() {
   return (
+    <BrowserRouter basename={process.env.PUBLIC_URL}>
     <LanguageProvider>
       <Router>
         <motion.div>
@@ -27,7 +28,10 @@ function App() {
         </motion.div>
       </Router>
     </LanguageProvider>
+    </BrowserRouter>
   );
 }
+
+
 
 export default App;
