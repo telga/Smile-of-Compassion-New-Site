@@ -22,5 +22,28 @@
     "noAdminFees": "We have absolutely no administration fees. 100% of donation goes directly towards helping those who are most in need. All members, helpers and volunteers of the organization are unpaid. The happiness of our recipients is our income of the soul!",
     "thankYou": "Thank you for your continued support and love!",
     "facebookButton": "Check out our Facebook"
+  },
+  "projects": {
+    "title": "Projects by Year",
+    "recentProjects": "{{year}} Projects",
+    "yearProjects": "{{year}} Projects"
+  },
+  "projectDetail": {
+    "backToProjects": "Back to Projects"
+  },
+  "donate": {
+    "title": "Donate",
+    "description": "Your support helps us continue our mission. Choose an amount to donate or enter a custom amount.",
+    "selectAmount": "Select Amount",
+    "or": "or",
+    "customAmount": "Custom Amount",
+    "submitDonation": "Submit Donation"
+  },
+  "contact": {
+    "title": "Contact Us",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "sendMessage": "Send Message"
   }
 }

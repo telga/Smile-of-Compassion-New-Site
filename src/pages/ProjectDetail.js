@@ -10,13 +10,17 @@ import { useLanguage } from '../components/LanguageContext';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { RichText } from '@graphcms/rich-text-react-renderer';
+import { useTranslation } from 'react-i18next';
 
 const GET_PROJECT = gql`
   query GetProject($id: ID!, $language: Locale!) {
     project(where: { id: $id }, locales: [$language]) {
       id
       title
-      description
+      description {
+        raw
+      }
       year
       image {
         url
@@ -37,6 +41,7 @@ function ProjectDetail() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [project, setProject] = React.useState(null);
+  const { t } = useTranslation();
 
   React.useEffect(() => {
     async function fetchProject() {
@@ -71,7 +76,7 @@ function ProjectDetail() {
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
       <Button startIcon={<ArrowBackIcon />} onClick={handleBackClick} sx={{ mb: 2 }}>
-        Back to Projects
+        {t('projectDetail.backToProjects')}
       </Button>
       <Typography variant="h3" component="h1" gutterBottom>
         {project.title}
@@ -120,12 +125,17 @@ function ProjectDetail() {
           <Typography>No images available for this project.</Typography>
         )}
       </Box>
-      <Typography variant="body1" paragraph>
-        {project.description}
-      </Typography>
-      <Typography variant="subtitle1">
-        Year: {project.year}
-      </Typography>
+      {project.description && (
+        <RichText
+          content={project.description.raw}
+          renderers={{
+            h1: ({ children }) => <Typography variant="h1">{children}</Typography>,
+            h2: ({ children }) => <Typography variant="h2">{children}</Typography>,
+            p: ({ children }) => <Typography variant="body1" paragraph>{children}</Typography>,
+            // Add more custom renderers as needed
+          }}
+        />
+      )}
     </Container>
   );
 }

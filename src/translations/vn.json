@@ -22,5 +22,28 @@
       "missionText": "Hiệp hội Dự án Nụ cười Nhân ái là một tổ chức phi lợi nhuận với sứ mệnh chính là cung cấp hỗ trợ y tế, sức khỏe và giáo dục cho những người kém may mắn ở Việt Nam nhằm cải thiện và nâng cao chất lượng cuộc sống tổng thể của họ.",
       "projectsButton": "Các Dự Án Của Chúng Tôi",
       "featuredProjects": "Các Dự Án Nổi Bật"
+    },
+    "projects": {
+      "title": "Dự Án Theo Năm",
+      "recentProjects": "Dự án Năm {{year}}",
+      "yearProjects": "Dự án Năm {{year}}"
+    },
+    "projectDetail": {
+      "backToProjects": "Quay lại Dự án"
+    },
+    "donate": {
+    "title": "Quyên góp",
+    "description": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh của mình. Chọn một số tiền để quyên góp hoặc nhập số tiền tùy chỉnh.",
+    "selectAmount": "Chọn số tiền",
+    "or": "hoặc",
+    "customAmount": "Số tiền tùy chỉnh",
+    "submitDonation": "Gửi quyên góp"
+    },
+    "contact": {
+      "title": "Liên hệ với chúng tôi",
+      "name": "Tên",
+      "email": "Email",
+      "message": "Tin nhắn",
+      "sendMessage": "Gửi tin nhắn"
     }
   }

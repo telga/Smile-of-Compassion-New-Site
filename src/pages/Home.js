@@ -12,25 +12,12 @@ const GET_RECENT_PROJECTS = gql`
     projects(locales: [$language], orderBy: year_DESC, first: 3) {
       id
       title
-      description
-      year
       image {
         url
-        localizations(includeCurrent: true) {
-          locale
-          url
-        }
       }
     }
   }
 `;
-
-const getImageUrl = (project, language) => {
-  if (!project.image) return null;
-  
-  const localizedImage = project.image.localizations.find(l => l.locale === language);
-  return localizedImage ? localizedImage.url : project.image.url;
-};
 
 function Home() {
   const [recentProjects, setRecentProjects] = useState([]);
@@ -117,15 +104,12 @@ function Home() {
                     <CardMedia
                       component="img"
                       height="140"
-                      image={getImageUrl(project, language) || `https://source.unsplash.com/random?${project.id}`}
+                      image={project.image?.url || `https://source.unsplash.com/random?${project.id}`}
                       alt={project.title}
                     />
-                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <CardContent sx={{ flexGrow: 1 }}>
                       <Typography gutterBottom variant="h6" component="div">
                         {project.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {project.description}
                       </Typography>
                     </CardContent>
                   </CardActionArea>

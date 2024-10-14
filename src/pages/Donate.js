@@ -1,12 +1,14 @@
 import React from 'react';
 import { Typography, Container, Box, Button, TextField, MenuItem, InputAdornment } from '@mui/material';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 const donationAmounts = [10, 25, 50, 100, 250, 500];
 
 function Donate() {
   const [amount, setAmount] = React.useState('');
   const [customAmount, setCustomAmount] = React.useState('');
+  const { t } = useTranslation();
 
   const handleAmountChange = (event) => {
     setAmount(event.target.value);
@@ -32,16 +34,16 @@ function Donate() {
     >
       <Container maxWidth="sm" sx={{ py: 8 }}>
         <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>
-          Donate
+          {t('donate.title')}
         </Typography>
         <Typography variant="body1" sx={{ mb: 4 }}>
-            Placeholder text
+          {t('donate.description')}
         </Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
           <TextField
             select
             fullWidth
-            label="Select Quantity"
+            label={t('donate.selectAmount')}
             value={amount}
             onChange={handleAmountChange}
             sx={{ mb: 3 }}
@@ -53,11 +55,11 @@ function Donate() {
             ))}
           </TextField>
           <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-            or
+            {t('donate.or')}
           </Typography>
           <TextField
             fullWidth
-            label="Custom Amount"
+            label={t('donate.customAmount')}
             value={customAmount}
             onChange={handleCustomAmountChange}
             type="number"
@@ -74,7 +76,7 @@ function Donate() {
             fullWidth
             sx={{ mt: 2 }}
           >
-            Submit Donation
+            {t('donate.submitDonation')}
           </Button>
         </Box>
       </Container>
