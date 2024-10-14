@@ -4,16 +4,21 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { motion } from 'framer-motion';
 import hygraphClient from '../lib/hygraph';
 import { gql } from 'graphql-request';
+import { useLanguage } from '../components/LanguageContext'; 
 
 const GET_PROJECTS = gql`
-  query GetProjects {
-    projects {
+  query GetProjects($language: Locale!) {
+    projects(locales: [$language]) {
       id
       title
       description
       year
       image {
         url
+        localizations(includeCurrent: true) {
+          locale
+          url
+        }
       }
     }
   }
@@ -22,18 +27,19 @@ const GET_PROJECTS = gql`
 function Projects() {
   const [projects, setProjects] = useState([]);
   const [expandedYear, setExpandedYear] = useState(null);
+  const { language } = useLanguage();
 
   useEffect(() => {
     async function fetchProjects() {
       try {
-        const { projects } = await hygraphClient.request(GET_PROJECTS);
-        setProjects(projects);
+        const data = await hygraphClient.request(GET_PROJECTS, { language });
+        setProjects(data.projects);
       } catch (error) {
         console.error('Error fetching projects:', error);
       }
     }
     fetchProjects();
-  }, []);
+  }, [language]);
 
   const projectsByYear = projects.reduce((acc, project) => {
     const year = project.year;
@@ -51,6 +57,13 @@ function Projects() {
   const handleProjectClick = (project) => {
     // TODO: Implement project click functionality
     console.log(`Clicked project: ${project.title}`);
+  };
+
+  const getImageUrl = (project) => {
+    if (!project.image) return null;
+    
+    const localizedImage = project.image.localizations.find(l => l.locale === language);
+    return localizedImage ? localizedImage.url : project.image.url;
   };
 
   return (
@@ -91,7 +104,7 @@ function Projects() {
                       <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <CardMedia
                           sx={{ paddingTop: '56.25%' }}
-                          image={project.image?.url || `https://source.unsplash.com/random?${project.id}`}
+                          image={getImageUrl(project) || `https://source.unsplash.com/random?${project.id}`}
                           title={project.title}
                         />
                         <CardContent sx={{ flexGrow: 1, p: 1.5 }}>
