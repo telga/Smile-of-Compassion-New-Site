@@ -25,7 +25,7 @@ function Home() {
           left: 0,
           right: 0,
           paddingTop: isSmallScreen ? '35%' : '35%',
-          backgroundImage: 'url("assets/group.jpg")',
+          backgroundImage: 'url("./Smile-of-Compassion-New-Site/assets/group.jpg")',
           backgroundSize: 'contain',
           backgroundPosition: 'center top',
           backgroundRepeat: 'no-repeat',
@@ -76,7 +76,7 @@ function Home() {
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardActionArea 
                     component={Link} 
-                    to={`/projects/${project.id}`}
+                    to={`#`}
                     sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}
                   >
                     <CardMedia
