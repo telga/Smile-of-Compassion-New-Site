@@ -1,0 +1,26 @@
+{
+    "about": {
+      "title": "Về Hiệp hội Dự án Nụ cười Nhân ái",
+      "subtitle": "Sứ mệnh Giúp đỡ Những Người Cần Giúp đỡ",
+      "description": "Hiệp hội Dự án Nụ cười Nhân ái là một tổ chức phi lợi nhuận với sứ mệnh chính là cung cấp hỗ trợ y tế, sức khỏe và giáo dục cho những người kém may mắn ở Việt Nam nhằm cải thiện và nâng cao chất lượng cuộc sống tổng thể của họ. Với một đội ngũ tình nguyện viên đầy lòng trắc ẩn, nhân ái và tận tụy, tổ chức sẽ cung cấp một chương trình an toàn, chu đáo và lành mạnh với các dịch vụ và hỗ trợ thiết yếu này mà không tính phí cho khách hàng/bệnh nhân/nạn nhân:",
+      "services": [
+        "Xây dựng nhà vệ sinh công cộng, trường học, cầu, giếng và nguồn nước sạch ở vùng nông thôn và miền núi.",
+        "Tổ chức các ca phẫu thuật y tế cho môi hở, hàm ếch và các vấn đề về mắt.",
+        "Cung cấp quần áo, đồ dùng học tập, sách vở, sân chơi, xe đạp, phí bảo hiểm y tế, ti vi, hệ thống năng lượng mặt trời, máy giặt, hệ thống lọc nước, lớp học phụ đạo miễn phí cho trường học và học sinh.",
+        "Cung cấp cứu trợ cho nạn nhân của thiên tai.",
+        "Cung cấp hỗ trợ tài chính cho người già cô đơn, trẻ mồ côi và người khuyết tật.",
+        "Cung cấp hỗ trợ tài chính cho những cá nhân bị tai nạn, bệnh tật, bị lạm dụng và bỏ rơi.",
+        "Tặng áo khoác mùa đông và chăn cho trẻ em ở vùng núi.",
+        "Tặng xe lăn cho người khuyết tật, đặc biệt là trẻ em bị Bại não."
+      ],
+      "noAdminFees": "Chúng tôi hoàn toàn không có phí quản lý. 100% số tiền quyên góp được chuyển trực tiếp để giúp đỡ những người cần nhất. Tất cả các thành viên, người giúp đỡ và tình nguyện viên của tổ chức đều không được trả lương. Hạnh phúc của những người nhận là thu nhập tinh thần của chúng tôi!",
+      "thankYou": "Cảm ơn bạn đã tiếp tục ủng hộ và yêu thương!",
+      "facebookButton": "Xem trang Facebook của chúng tôi"
+    },
+    "home": {
+      "mission": "Sứ Mệnh Của Chúng Tôi",
+      "missionText": "Hiệp hội Dự án Nụ cười Nhân ái là một tổ chức phi lợi nhuận với sứ mệnh chính là cung cấp hỗ trợ y tế, sức khỏe và giáo dục cho những người kém may mắn ở Việt Nam nhằm cải thiện và nâng cao chất lượng cuộc sống tổng thể của họ.",
+      "projectsButton": "Các Dự Án Của Chúng Tôi",
+      "featuredProjects": "Các Dự Án Nổi Bật"
+    }
+  }

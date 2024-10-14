@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { gql } from 'graphql-request';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
+import { useTranslation } from 'react-i18next';
 
 const GET_RECENT_PROJECTS = gql`
   query GetRecentProjects($language: Locale!) {
@@ -36,6 +37,7 @@ function Home() {
   const { language } = useLanguage();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function fetchRecentProjects() {
@@ -78,11 +80,11 @@ function Home() {
           transition={{ duration: 0.5 }}
         >
           <Box sx={{ textAlign: 'center', py: { xs: 2, sm: 4 } }}>
-          <Typography variant="h4" component="h2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
-          Our Mission
+            <Typography variant="h4" component="h2" sx={{ color: '#1976d2', fontWeight: 'bold', mb: 2 }}>
+              {t('home.mission')}
             </Typography>
             <Typography variant="body1" component="p" gutterBottom sx={{ mb: 2 }}>
-              Smile of Compassion Project Association is a non-profit organization with the main mission of providing medical, health, and educational support to underprivileged people in Vietnam in order to improve and enhance their overall quality of life.
+              {t('home.missionText')}
             </Typography>
             <Button
               component={Link}
@@ -92,7 +94,7 @@ function Home() {
               size="large"
               sx={{ mt: 2, px: 4, py: 1.5, fontSize: '1.1rem' }}
             >
-              Our Projects
+              {t('home.projectsButton')}
             </Button>
           </Box>
         </motion.div>
@@ -100,8 +102,8 @@ function Home() {
         <Divider sx={{ my: { xs: 4, sm: 6 } }} />
         
         <Box sx={{ mt: { xs: 2, sm: 4 }, pb: { xs: 4, sm: 6 } }}>
-        <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, textAlign: 'center', color: '#1976d2', fontWeight: 'bold' }}>
-        Featured Projects
+          <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, textAlign: 'center', color: '#1976d2', fontWeight: 'bold' }}>
+            {t('home.featuredProjects')}
           </Typography>
           <Grid container spacing={3}>
             {recentProjects.map((project) => (
@@ -109,7 +111,7 @@ function Home() {
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                   <CardActionArea 
                     component={Link} 
-                    to={`/projects#${project.year}`}
+                    to={`/projects/${project.id}`}
                     sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}
                   >
                     <CardMedia
