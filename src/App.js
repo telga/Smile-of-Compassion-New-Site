@@ -14,7 +14,6 @@ function App() {
   return (
     <BrowserRouter basename={process.env.PUBLIC_URL}>
     <LanguageProvider>
-      <Router>
         <motion.div>
           <Header />
           <Routes>
@@ -26,7 +25,6 @@ function App() {
           </Routes>
           <Footer />
         </motion.div>
-      </Router>
     </LanguageProvider>
     </BrowserRouter>
   );
