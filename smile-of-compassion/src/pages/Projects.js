@@ -20,7 +20,7 @@ const projectsByYear = {
   ],
   2021: [
     { id: 11, title: 'Quis Autem Vel Eum', description: 'Iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur.' },
-    { id: 12, title: 'Vel Illum Qui Dolorem', description: 'Eum fugiat quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus.' },
+    { id: 12, title: 'Vel Iyllum Qui Dolorem', description: 'Eum fugiat quo voluptas nulla pariatur? At vero eos et accusamus et iusto odio dignissimos ducimus.' },
     { id: 13, title: 'Qui Blanditiis Praesentium', description: 'Voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.' },
     { id: 14, title: 'Similique Sunt In Culpa', description: 'Qui officia deserunt mollitia animi, id est laborum et dolorum fuga. Et harum quidem rerum facilis est et expedita distinctio.' },
     { id: 15, title: 'Nam Libero Tempore', description: 'Cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat facere possimus.' },

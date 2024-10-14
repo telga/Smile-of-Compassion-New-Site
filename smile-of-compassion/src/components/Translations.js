@@ -13,13 +13,6 @@ const translations = {
       contact: 'Liên Hệ',
       donate: 'Quyên Góp',
     },
-    ja: {
-      home: 'ホームページ',
-      about: '私たちについて',
-      projects: 'プロジェクト',
-      contact: 'お問い合わせ',
-      donate: '寄付',
-    },
   };
   
   export const getTranslation = (language, key) => {
