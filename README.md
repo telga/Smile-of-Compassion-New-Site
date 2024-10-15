@@ -6,7 +6,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 ## Features:
 - Uses Hygraph CMS to allow admin to add posts by entering data in a user-friendly interface, no code involved.
 - All added pages on Hygraph will be appended to main site immediately.
-- Language switcher is setup for local static translations for non-dynamic pages but on dynamic pages is done through Hygraph locales (currently EN and VN).
+- Language switcher is setup for local static translations on non-dynamic pages but dynamic pages is done through Hygraph locales (currently EN and VN).
 
 ## Future Integration Roadmap:
 - AI translations for new page additions using OPENAI API GPT-4o; this will allow admin to not do manual translation.
