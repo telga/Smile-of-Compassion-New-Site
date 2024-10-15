@@ -1,29 +1,32 @@
-import React from 'react';
-import { Typography, Container, Box, Button, TextField, MenuItem, InputAdornment } from '@mui/material';
+import React, { useState } from 'react';
+import { Typography, Container, Box, Button, Tabs, Tab } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-
-const donationAmounts = [10, 25, 50, 100, 250, 500];
+import QRCode from 'react-qr-code';
 
 function Donate() {
-  const [amount, setAmount] = React.useState('');
-  const [customAmount, setCustomAmount] = React.useState('');
+  const [paymentMethod, setPaymentMethod] = useState(0);
   const { t } = useTranslation();
 
-  const handleAmountChange = (event) => {
-    setAmount(event.target.value);
-    setCustomAmount('');
+  const handlePaymentMethodChange = (event, newValue) => {
+    setPaymentMethod(newValue);
   };
 
-  const handleCustomAmountChange = (event) => {
-    setCustomAmount(event.target.value);
-    setAmount('');
+  const getPayPalDonateLink = () => {
+    const baseUrl = 'https://www.paypal.com/donate';
+    const businessId = '7SSDZ3J4PCJTW';
+    return `${baseUrl}?business=${businessId}&currency_code=USD`;
   };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const donationAmount = amount || customAmount;
-    console.log(`Donation submitted: $${donationAmount}`);
+  const getZelleQRValue = () => {
+    return `smileofcompassion@gmail.com`;
+  };
+
+  const getInteracETransferInfo = () => {
+    return {
+      email: 'smileofcompassion@gmail.com',
+      message: 'Name, Phone Number, Email',
+    };
   };
 
   return (
@@ -33,51 +36,60 @@ function Donate() {
       transition={{ duration: 0.5 }}
     >
       <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 4 }}>
+        <Typography 
+          variant="h3" 
+          component="h1" 
+          gutterBottom 
+          sx={{ mb: 4, textAlign: 'center' }}
+        >
           {t('donate.title')}
         </Typography>
-        <Typography variant="body1" sx={{ mb: 4 }}>
+        <Typography 
+          variant="body1" 
+          sx={{ mb: 4, textAlign: 'center' }}
+        >
           {t('donate.description')}
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
-          <TextField
-            select
-            fullWidth
-            label={t('donate.selectAmount')}
-            value={amount}
-            onChange={handleAmountChange}
-            sx={{ mb: 3 }}
-          >
-            {donationAmounts.map((option) => (
-              <MenuItem key={option} value={option}>
-                ${option}
-              </MenuItem>
-            ))}
-          </TextField>
-          <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-            {t('donate.or')}
-          </Typography>
-          <TextField
-            fullWidth
-            label={t('donate.customAmount')}
-            value={customAmount}
-            onChange={handleCustomAmountChange}
-            type="number"
-            InputProps={{
-              startAdornment: <InputAdornment position="start">$</InputAdornment>,
-            }}
-            sx={{ mb: 3 }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            fullWidth
-            sx={{ mt: 2 }}
-          >
-            {t('donate.submitDonation')}
-          </Button>
+        <Box sx={{ mt: 4 }}>
+          <Tabs value={paymentMethod} onChange={handlePaymentMethodChange} centered sx={{ mb: 3 }}>
+            <Tab label="PayPal" />
+            <Tab label="Zelle" />
+            <Tab label="Interac e-Transfer" />
+          </Tabs>
+          {paymentMethod === 0 && (
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              fullWidth
+              href={getPayPalDonateLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('donate.donateWithPayPal')}
+            </Button>
+          )}
+          {paymentMethod === 1 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {t('donate.scanZelleQR')}
+              </Typography>
+              <QRCode value={getZelleQRValue()} size={200} />
+            </Box>
+          )}
+          {paymentMethod === 2 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {t('donate.interacETransferInfo')}
+              </Typography>
+              <Typography variant="body2">
+                {t('donate.email')}: {getInteracETransferInfo().email}
+              </Typography>
+              <Typography variant="body2">
+                {t('donate.message')}: {getInteracETransferInfo().message}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Container>
     </motion.div>

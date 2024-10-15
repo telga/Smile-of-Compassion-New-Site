@@ -34,10 +34,11 @@
   "donate": {
     "title": "Donate",
     "description": "Your support helps us continue our mission. Choose an amount to donate or enter a custom amount.",
-    "selectAmount": "Select Amount",
-    "or": "or",
-    "customAmount": "Custom Amount",
-    "submitDonation": "Submit Donation"
+    "scanZelleQR": "Scan to Donate with Zelle",
+    "donateWithPayPal": "Donate with PayPal",
+    "interacETransferInfo": "Interac e-Transfer Information",
+    "email": "Email",
+    "message": "Message"
   },
   "contact": {
     "title": "Contact Us",

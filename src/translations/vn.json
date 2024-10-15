@@ -32,12 +32,13 @@
       "backToProjects": "Quay lại Dự án"
     },
     "donate": {
-    "title": "Quyên góp",
+    "title": "Hỗ Trợ",
     "description": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh của mình. Chọn một số tiền để quyên góp hoặc nhập số tiền tùy chỉnh.",
-    "selectAmount": "Chọn số tiền",
-    "or": "hoặc",
-    "customAmount": "Số tiền tùy chỉnh",
-    "submitDonation": "Gửi quyên góp"
+    "scanZelleQR": "Quét để hỗ trợ với Zelle",
+    "donateWithPayPal": "Hỗ trợ với PayPal",
+    "interacETransferInfo": "Thông tin chuyển khoản Interac",
+    "email": "Email",
+    "message": "Tin nhắn"
     },
     "contact": {
       "title": "Liên hệ với chúng tôi",
@@ -47,3 +48,4 @@
       "sendMessage": "Gửi tin nhắn"
     }
   }
+  
