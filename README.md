@@ -1,8 +1,6 @@
 # New Smile of Compassion Site
 Link to gh-page test site: [https://telga.github.io/Smile-of-Compassion-New-Site](https://telga.github.io/Smile-of-Compassion-New-Site)
 
-## Current Task: Content migration
-
 New redesigned site for Smile of Compassion Projects using React and Hygraph as a CMS.
 
 ## Features:
@@ -11,6 +9,9 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - Language switcher is setup for local static translations on non-dynamic pages but dynamic pages is done through Hygraph locales (currently EN and VN).
 
 ## Roadmap:
+
+**Current Task:** Content migration
+
 - [x] Skeleton site.
 - [x] Logos and backgrounds.
 - [x] Hygraph integration.
