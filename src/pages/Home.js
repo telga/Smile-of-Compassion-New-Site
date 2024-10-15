@@ -6,6 +6,7 @@ import { gql } from 'graphql-request';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import { useTranslation } from 'react-i18next';
+import { getAssetPath } from '../assetUtils';
 
 // GraphQL query to fetch recent projects
 const GET_RECENT_PROJECTS = gql`
@@ -55,7 +56,7 @@ function Home() {
           left: 0,
           right: 0,
           paddingTop: isSmallScreen ? '35%' : '35%',
-          backgroundImage: 'url("assets/group.jpg")',
+          backgroundImage: `url("${getAssetPath('/assets/group.jpg')}")`,
           backgroundSize: 'contain',
           backgroundPosition: 'center top',
           backgroundRepeat: 'no-repeat',

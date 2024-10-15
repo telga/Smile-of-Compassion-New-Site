@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from './LanguageContext';
 import { getTranslation } from './Translations';
+import { getAssetPath } from '../assetUtils';
 
 // Header component: Renders the top navigation bar and mobile menu
 function Header() {
@@ -55,7 +56,7 @@ function Header() {
             <Link to="/">
               <Box
                 component="img"
-                src="assets/soc-logo.png"
+                src={getAssetPath('/assets/soc-logo.png')}
                 alt="logo"
                 sx={{
                   height: { xs: 40, sm: 50 }, 
