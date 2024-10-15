@@ -14,6 +14,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 ![](https://geps.dev/progress/30)
 
+
 **Current Task:** Content migration
 
 - [x] Skeleton site.
