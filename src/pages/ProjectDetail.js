@@ -1,5 +1,5 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Container, Box, Button, Card, CardMedia } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
@@ -44,6 +44,7 @@ function ProjectDetail() {
   const { language } = useLanguage();
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
+  const location = useLocation();
 
   // Fetch project data when component mounts or language changes
   React.useEffect(() => {
@@ -73,6 +74,31 @@ function ProjectDetail() {
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />
   };
+
+  useEffect(() => {
+    console.log('Current pathname:', location.pathname);
+    console.log('Current PUBLIC_URL:', process.env.PUBLIC_URL);
+
+    // Fix for incorrect base URL on refresh
+    if (location.pathname.startsWith('/projects/')) {
+      const baseElement = document.querySelector('base');
+      if (!baseElement) {
+        const newBaseElement = document.createElement('base');
+        newBaseElement.href = `${window.location.origin}${process.env.PUBLIC_URL}/`;
+        document.head.appendChild(newBaseElement);
+      } else {
+        baseElement.href = `${window.location.origin}${process.env.PUBLIC_URL}/`;
+      }
+    }
+
+    // Debugging: Check logo URL
+    const logoElement = document.querySelector('img[alt="Logo"]');
+    if (logoElement) {
+      console.log('Current logo src:', logoElement.src);
+    } else {
+      console.log('Logo element not found');
+    }
+  }, [location]);
 
   if (!project) {
     return <Typography>Loading...</Typography>;
