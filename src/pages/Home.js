@@ -7,6 +7,7 @@ import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import { useTranslation } from 'react-i18next';
 
+// GraphQL query to fetch recent projects
 const GET_RECENT_PROJECTS = gql`
   query GetRecentProjects($language: Locale!) {
     projects(locales: [$language], orderBy: year_DESC, first: 3) {
@@ -19,13 +20,19 @@ const GET_RECENT_PROJECTS = gql`
   }
 `;
 
+// Home component: Renders the landing page of the website
 function Home() {
+  // State to store recent projects
   const [recentProjects, setRecentProjects] = useState([]);
+  // Get current language from context
   const { language } = useLanguage();
+  // Access theme and check for small screen
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  // Hook to use translation functionality
   const { t } = useTranslation();
 
+  // Effect to fetch recent projects when language changes
   useEffect(() => {
     async function fetchRecentProjects() {
       try {
@@ -40,6 +47,7 @@ function Home() {
 
   return (
     <Box sx={{ position: 'relative' }}>
+      {/* Hero image */}
       <Box
         sx={{
           position: 'absolute',
@@ -61,6 +69,7 @@ function Home() {
           pt: isSmallScreen ? 'calc(35%)' : 'calc(35%)',
         }}
       >
+        {/* Mission statement section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -88,6 +97,7 @@ function Home() {
 
         <Divider sx={{ my: { xs: 4, sm: 6 } }} />
         
+        {/* Featured projects section */}
         <Box sx={{ mt: { xs: 2, sm: 4 }, pb: { xs: 4, sm: 6 } }}>
           <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3, textAlign: 'center', color: '#1976d2', fontWeight: 'bold' }}>
             {t('home.featuredProjects')}

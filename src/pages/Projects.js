@@ -8,6 +8,7 @@ import { useLanguage } from '../components/LanguageContext';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
+// GraphQL query to fetch projects
 const GET_PROJECTS = gql`
   query GetProjects($language: Locale!) {
     projects(locales: [$language]) {
@@ -25,12 +26,18 @@ const GET_PROJECTS = gql`
   }
 `;
 
+// Projects component: Renders a list of projects grouped by year
 function Projects() {
+  // State to store projects
   const [projects, setProjects] = useState([]);
+  // State to track expanded year in accordion
   const [expandedYear, setExpandedYear] = useState(null);
+  // Get current language from context
   const { language } = useLanguage();
+  // Hook to use translation functionality
   const { t } = useTranslation();
 
+  // Fetch projects when component mounts or language changes
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -43,6 +50,7 @@ function Projects() {
     fetchProjects();
   }, [language]);
 
+  // Group projects by year
   const projectsByYear = projects.reduce((acc, project) => {
     const year = project.year;
     if (!acc[year]) {
@@ -52,13 +60,16 @@ function Projects() {
     return acc;
   }, {});
 
+  // Sort years in descending order
   const sortedYears = Object.keys(projectsByYear).sort((a, b) => b - a);
   const mostRecentYear = sortedYears[0];
 
+  // Handler for expanding/collapsing year accordion
   const handleYearChange = (year) => (event, isExpanded) => {
     setExpandedYear(isExpanded ? year : null);
   };
 
+  // Get localized image URL
   const getImageUrl = (project) => {
     const localization = project.image?.localizations.find(loc => loc.locale === language);
     return localization ? localization.url : project.image?.url;
@@ -71,10 +82,12 @@ function Projects() {
       transition={{ duration: 0.5 }}
     >
       <Container maxWidth="lg" sx={{ py: 6 }}>
+        {/* Page title */}
         <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 3 }}>
           {t('projects.title')}
         </Typography>
         
+        {/* Display most recent projects */}
         {mostRecentYear && (
           <>
             <Typography variant="h5" sx={{ mb: 2 }}>{t('projects.recentProjects', { year: mostRecentYear })}</Typography>
@@ -115,6 +128,7 @@ function Projects() {
           </>
         )}
 
+        {/* Display projects from previous years in accordions */}
         {sortedYears.slice(1).map((year) => (
           <Accordion 
             key={year} 

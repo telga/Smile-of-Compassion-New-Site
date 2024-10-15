@@ -1,26 +1,38 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+// Create a context for language management
 const LanguageContext = createContext();
 
-export const LanguageProvider = ({ children }) => {
+// LanguageProvider component: Manages language state and provides it to child components
+export function LanguageProvider({ children }) {
   const { i18n } = useTranslation();
-  const [language, setLanguage] = useState(i18n.language);
+  
+  // Initialize language state from localStorage or default to 'en'
+  const [language, setLanguage] = useState(() => {
+    return localStorage.getItem('language') || 'en';
+  });
 
-  const changeLanguage = (newLanguage) => {
-    i18n.changeLanguage(newLanguage);
-    setLanguage(newLanguage);
-  };
-
+  // Effect to update i18n language and store in localStorage when language changes
   useEffect(() => {
     i18n.changeLanguage(language);
-  }, [i18n, language]);
+    localStorage.setItem('language', language);
+  }, [language, i18n]);
 
+  // Function to change the current language
+  const changeLanguage = (lang) => {
+    setLanguage(lang);
+  };
+
+  // Provide language context to child components
   return (
     <LanguageContext.Provider value={{ language, changeLanguage }}>
       {children}
     </LanguageContext.Provider>
   );
-};
+}
 
-export const useLanguage = () => useContext(LanguageContext);
+// Custom hook to use the language context
+export function useLanguage() {
+  return useContext(LanguageContext);
+}

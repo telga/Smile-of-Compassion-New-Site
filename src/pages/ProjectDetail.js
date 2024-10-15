@@ -13,6 +13,7 @@ import 'slick-carousel/slick/slick-theme.css';
 import { RichText } from '@graphcms/rich-text-react-renderer';
 import { useTranslation } from 'react-i18next';
 
+// GraphQL query to fetch project details
 const GET_PROJECT = gql`
   query GetProject($id: ID!, $language: Locale!) {
     project(where: { id: $id }, locales: [$language]) {
@@ -36,6 +37,7 @@ const GET_PROJECT = gql`
   }
 `;
 
+// ProjectDetail component: Renders detailed information about a specific project
 function ProjectDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,6 +45,7 @@ function ProjectDetail() {
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
 
+  // Fetch project data when component mounts or language changes
   React.useEffect(() => {
     async function fetchProject() {
       try {
@@ -55,10 +58,12 @@ function ProjectDetail() {
     fetchProject();
   }, [id, language]);
 
+  // Handler for back button click
   const handleBackClick = () => {
     navigate('/projects');
   };
 
+  // Settings for the image slider
   const sliderSettings = {
     dots: true,
     infinite: true,
@@ -75,12 +80,17 @@ function ProjectDetail() {
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
+      {/* Back to projects button */}
       <Button startIcon={<ArrowBackIcon />} onClick={handleBackClick} sx={{ mb: 2 }}>
         {t('projectDetail.backToProjects')}
       </Button>
+      
+      {/* Project title */}
       <Typography variant="h3" component="h1" gutterBottom>
         {project.title}
       </Typography>
+      
+      {/* Image slider or single image */}
       <Box sx={{ 
         height: 400,
         mb: 4,
@@ -125,6 +135,8 @@ function ProjectDetail() {
           <Typography>No images available for this project.</Typography>
         )}
       </Box>
+      
+      {/* Project description */}
       {project.description && (
         <RichText
           content={project.description.raw}
@@ -140,6 +152,7 @@ function ProjectDetail() {
   );
 }
 
+// Custom previous arrow component for the slider
 const PrevArrow = ({ className, onClick }) => (
   <Box 
     className={className} 
@@ -163,6 +176,7 @@ const PrevArrow = ({ className, onClick }) => (
   </Box>
 );
 
+// Custom next arrow component for the slider
 const NextArrow = ({ className, onClick }) => (
   <Box 
     className={className} 

@@ -7,17 +7,23 @@ import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from './LanguageContext';
 import { getTranslation } from './Translations';
 
+// Header component: Renders the top navigation bar and mobile menu
 function Header() {
+  // State to control mobile menu open/close
   const [menuOpen, setMenuOpen] = useState(false);
   const theme = useTheme();
+  // Check if the current viewport is mobile size
   const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
 
+  // Toggle mobile menu open/close
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
+  // Get current language from context
   const { language } = useLanguage();
 
+  // Define navigation menu items
   const menuItems = [
     { text: getTranslation(language, 'home'), path: '/' },
     { text: getTranslation(language, 'about'), path: '/about' },
@@ -25,10 +31,12 @@ function Header() {
     { text: getTranslation(language, 'contact'), path: '/contact' },
   ];
 
+  // Define donate button
   const donate = [{ text: getTranslation(language, 'donate'), path: '/donate' }];
 
   return (
     <>
+      {/* Main AppBar for desktop and mobile */}
       <AppBar 
         position="static" 
         elevation={0}
@@ -130,58 +138,75 @@ function Header() {
           )}
         </Toolbar>
       </AppBar>
+
+      {/* Mobile menu drawer */}
       <Drawer
         anchor="right"
         open={menuOpen}
         onClose={toggleMenu}
         sx={{
           '& .MuiDrawer-paper': {
-            width: '100%',
+            width: '80%',
+            maxWidth: '400px',
             height: '100%',
-            backgroundColor: 'rgba(255, 255, 255, 0.6)',
-            backdropFilter: 'blur(5px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
           },
         }}
       >
         <Box
           sx={{
             display: 'flex',
-            justifyContent: 'flex-end',
-            p: 2,
+            flexDirection: 'column',
+            height: '100%',
+            padding: '2rem',
           }}
         >
-          <IconButton onClick={toggleMenu}>
-            <CloseIcon />
-          </IconButton>
-        </Box>
-        <List>
-          {menuItems.map((item) => (
-            <ListItem 
-              button 
-              key={item.text} 
-              component={Link} 
-              to={item.path} 
-              onClick={toggleMenu}
-              sx={{
-                textAlign: 'center',
-                py: 2,
-                '& .MuiListItemText-primary': {
-                  color: '#333333',
-                  '&:hover': { color: '#0056b3' },
-                  '&:visited': { color: '#333333' }, 
-                },
-              }}
-            >
-              <ListItemText 
-                primary={item.text} 
-                primaryTypographyProps={{
-                  variant: 'h4',
-                  fontWeight: 'bold',
+          {/* Close button for mobile menu */}
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              mb: 2,
+            }}
+          >
+            <IconButton onClick={toggleMenu}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          {/* Navigation items for mobile menu */}
+          <List sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            {menuItems.map((item) => (
+              <ListItem 
+                button 
+                key={item.text} 
+                component={Link} 
+                to={item.path} 
+                onClick={toggleMenu}
+                sx={{
+                  textAlign: 'center',
+                  py: 2,
+                  '& .MuiListItemText-primary': {
+                    color: '#333333',
+                    '&:hover': { color: '#0056b3' },
+                    '&:visited': { color: '#333333' }, 
+                  },
                 }}
-              />
-            </ListItem>
-          ))}
-          <ListItem sx={{ justifyContent: 'center', mt: 2 }}>
+              >
+                <ListItemText 
+                  primary={item.text} 
+                  primaryTypographyProps={{
+                    variant: 'h4',
+                    fontWeight: 'bold',
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+
+          {/* Donate button and language switcher for mobile menu */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
             {donate.map((item) => (  
               <Button 
                 key={item.text}
@@ -196,14 +221,16 @@ function Header() {
                   py: 1,
                   px: 4,
                   fontSize: '1.2rem',
+                  mb: 2,
+                  width: '100%',
                 }}
               >
                 {item.text}
               </Button>
-              ))}
-          </ListItem>
-        </List>
-        <LanguageSwitcher />
+            ))}
+            <LanguageSwitcher />
+          </Box>
+        </Box>
       </Drawer>
     </>
   );
