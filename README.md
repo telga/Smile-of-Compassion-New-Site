@@ -10,7 +10,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 ## Future Integration Roadmap:
 - AI translations for new page additions using OPENAI API GPT-4o; this will allow admin to not do manual translation.
-    - Will work cross language. If English content is added the Vietnamese page will be automatically translated and appended and vice versa.
+    - Will work cross language. If English content is added, the Vietnamese page will be automatically translated and appended and vice versa.
 - Server-side donations.
 - Possibly all pages to be dynamic to let admin edit all content on site.
 - Images field to be auto localized.
