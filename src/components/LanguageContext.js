@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Create a context for language management
@@ -8,31 +8,41 @@ const LanguageContext = createContext();
 export function LanguageProvider({ children }) {
   const { i18n } = useTranslation();
   
-  // Initialize language state from localStorage or default to 'en'
+  // Initialize language from localStorage, defaulting to 'en' if not found
   const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('language') || 'en';
+    const savedLanguage = localStorage.getItem('userLanguage');
+    return savedLanguage || 'en';
   });
 
-  // Effect to update i18n language and store in localStorage when language changes
+  // Use useCallback to memoize the changeLanguage function
+  const changeLanguage = useCallback((newLanguage) => {
+    setLanguage(newLanguage);
+    i18n.changeLanguage(newLanguage);
+    localStorage.setItem('userLanguage', newLanguage); // Save to localStorage
+  }, [i18n]);
+
+  // Use useEffect to set the initial language
   useEffect(() => {
     i18n.changeLanguage(language);
-    localStorage.setItem('language', language);
-  }, [language, i18n]);
+  }, [i18n, language]);
 
-  // Function to change the current language
-  const changeLanguage = (lang) => {
-    setLanguage(lang);
+  const value = {
+    language,
+    changeLanguage
   };
 
-  // Provide language context to child components
   return (
-    <LanguageContext.Provider value={{ language, changeLanguage }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );
 }
 
 // Custom hook to use the language context
-export function useLanguage() {
-  return useContext(LanguageContext);
-}
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (context === undefined) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};

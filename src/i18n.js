@@ -7,6 +7,9 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 import enTranslations from './translations/en.json';
 import vnTranslations from './translations/vn.json';
 
+// Clear language from localStorage at startup
+localStorage.removeItem('i18nextLng');
+
 i18n
   // Use language detector plugin
   // This will try to detect the user's preferred language
@@ -22,6 +25,8 @@ i18n
     },
     // Set fallback language if translation is missing
     fallbackLng: 'en',
+    // Set the default language here
+    lng: 'en', // Set default language to English
     // Enable debug mode for development (set to false in production)
     debug: true,
     // Configure language detection

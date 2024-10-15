@@ -16,10 +16,9 @@ import i18n from './i18n';
 // Main App component: Sets up routing and global providers
 function App() {
   return (
-    // Provide i18n instance to the app for internationalization
-    <I18nextProvider i18n={i18n}>
-      {/* Wrap the app with LanguageProvider for language switching functionality */}
-      <LanguageProvider>
+    <LanguageProvider>
+      {/* Provide i18n instance to the app for internationalization */}
+      <I18nextProvider i18n={i18n}>
         {/* Set up routing with a custom basename for GitHub Pages deployment */}
         <Router basename="/Smile-of-Compassion-New-Site">
           {/* Wrap the entire app content in a motion.div for potential animations */}
@@ -39,8 +38,8 @@ function App() {
             <Footer />
           </motion.div>
         </Router>
-      </LanguageProvider>
-    </I18nextProvider>
+      </I18nextProvider>
+    </LanguageProvider>
   );
 }
 

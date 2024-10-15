@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Button, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -20,8 +20,12 @@ function Header() {
     setMenuOpen(!menuOpen);
   };
 
-  // Get current language from context
-  const { language } = useLanguage();
+  // Get current language and changeLanguage function from context
+  const { language, changeLanguage } = useLanguage();
+
+  // Use useEffect to log the current language when it changes
+  useEffect(() => {
+  }, [language]);
 
   // Define navigation menu items
   const menuItems = [
@@ -114,7 +118,7 @@ function Header() {
                   {item.text}
                 </Button>
               ))}
-              <LanguageSwitcher />
+              <LanguageSwitcher currentLanguage={language} onChangeLanguage={changeLanguage} />
               {donate.map((item) => (  
               <Button 
                 key={item.text}
@@ -228,7 +232,7 @@ function Header() {
                 {item.text}
               </Button>
             ))}
-            <LanguageSwitcher />
+            <LanguageSwitcher currentLanguage={language} onChangeLanguage={changeLanguage} />
           </Box>
         </Box>
       </Drawer>
