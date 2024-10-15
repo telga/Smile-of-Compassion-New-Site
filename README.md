@@ -8,7 +8,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - All added pages on Hygraph will be appended to main site immediately.
 - Language switcher is setup for local static translations on non-dynamic pages but dynamic pages is done through Hygraph locales (currently EN and VN).
 
-## Roadmap:
+## Roadmap: ![](https://geps.dev/progress/30)
 
 **Current Task:** Content migration
 
