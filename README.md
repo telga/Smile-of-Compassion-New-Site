@@ -9,6 +9,9 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - Language switcher is setup for local static translations on non-dynamic pages but dynamic pages is done through Hygraph locales (currently EN and VN).
 - Uses emailJS for contact form backend.
 
+https://github.com/user-attachments/assets/153b0ffe-fd07-400e-b665-fdaecf20ee40
+
+
 ## Roadmap:
 
 **Current Progess:**
