@@ -12,7 +12,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 **Current Progess:**
 
-![](https://geps.dev/progress/30)
+![](https://geps.dev/progress/35)
 
 
 
@@ -28,7 +28,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - [ ] Donations.
 - [ ] AI translations using OPENAI-API.
 - [ ] All pages dynamic.
-- [ ] Images field to be auto localized.
+- [x] Images field to be auto localized.
 - [ ] Admin backend through server linked to Hygraph for an easier admin experience.
 - [ ] Launch on DigitalOcean (if needed can host on github with main domain).
 
