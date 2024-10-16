@@ -13,7 +13,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 **Current Progess:**
 
-![](https://geps.dev/progress/35)
+![](https://geps.dev/progress/40)
 
 
 
