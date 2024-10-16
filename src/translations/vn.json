@@ -45,7 +45,9 @@
       "name": "Tên",
       "email": "Email",
       "message": "Tin nhắn",
-      "sendMessage": "Gửi tin nhắn"
+      "sendMessage": "Gửi tin nhắn",
+      "successMessage": "Tin nhắn của bạn đã được gửi thành công. Chúng tôi sẽ liên hệ lại với bạn sớm!",
+      "errorMessage": "Đã xảy ra lỗi khi gửi tin nhắn của bạn. Vui lòng thử lại sau."
     }
   }
   
