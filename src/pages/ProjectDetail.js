@@ -50,8 +50,17 @@ function ProjectDetail() {
   React.useEffect(() => {
     async function fetchProject() {
       try {
-        const data = await hygraphClient.request(GET_PROJECT, { id, language });
-        setProject(data.project);
+        const enData = await hygraphClient.request(GET_PROJECT, { id, language: 'en' });
+        const currentLangData = await hygraphClient.request(GET_PROJECT, { id, language });
+        
+        const mergedProject = {
+          ...enData.project,
+          ...currentLangData.project,
+          images: enData.project.images, // Always use English images
+          image: enData.project.image // Always use English single image
+        };
+        
+        setProject(mergedProject);
       } catch (error) {
         console.error('Error fetching project:', error);
       }
@@ -100,9 +109,33 @@ function ProjectDetail() {
     }
   }, [location]);
 
+  const getLocalizedContent = (content) => {
+    return content && (content[language] || content['en']);
+  };
+
+  const getProjectImages = (project) => {
+    let images = [];
+    
+    if (project.images && project.images.en && Array.isArray(project.images.en) && project.images.en.length > 0) {
+      images = project.images.en;
+    } else if (project.images && Array.isArray(project.images) && project.images.length > 0) {
+      images = project.images;
+    } else if (project.image && project.image.en) {
+      images = [project.image.en];
+    } else if (project.image) {
+      images = [project.image];
+    } else {
+      console.log('No images found');
+    }
+    
+    return images;
+  };
+
   if (!project) {
     return <Typography>Loading...</Typography>;
   }
+
+  const projectImages = getProjectImages(project);
 
   return (
     <Container maxWidth="md" sx={{ py: 6 }}>
@@ -128,9 +161,9 @@ function ProjectDetail() {
         '& .slick-prev': { left: 10 },
         '& .slick-next': { right: 10 },
       }}>
-        {project.images && project.images.length > 0 ? (
+        {projectImages.length > 0 ? (
           <Slider {...sliderSettings}>
-            {project.images.map((image, index) => (
+            {projectImages.map((image, index) => (
               <Box key={index} sx={{ height: '100%' }}>
                 <img 
                   src={image.url} 
@@ -145,18 +178,6 @@ function ProjectDetail() {
               </Box>
             ))}
           </Slider>
-        ) : project.image ? (
-          <Card sx={{ height: '100%' }}>
-            <CardMedia
-              component="img"
-              image={project.image.url}
-              alt={project.title}
-              sx={{
-                height: '100%',
-                objectFit: 'contain',
-              }}
-            />
-          </Card>
         ) : (
           <Typography>No images available for this project.</Typography>
         )}
