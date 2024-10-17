@@ -1,6 +1,6 @@
 {
     "about": {
-      "title": "Về Hiệp hội Dự án Nụ cười Nhân ái",
+      "title": "Về Chúng Tôi",
       "subtitle": "Sứ mệnh Giúp đỡ Những Người Cần Giúp đỡ",
       "description": "Hiệp hội Dự án Nụ cười Nhân ái là một tổ chức phi lợi nhuận với sứ mệnh chính là cung cấp hỗ trợ y tế, sức khỏe và giáo dục cho những người kém may mắn ở Việt Nam nhằm cải thiện và nâng cao chất lượng cuộc sống tổng thể của họ. Với một đội ngũ tình nguyện viên đầy lòng trắc ẩn, nhân ái và tận tụy, tổ chức sẽ cung cấp một chương trình an toàn, chu đáo và lành mạnh với các dịch vụ và hỗ trợ thiết yếu này mà không tính phí cho khách hàng/bệnh nhân/nạn nhân:",
       "services": [
@@ -15,13 +15,15 @@
       ],
       "noAdminFees": "Chúng tôi hoàn toàn không có phí quản lý. 100% số tiền quyên góp được chuyển trực tiếp để giúp đỡ những người cần nhất. Tất cả các thành viên, người giúp đỡ và tình nguyện viên của tổ chức đều không được trả lương. Hạnh phúc của những người nhận là thu nhập tinh thần của chúng tôi!",
       "thankYou": "Cảm ơn bạn đã tiếp tục ủng hộ và yêu thương!",
-      "facebookButton": "Xem trang Facebook của chúng tôi"
+      "facebookButton": "Xem trang Facebook của chúng tôi",
+      "servicesTitle": "Các Hoạt động Của Chúng Tôi"
     },
     "home": {
       "mission": "Sứ Mệnh Của Chúng Tôi",
       "missionText": "Hiệp hội Dự án Nụ cười Nhân ái là một tổ chức phi lợi nhuận với sứ mệnh chính là cung cấp hỗ trợ y tế, sức khỏe và giáo dục cho những người kém may mắn ở Việt Nam nhằm cải thiện và nâng cao chất lượng cuộc sống tổng thể của họ.",
-      "projectsButton": "Các Dự Án Của Chúng Tôi",
-      "featuredProjects": "Các Dự Án Nổi Bật"
+      "projectsButton": "Dự Án Của Chúng Tôi",
+      "featuredProjects": "Các Dự Án Nổi Bật",
+      "donateNow": "Hỗ Trợ"
     },
     "projects": {
       "title": "Dự Án Theo Năm",

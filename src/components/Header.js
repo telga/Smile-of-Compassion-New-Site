@@ -1,34 +1,83 @@
-import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Button, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme } from '@mui/material';
+import React, { useState } from 'react';
+import { AppBar, Toolbar, Button, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Container, InputBase } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import { Link } from 'react-router-dom';
+import SearchIcon from '@mui/icons-material/Search';
+import { Link, useLocation } from 'react-router-dom';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useLanguage } from './LanguageContext';
 import { getTranslation } from './Translations';
 import { getAssetPath } from '../assetUtils';
+import { styled } from '@mui/system';
 
-// Header component: Renders the top navigation bar and mobile menu
+const ModernNavButton = styled(Button)(({ theme }) => ({
+  color: '#333333',
+  backgroundColor: 'transparent',
+  textTransform: 'none',
+  fontSize: '0.9rem',
+  fontWeight: 500,
+  padding: '4px 10px',
+  borderRadius: '16px',
+  transition: 'all 0.3s ease',
+  marginLeft: theme.spacing(0.5),
+  marginRight: theme.spacing(0.5),
+  '&:hover': {
+    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+    color: '#2E7D32',
+    transform: 'translateY(-2px)',
+  },
+}));
+
+const Search = styled('div')({
+  position: 'relative',
+  borderRadius: '20px',
+  backgroundColor: 'rgba(0, 0, 0, 0.08)',
+  '&:hover': {
+    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+  },
+  marginRight: '16px',
+  marginLeft: '24px',
+  width: 'auto',
+  height: '28px',
+});
+
+const SearchIconWrapper = styled('div')({
+  padding: '0 8px',
+  height: '100%',
+  position: 'absolute',
+  pointerEvents: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+const StyledInputBase = styled(InputBase)({
+  color: 'inherit',
+  height: '100%',
+  '& .MuiInputBase-input': {
+    padding: '4px 4px 4px 0',
+    paddingLeft: 'calc(1em + 24px)',
+    width: '20ch',
+    fontSize: '0.875rem',
+    color: '#333333',
+  },
+});
+
 function Header() {
-  // State to control mobile menu open/close
   const [menuOpen, setMenuOpen] = useState(false);
   const theme = useTheme();
-  // Check if the current viewport is mobile size
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const { language, changeLanguage } = useLanguage();
+  const location = useLocation();
 
-  // Toggle mobile menu open/close
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
   };
 
-  // Get current language and changeLanguage function from context
-  const { language, changeLanguage } = useLanguage();
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
 
-  // Use useEffect to log the current language when it changes
-  useEffect(() => {
-  }, [language]);
-
-  // Define navigation menu items
   const menuItems = [
     { text: getTranslation(language, 'home'), path: '/' },
     { text: getTranslation(language, 'about'), path: '/about' },
@@ -36,208 +85,287 @@ function Header() {
     { text: getTranslation(language, 'contact'), path: '/contact' },
   ];
 
-  // Define donate button
-  const donate = [{ text: getTranslation(language, 'donate'), path: '/donate' }];
+  const handleSearchClick = () => {
+    // This function will be used to open the search modal in the future
+    console.log('Search button clicked');
+  };
 
   return (
-    <>
-      {/* Main AppBar for desktop and mobile */}
-      <AppBar 
-        position="static" 
-        elevation={0}
+    <Box sx={{ position: 'fixed', width: '100%', zIndex: 1000, top: 0, left: 0 }}>
+      <Container 
+        maxWidth="lg" 
         sx={{ 
-          backgroundColor: '#ffffff', 
-          color: '#333333',
-          borderBottom: '1px solid #e0e0e0',
+          px: { xs: 1, sm: 2, md: 3 },
+          pt: { xs: 2, sm: 0 }  // Add padding top for mobile view
         }}
       >
-        <Toolbar disableGutters sx={{ px: { xs: 1, sm: 2, md: 3, lg: 4 }, py: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
-            <Link to="/">
+        {!isMobile && (
+          <AppBar 
+            position="static" 
+            elevation={0}
+            sx={{ 
+              backgroundColor: '#ffffff',
+              borderRadius: '0 0 12px 12px',
+              mb: 0.5,
+              height: '32px',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <Toolbar 
+              sx={{ 
+                justifyContent: 'space-between', 
+                minHeight: '32px !important',
+                height: '100%',
+                py: 0 
+              }}
+            >
+              <Button
+                onClick={handleSearchClick}
+                startIcon={<SearchIcon sx={{ fontSize: '1rem' }} />}
+                sx={{
+                  color: '#333333',
+                  backgroundColor: 'transparent',
+                  textTransform: 'none',
+                  fontSize: '0.875rem',
+                  borderRadius: '16px',
+                  fontWeight: 500,
+                  padding: '2px 3px 2px 10px',
+                  minWidth: 0,
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  },
+                }}
+              >
+                {getTranslation(language, 'search_projects')}
+              </Button>
+              <LanguageSwitcher 
+                currentLanguage={language} 
+                onChangeLanguage={changeLanguage} 
+                sx={{ 
+                  height: '24px',
+                  '& .MuiToggleButton-root': { 
+                    py: 0, 
+                    px: 1, 
+                    fontSize: '0.75rem',
+                    height: '100%' 
+                  } 
+                }} 
+              />
+            </Toolbar>
+          </AppBar>
+        )}
+        <AppBar 
+          position="static" 
+          elevation={2}
+          sx={{ 
+            backgroundColor: '#ffffff',
+            color: '#333333',
+            borderRadius: '12px',
+          }}
+        >
+          <Toolbar sx={{ justifyContent: 'space-between', minHeight: { xs: '48px', md: '56px' }, py: 0.5 }}>
+            <Link to="/" style={{ textDecoration: 'none' }}>
               <Box
                 component="img"
                 src={getAssetPath('/assets/soc-logo.png')}
                 alt="logo"
-                sx={{
-                  height: { xs: 40, sm: 50 }, 
-                  marginRight: { xs: 1, sm: 2 }, 
+                sx={{ 
+                  height: { xs: 28, md: 32 },
                   position: 'relative',
-                  top: 2
+                  top: 3  // Changed from 1 to 3
                 }}
               />
             </Link>
-          </Box>
-          {isMobile ? (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {donate.map((item) => (  
-              <Button 
-                key={item.text}
-                component={Link}
-                to={item.path}
-                variant="contained" 
-                sx={{ 
-                  backgroundColor: '#0056b3', 
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#003d82' },
-                  fontWeight: 'bold',
-                  mr: 2,
-                  px: 2,
-                  py: 0.5,
-                  fontSize: '0.875rem',
-                }}
-              >
-                {item.text}
-              </Button>
-              ))}
+            {isMobile ? (
               <IconButton
-                size="large"
+                size="small"
                 edge="start"
                 color="inherit"
                 aria-label="menu"
                 onClick={toggleMenu}
-                sx={{ color: '#0056b3' }}
               >
                 <MenuIcon />
               </IconButton>
-            </Box>
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {menuItems.map((item) => (
+            ) : (
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {menuItems.map((item) => (
+                  <ModernNavButton 
+                    key={item.text} 
+                    component={Link} 
+                    to={item.path}
+                    sx={{ 
+                      color: location.pathname === item.path ? '#2E7D32' : '#333333',
+                      fontWeight: location.pathname === item.path ? 700 : 500,
+                    }}
+                  >
+                    {item.text}
+                  </ModernNavButton>
+                ))}
                 <Button 
-                  key={item.text} 
-                  component={Link} 
-                  to={item.path}
+                  component={Link}
+                  to="/donate"
+                  variant="contained" 
                   sx={{ 
-                    color: '#333333', 
-                    '&:hover': { backgroundColor: 'transparent', color: '#0056b3' },
-                    fontWeight: 500,
-                    mx: 1,
+                    backgroundColor: '#FFC107',
+                    color: '#333333',
+                    '&:hover': { 
+                      backgroundColor: '#FFD54F',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    },
+                    fontWeight: 'bold',
+                    px: 2,
+                    py: 0.5,
+                    fontSize: '0.9rem',
+                    borderRadius: '16px',
                     textTransform: 'none',
-                    fontSize: '1rem',
+                    transition: 'all 0.3s ease',
+                    ml: 2,
                   }}
                 >
-                  {item.text}
+                  {getTranslation(language, 'donate')}
                 </Button>
-              ))}
-              <LanguageSwitcher currentLanguage={language} onChangeLanguage={changeLanguage} />
-              {donate.map((item) => (  
-              <Button 
-                key={item.text}
-                component={Link}
-                to={item.path}
-                variant="contained" 
-                sx={{ 
-                  backgroundColor: '#0056b3', 
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#003d82' },
-                  fontWeight: 'bold',
-                  ml: 2,
-                  px: 3,
-                  py: 1,
-                }}
-              >
-                {item.text}
-              </Button>
-              ))}
-            </Box>
-          )}
-        </Toolbar>
-      </AppBar>
+              </Box>
+            )}
+          </Toolbar>
+        </AppBar>
+      </Container>
 
-      {/* Mobile menu drawer */}
       <Drawer
         anchor="right"
         open={menuOpen}
-        onClose={toggleMenu}
+        onClose={closeMenu}
         sx={{
           '& .MuiDrawer-paper': {
             width: '80%',
             maxWidth: '400px',
-            height: '100%',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
+            backgroundColor: '#ffffff',
+            borderTopLeftRadius: '16px',
+            borderBottomLeftRadius: '16px',
           },
         }}
       >
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            padding: '2rem',
-          }}
-        >
-          {/* Close button for mobile menu */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              mb: 2,
-            }}
-          >
-            <IconButton onClick={toggleMenu}>
+        <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, mt: 2 }}>
+            <Box
+              component="img"
+              src={getAssetPath('/assets/soc-logo.png')}
+              alt="logo"
+              sx={{ height: 40 }}
+            />
+            <IconButton onClick={closeMenu} sx={{ p: 1 }}>
               <CloseIcon />
             </IconButton>
           </Box>
-
-          {/* Navigation items for mobile menu */}
-          <List sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Box sx={{ ml: -3, mr: -3 }}>
+            <Search sx={{ 
+              mb: 2,
+              mx: 3,
+              width: 'calc(100% - 48px)',
+              height: '40px', 
+              backgroundColor: 'rgba(0, 0, 0, 0.04)',
+              borderRadius: '18px',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.06)',
+              },
+            }}>
+              <SearchIconWrapper sx={{ 
+                width: '40px', 
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <SearchIcon sx={{ fontSize: '1.2rem', color: 'rgba(0, 0, 0, 0.5)' }} />
+              </SearchIconWrapper>
+              <StyledInputBase
+                placeholder={getTranslation(language, 'search_projects')}
+                inputProps={{ 'aria-label': 'search projects' }}
+                sx={{ 
+                  flex: 1,
+                  '& .MuiInputBase-input': {
+                    width: '100%',
+                    height: '100%',
+                    fontSize: '1rem',
+                    padding: '0 0 2px 46px',
+                    '&::placeholder': {
+                      color: 'rgba(0, 0, 0, 0.5)',
+                      opacity: 1,
+                    },
+                  }
+                }}
+              />
+            </Search>
+          </Box>
+          <List sx={{ flex: 1 }}>
             {menuItems.map((item) => (
               <ListItem 
                 button 
                 key={item.text} 
                 component={Link} 
                 to={item.path} 
-                onClick={toggleMenu}
+                onClick={closeMenu}
                 sx={{
-                  textAlign: 'center',
-                  py: 2,
-                  '& .MuiListItemText-primary': {
-                    color: '#333333',
-                    '&:hover': { color: '#0056b3' },
-                    '&:visited': { color: '#333333' }, 
+                  color: location.pathname === item.path ? '#2E7D32' : '#333333',
+                  backgroundColor: location.pathname === item.path ? 'rgba(46, 125, 50, 0.08)' : 'transparent',
+                  '&:hover': {
+                    color: '#2E7D32',
+                    backgroundColor: 'rgba(46, 125, 50, 0.08)',
                   },
+                  borderRadius: '20px',
+                  mb: 1,
+                  transition: 'all 0.3s ease',
                 }}
               >
                 <ListItemText 
                   primary={item.text} 
                   primaryTypographyProps={{
-                    variant: 'h4',
-                    fontWeight: 'bold',
+                    sx: {
+                      fontWeight: location.pathname === item.path ? 'bold' : 'normal',
+                      fontSize: '1rem',
+                    }
                   }}
                 />
               </ListItem>
             ))}
           </List>
-
-          {/* Donate button and language switcher for mobile menu */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2 }}>
-            {donate.map((item) => (  
-              <Button 
-                key={item.text}
-                component={Link}
-                to={item.path}
-                variant="contained" 
-                sx={{ 
-                  backgroundColor: '#0056b3', 
-                  color: '#ffffff',
-                  '&:hover': { backgroundColor: '#003d82' },
-                  fontWeight: 'bold',
-                  py: 1,
-                  px: 4,
-                  fontSize: '1.2rem',
-                  mb: 2,
-                  width: '100%',
-                }}
-              >
-                {item.text}
-              </Button>
-            ))}
-            <LanguageSwitcher currentLanguage={language} onChangeLanguage={changeLanguage} />
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mt: 2, mb: 3 }}>
+            <LanguageSwitcher 
+              currentLanguage={language} 
+              onChangeLanguage={changeLanguage} 
+              sx={{ mb: 2 }}
+            />
           </Box>
+          <Button 
+            component={Link}
+            to="/donate"
+            variant="contained" 
+            fullWidth
+            onClick={closeMenu}
+            sx={{ 
+              backgroundColor: '#FFC107',
+              color: '#333333',
+              '&:hover': { 
+                backgroundColor: '#FFD54F',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              },
+              fontWeight: 'bold',
+              borderRadius: '20px',
+              textTransform: 'none',
+              transition: 'all 0.3s ease',
+              fontSize: '1rem',
+              py: 1,
+            }}
+          >
+            {getTranslation(language, 'donate')}
+          </Button>
         </Box>
       </Drawer>
-    </>
+    </Box>
   );
 }
 

@@ -1,64 +1,102 @@
-import React from 'react';
-import { Select, MenuItem, FormControl, Box, Typography } from '@mui/material';
+import React, { useState } from 'react';
+import { Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { styled } from '@mui/system';
 import LanguageIcon from '@mui/icons-material/Language';
-import { useLanguage } from './LanguageContext';
+import CheckIcon from '@mui/icons-material/Check';
 
-// LanguageSwitcher component: Allows users to switch between available languages
-function LanguageSwitcher() {
-  // Get current language and change function from context
-  const { language, changeLanguage } = useLanguage();
+const StyledButton = styled(Button)(({ theme }) => ({
+  color: '#333333',
+  backgroundColor: 'transparent',
+  textTransform: 'none',
+  fontSize: '0.9rem',
+  fontWeight: 500,
+  padding: '6px 12px',
+  borderRadius: '20px',
+  '&:hover': {
+    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+  },
+}));
 
-  // Handle language change event
-  const handleChange = (event) => {
-    changeLanguage(event.target.value);
+const StyledMenu = styled(Menu)(({ theme }) => ({
+  '& .MuiPaper-root': {
+    borderRadius: '12px',
+    marginTop: '8px',
+    minWidth: 180,
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)',
+  },
+}));
+
+const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
+  padding: '10px 16px',
+  '&:hover': {
+    backgroundColor: 'rgba(46, 125, 50, 0.08)',
+  },
+}));
+
+const languages = [
+  { code: 'en', label: 'English' },
+  { code: 'vn', label: 'Vietnamese' },
+  // Add more languages as needed
+];
+
+function LanguageSwitcher({ currentLanguage, onChangeLanguage, sx }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLanguageChange = (languageCode) => {
+    onChangeLanguage(languageCode);
+    handleClose();
+  };
+
+  const currentLanguageLabel = languages.find(lang => lang.code === currentLanguage)?.label || 'Language';
+
   return (
-    <FormControl size="small">
-      <Select
-        value={language}
-        onChange={handleChange}
-        displayEmpty
-        inputProps={{ 'aria-label': 'Without label' }}
-        sx={{
-          color: '#333333',
-          // Remove default outline styles
-          '& .MuiOutlinedInput-notchedOutline': {
-            border: 'none',
-          },
-          '&:hover .MuiOutlinedInput-notchedOutline': {
-            border: 'none',
-          },
-          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            border: 'none',
-          },
-          // Adjust padding and alignment of select content
-          '& .MuiSelect-select': {
-            paddingLeft: '24px !important',
-            paddingRight: '14px !important',
-            display: 'flex',
-            alignItems: 'center',
-          },
-        }}
-        // Remove default dropdown icon
-        IconComponent={() => null}
-        // Custom render for selected value
-        renderValue={(selected) => (
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <LanguageIcon sx={{ fontSize: '1rem', marginRight: '4px' }} />
-            <Typography variant="caption" sx={{ lineHeight: 1 }}>{selected.toUpperCase()}</Typography>
-          </Box>
-        )}
+    <>
+      <StyledButton
+        onClick={handleClick}
+        startIcon={<LanguageIcon />}
+        endIcon={null}
+        sx={sx}
       >
-        {/* Menu items for language options */}
-        <MenuItem value="en">
-          <Typography variant="caption" sx={{ lineHeight: 1 }}>EN</Typography>
-        </MenuItem>
-        <MenuItem value="vn">
-          <Typography variant="caption" sx={{ lineHeight: 1 }}>VN</Typography>
-        </MenuItem>
-      </Select>
-    </FormControl>
+        {currentLanguageLabel}
+      </StyledButton>
+      <StyledMenu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        {languages.map((language) => (
+          <StyledMenuItem
+            key={language.code}
+            onClick={() => handleLanguageChange(language.code)}
+            selected={currentLanguage === language.code}
+          >
+            <ListItemText>{language.label}</ListItemText>
+            {currentLanguage === language.code && (
+              <ListItemIcon sx={{ minWidth: 'auto', marginLeft: 1 }}>
+                <CheckIcon fontSize="small" />
+              </ListItemIcon>
+            )}
+          </StyledMenuItem>
+        ))}
+      </StyledMenu>
+    </>
   );
 }
 

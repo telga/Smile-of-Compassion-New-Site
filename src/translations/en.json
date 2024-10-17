@@ -3,10 +3,11 @@
     "mission": "Our Mission",
     "missionText": "Smile of Compassion Project Association is a non-profit organization with the main mission of providing medical, health, and educational support to underprivileged people in Vietnam in order to improve and enhance their overall quality of life.",
     "projectsButton": "Our Projects",
-    "featuredProjects": "Featured Projects"
+    "featuredProjects": "Featured Projects",
+    "donateNow": "Donate"
   },
   "about": {
-    "title": "About Smile of Compassion Project Association",
+    "title": "About Us",
     "subtitle": "A Mission To Help the Helpless",
     "description": "Smile of Compassion Projects Association is a non-profit organization with the main mission of providing medical, health and educational support to underprivileged people in Vietnam in order to improve and enhance their overall quality of life. With a compassion, benevolent, and dedicated team of volunteers, the organization will provide a safe, caring, and healthy program with these essential services and support without cost for the clients/patients/victims:",
     "services": [
@@ -21,7 +22,8 @@
     ],
     "noAdminFees": "We have absolutely no administration fees. 100% of donation goes directly towards helping those who are most in need. All members, helpers and volunteers of the organization are unpaid. The happiness of our recipients is our income of the soul!",
     "thankYou": "Thank you for your continued support and love!",
-    "facebookButton": "Check out our Facebook"
+    "facebookButton": "Check out our Facebook",
+    "servicesTitle": "Our Activities"
   },
   "projects": {
     "title": "Projects by Year",

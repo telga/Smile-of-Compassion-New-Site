@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Container, Box, Button, Card, CardMedia } from '@mui/material';
+import { Typography, Container, Box, Button, Card, CardMedia, useMediaQuery, useTheme } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -12,6 +12,7 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { RichText } from '@graphcms/rich-text-react-renderer';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
 
 // GraphQL query to fetch project details
 const GET_PROJECT = gql`
@@ -45,6 +46,10 @@ function ProjectDetail() {
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
   const location = useLocation();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMedium = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // Fetch project data when component mounts or language changes
   React.useEffect(() => {
@@ -81,7 +86,8 @@ function ProjectDetail() {
     slidesToShow: 1,
     slidesToScroll: 1,
     prevArrow: <PrevArrow />,
-    nextArrow: <NextArrow />
+    nextArrow: <NextArrow />,
+    adaptiveHeight: true,
   };
 
   useEffect(() => {
@@ -132,118 +138,163 @@ function ProjectDetail() {
   };
 
   if (!project) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <Typography variant="h5">Loading...</Typography>
+      </Box>
+    );
   }
 
   const projectImages = getProjectImages(project);
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
-      {/* Back to projects button */}
-      <Button startIcon={<ArrowBackIcon />} onClick={handleBackClick} sx={{ mb: 2 }}>
-        {t('projectDetail.backToProjects')}
-      </Button>
-      
-      {/* Project title */}
-      <Typography variant="h3" component="h1" gutterBottom>
-        {project.title}
-      </Typography>
-      
-      {/* Image slider or single image */}
-      <Box sx={{ 
-        height: 400,
-        mb: 4,
-        '& .slick-slider, & .slick-list, & .slick-track': { height: '100%' },
-        '& .slick-prev, & .slick-next': {
-          zIndex: 1,
-          '&:before': { display: 'none' },
-        },
-        '& .slick-prev': { left: 10 },
-        '& .slick-next': { right: 10 },
-      }}>
-        {projectImages.length > 0 ? (
-          <Slider {...sliderSettings}>
-            {projectImages.map((image, index) => (
-              <Box key={index} sx={{ height: '100%' }}>
-                <img 
-                  src={image.url} 
-                  alt={`Project ${index + 1}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain',
-                    objectPosition: 'center',
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Box sx={{ paddingTop: { xs: '60px', sm: '70px', md: '80px' } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 } }}>
+          <motion.div
+            initial={{ x: -50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Button 
+              startIcon={<ArrowBackIcon />} 
+              onClick={handleBackClick} 
+              sx={{ 
+                mb: 2, 
+                color: '#333',
+                '&:hover': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                },
+              }}
+            >
+              {t('projectDetail.backToProjects')}
+            </Button>
+          </motion.div>
+          
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <Typography 
+              variant="h3" 
+              component="h1" 
+              gutterBottom 
+              sx={{ 
+                fontWeight: 700, 
+                color: '#333',
+                fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
+                mb: { xs: 2, sm: 3, md: 4 }
+              }}
+            >
+              {project.title}
+            </Typography>
+          </motion.div>
+          
+          <Box sx={{ 
+            height: { xs: 250, sm: 350, md: 450 },
+            mb: { xs: 2, sm: 3, md: 4 },
+            '& .slick-slider, & .slick-list, & .slick-track': { height: '100%' },
+            '& .slick-prev, & .slick-next': {
+              zIndex: 1,
+              '&:before': { display: 'none' },
+            },
+            '& .slick-prev': { left: { xs: 5, md: 10 } },
+            '& .slick-next': { right: { xs: 5, md: 10 } },
+            '& .slick-dots': {
+              bottom: 16,
+              '& li button:before': {
+                color: 'white',
+                opacity: 0.5,
+              },
+              '& li.slick-active button:before': {
+                opacity: 1,
+              },
+            },
+          }}>
+            {projectImages.length > 0 ? (
+              <Slider {...sliderSettings}>
+                {projectImages.map((image, index) => (
+                  <Box key={index} sx={{ height: '100%' }}>
+                    <img 
+                      src={image.url} 
+                      alt={`Project ${index + 1}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                        borderRadius: '12px',
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Slider>
+            ) : (
+              <Typography>No images available for this project.</Typography>
+            )}
+          </Box>
+          
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+          >
+            {project.description && (
+              <Box sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.8)', 
+                borderRadius: '12px', 
+                p: { xs: 2, sm: 3, md: 4 },
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}>
+                <RichText
+                  content={project.description.raw}
+                  renderers={{
+                    h1: ({ children }) => <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: '#333', fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{children}</Typography>,
+                    h2: ({ children }) => <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: '#444', fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' } }}>{children}</Typography>,
+                    p: ({ children }) => <Typography variant="body1" paragraph sx={{ color: '#555', lineHeight: 1.7, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } }}>{children}</Typography>,
+                    // Add more custom renderers as needed
                   }}
                 />
               </Box>
-            ))}
-          </Slider>
-        ) : (
-          <Typography>No images available for this project.</Typography>
-        )}
+            )}
+          </motion.div>
+        </Container>
       </Box>
-      
-      {/* Project description */}
-      {project.description && (
-        <RichText
-          content={project.description.raw}
-          renderers={{
-            h1: ({ children }) => <Typography variant="h1">{children}</Typography>,
-            h2: ({ children }) => <Typography variant="h2">{children}</Typography>,
-            p: ({ children }) => <Typography variant="body1" paragraph>{children}</Typography>,
-            // Add more custom renderers as needed
-          }}
-        />
-      )}
-    </Container>
+    </motion.div>
   );
 }
 
-// Custom previous arrow component for the slider
+const ArrowStyles = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: { xs: '30px', sm: '35px', md: '40px' },
+  height: { xs: '30px', sm: '35px', md: '40px' },
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  borderRadius: '50%',
+  zIndex: 2,
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    transform: 'scale(1.1)',
+  },
+};
+
 const PrevArrow = ({ className, onClick }) => (
-  <Box 
-    className={className} 
-    onClick={onClick}
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '40px',
-      height: '40px',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      borderRadius: '50%',
-      zIndex: 2,
-      left: '10px',
-      '&:hover': {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      },
-    }}
-  >
-    <ArrowBackIosIcon sx={{ color: 'white' }} />
+  <Box className={className} onClick={onClick} sx={ArrowStyles}>
+    <ArrowBackIosIcon sx={{ color: 'white', fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' } }} />
   </Box>
 );
 
-// Custom next arrow component for the slider
 const NextArrow = ({ className, onClick }) => (
-  <Box 
-    className={className} 
-    onClick={onClick}
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '40px',
-      height: '40px',
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      borderRadius: '50%',
-      zIndex: 2,
-      right: '10px',
-      '&:hover': {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      },
-    }}
-  >
-    <ArrowForwardIosIcon sx={{ color: 'white' }} />
+  <Box className={className} onClick={onClick} sx={ArrowStyles}>
+    <ArrowForwardIosIcon sx={{ color: 'white', fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' } }} />
   </Box>
 );
 

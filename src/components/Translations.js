@@ -6,15 +6,15 @@ const translations = {
     projects: 'Projects',
     contact: 'Contact',
     donate: 'Donate',
-    // ... other English translations ...
+    search_projects: 'Search Projects',
   },
   vn: {
     home: 'Trang chủ',
     about: 'Về chúng tôi',
     projects: 'Dự án',
     contact: 'Liên hệ',
-    donate: 'Quyên góp',
-    // ... other Vietnamese translations ...
+    donate: 'Hỗ Trợ',
+    search_projects: 'Tìm kiếm dự án',
   },
 };
 
