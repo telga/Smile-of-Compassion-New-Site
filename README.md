@@ -24,11 +24,11 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 - [x] Skeleton site.
 - [x] Logos and backgrounds.
-- [x] Hygraph integration.
+- [x] Hygraph integration. **BROKEN PROJ CARDS**
 - [x] Github progress host.
 - [ ] Content migration.
 - [x] Contact form backend.
-- [ ] Full stylization.
+- [ ] Full stylization. **WIP**
 - [ ] Donations.
 - [ ] AI translations using OPENAI-API.
 - [ ] All pages dynamic.
