@@ -9,6 +9,7 @@ import { useLanguage } from './LanguageContext';
 import { getTranslation } from './Translations';
 import { getAssetPath } from '../assetUtils';
 import { styled } from '@mui/system';
+import SearchModal from './SearchModal';
 
 const ModernNavButton = styled(Button)(({ theme }) => ({
   color: '#333333',
@@ -69,6 +70,7 @@ function Header() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { language, changeLanguage } = useLanguage();
   const location = useLocation();
+  const [searchModalOpen, setSearchModalOpen] = useState(false); // Add this state
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -86,8 +88,11 @@ function Header() {
   ];
 
   const handleSearchClick = () => {
-    // This function will be used to open the search modal in the future
-    console.log('Search button clicked');
+    setSearchModalOpen(true);
+  };
+
+  const handleCloseSearchModal = () => {
+    setSearchModalOpen(false);
   };
 
   return (
@@ -365,6 +370,7 @@ function Header() {
           </Button>
         </Box>
       </Drawer>
+      <SearchModal open={searchModalOpen} onClose={handleCloseSearchModal} />
     </Box>
   );
 }
