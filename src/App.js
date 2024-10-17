@@ -18,7 +18,7 @@ import { onError } from "@apollo/client/link/error";
 
 // Create Apollo Client using the environment variable
 const httpLink = createHttpLink({
-  uri: 'https://us-west-2.cdn.hygraph.com/content/cm291myyd01dw07w3rz3gvofh/master',
+  uri: process.env.REACT_APP_HYGRAPH_API_URL,
 });
 
 const authLink = setContext((_, { headers }) => {
