@@ -149,23 +149,23 @@ function Donate() {
                   
                   {paymentMethod === 1 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> // Increased margin and font size
+                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> 
                         {t('donate.scanZelleQR')}
                       </Typography>
-                      <QRCode value={getZelleQRValue()} size={isMobile ? 200 : 220} /> // Increased QR code size
+                      <QRCode value={getZelleQRValue()} size={isMobile ? 200 : 220} /> 
                     </Box>
                   )}
                   
                   {paymentMethod === 2 && (
                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> // Increased margin and font size
+                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> 
                         {t('donate.interacETransferInfo')}
                       </Typography>
                       <Paper elevation={1} sx={{ p: 3, borderRadius: 2, backgroundColor: theme.palette.background.default, width: '100%' }}>
-                        <Typography variant="body1" sx={{ mb: 2, fontSize: '1rem' }}> // Increased margin and font size
+                        <Typography variant="body1" sx={{ mb: 2, fontSize: '1rem' }}> 
                           <strong>{t('donate.email')}:</strong> {getInteracETransferInfo().email}
                         </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1rem' }}> // Increased font size
+                        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
                           <strong>{t('donate.message')}:</strong> {getInteracETransferInfo().message}
                         </Typography>
                       </Paper>

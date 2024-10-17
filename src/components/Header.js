@@ -66,11 +66,11 @@ const StyledInputBase = styled(InputBase)({
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { language, changeLanguage } = useLanguage();
   const location = useLocation();
-  const [searchModalOpen, setSearchModalOpen] = useState(false); // Add this state
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -88,11 +88,12 @@ function Header() {
   ];
 
   const handleSearchClick = () => {
-    setSearchModalOpen(true);
-  };
-
-  const handleCloseSearchModal = () => {
-    setSearchModalOpen(false);
+    if (isMobile) {
+      setSearchModalOpen(true);
+    } else {
+      setSearchModalOpen(true);
+      console.log('Desktop search clicked');
+    }
   };
 
   return (
@@ -101,7 +102,7 @@ function Header() {
         maxWidth="lg" 
         sx={{ 
           px: { xs: 1, sm: 2, md: 3 },
-          pt: { xs: 2, sm: 0 }  // Add padding top for mobile view
+          pt: { xs: 2, sm: 0 }
         }}
       >
         {!isMobile && (
@@ -177,20 +178,35 @@ function Header() {
                 sx={{ 
                   height: { xs: 28, md: 32 },
                   position: 'relative',
-                  top: 3  // Changed from 1 to 3
+                  top: 1
                 }}
               />
             </Link>
             {isMobile ? (
-              <IconButton
-                size="small"
-                edge="start"
-                color="inherit"
-                aria-label="menu"
-                onClick={toggleMenu}
-              >
-                <MenuIcon />
-              </IconButton>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <IconButton
+                  size="small"
+                  edge="start"
+                  color="inherit"
+                  aria-label="search"
+                  onClick={handleSearchClick}
+                  sx={{ 
+                    mr: 1,
+                    padding: '4px', // Reduce padding to make the button smaller
+                  }}
+                >
+                  <SearchIcon sx={{ fontSize: '1.2rem' }} /> {/* Reduce the icon size */}
+                </IconButton>
+                <IconButton
+                  size="small"
+                  edge="start"
+                  color="inherit"
+                  aria-label="menu"
+                  onClick={toggleMenu}
+                >
+                  <MenuIcon />
+                </IconButton>
+              </Box>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {menuItems.map((item) => (
@@ -262,49 +278,6 @@ function Header() {
               <CloseIcon />
             </IconButton>
           </Box>
-          <Box sx={{ ml: -3, mr: -3 }}>
-            <Search sx={{ 
-              mb: 2,
-              mx: 3,
-              width: 'calc(100% - 48px)',
-              height: '40px', 
-              backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              borderRadius: '18px',
-              border: '1px solid rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              alignItems: 'center',
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.06)',
-              },
-            }}>
-              <SearchIconWrapper sx={{ 
-                width: '40px', 
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <SearchIcon sx={{ fontSize: '1.2rem', color: 'rgba(0, 0, 0, 0.5)' }} />
-              </SearchIconWrapper>
-              <StyledInputBase
-                placeholder={getTranslation(language, 'search_projects')}
-                inputProps={{ 'aria-label': 'search projects' }}
-                sx={{ 
-                  flex: 1,
-                  '& .MuiInputBase-input': {
-                    width: '100%',
-                    height: '100%',
-                    fontSize: '1rem',
-                    padding: '0 0 2px 46px',
-                    '&::placeholder': {
-                      color: 'rgba(0, 0, 0, 0.5)',
-                      opacity: 1,
-                    },
-                  }
-                }}
-              />
-            </Search>
-          </Box>
           <List sx={{ flex: 1 }}>
             {menuItems.map((item) => (
               <ListItem 
@@ -370,7 +343,7 @@ function Header() {
           </Button>
         </Box>
       </Drawer>
-      <SearchModal open={searchModalOpen} onClose={handleCloseSearchModal} />
+      <SearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
     </Box>
   );
 }
