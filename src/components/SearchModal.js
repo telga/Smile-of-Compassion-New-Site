@@ -7,17 +7,19 @@ import {
   Typography, 
   Box, 
   TextField, 
-  Grid, 
   CardMedia,
-  CardActionArea
+  IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import CloseIcon from '@mui/icons-material/Close';
+import { useLanguage } from '../components/LanguageContext'; // Import the language context
 
-const SEARCH_PROJECTS = gql`
-  query SearchProjects($searchTerm: String!) {
-    projects(where: { title_contains: $searchTerm }) {
+export const SEARCH_PROJECTS = gql`
+  query SearchProjects($searchTerm: String!, $language: Locale!) {
+    projects(where: { title_contains: $searchTerm }, locales: [$language]) {
       id
       title
+      year
       image {
         url
         localizations(locales: [en]) {
@@ -32,8 +34,10 @@ const SEARCH_PROJECTS = gql`
 const SearchModal = ({ open, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
-  const { loading, error, data, refetch } = useQuery(SEARCH_PROJECTS, {
-    variables: { searchTerm },
+  const { language } = useLanguage(); // Get the current language
+
+  const { loading, error, data, refetch} = useQuery(SEARCH_PROJECTS, {
+    variables: { searchTerm, language }, // Pass the language to the query
     skip: searchTerm.length < 3,
   });
 
@@ -48,15 +52,15 @@ const SearchModal = ({ open, onClose }) => {
     onClose();
   };
 
-  console.log('SEARCH_PROJECTS query:', SEARCH_PROJECTS);
-  console.log('searchTerm:', searchTerm);
-
-  if (!open) return null;
+  const handleClose = () => {
+    setSearchTerm('');
+    onClose();
+  };
 
   return (
     <Modal 
       open={open} 
-      onClose={onClose}
+      onClose={handleClose}
       sx={{
         display: 'flex',
         alignItems: 'center',
@@ -64,69 +68,76 @@ const SearchModal = ({ open, onClose }) => {
       }}
     >
       <Box sx={{
-        bgcolor: 'background.paper',
-        borderRadius: 2,
-        boxShadow: 24,
-        p: 4,
         width: '90%',
         maxWidth: 600,
         maxHeight: '80vh',
-        overflowY: 'auto',
+        bgcolor: 'background.paper',
+        boxShadow: 24,
+        p: 4,
+        borderRadius: 2,
+        display: 'flex',
+        flexDirection: 'column',
       }}>
-        <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3 }}>
-          Search Projects
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="h2">
+            Search Projects
+          </Typography>
+          <IconButton onClick={handleClose} size="small">
+            <CloseIcon />
+          </IconButton>
+        </Box>
         <TextField
           fullWidth
           label="Search projects"
           variant="outlined"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ mb: 3 }}
+          sx={{ mb: 2 }}
         />
-        {loading && <Typography>Loading...</Typography>}
-        {error && <Typography color="error">Error: {error.message}</Typography>}
-        {data && data.projects && (
-          <Grid container spacing={3}>
-            {data.projects.map((project) => (
-              <Grid item xs={12} sm={6} key={project.id}>
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
+          {loading && <Typography>Loading...</Typography>}
+          {error && <Typography color="error">Error: {error.message}</Typography>}
+          {data && data.projects && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {data.projects.map((project) => (
                 <Card 
+                  key={project.id}
                   sx={{ 
-                    height: '100%', 
+                    width: '75%',
                     display: 'flex', 
                     flexDirection: 'column',
-                    transition: '0.3s',
                     cursor: 'pointer',
-                    '&:hover': {
-                      boxShadow: 3,
-                    },
+                    '&:hover': { boxShadow: 3 },
+                    mb: 2, // Add margin bottom for spacing between cards
                   }}
                   onClick={() => handleProjectClick(project.id)}
                 >
-                  <CardActionArea>
-                    <CardMedia
-                      component="img"
-                      height="140"
-                      image={project.image?.url || '/path/to/placeholder-image.jpg'}
-                      alt={project.title}
-                    />
-                    <CardContent>
-                      <Typography gutterBottom variant="h6" component="h3">
-                        {project.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {project.year}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
+                  <CardMedia
+                    component="img"
+                    height="120" // Slightly increased height for better visibility
+                    image={
+                      project.image?.localizations?.[0]?.url || 
+                      project.image?.url || 
+                      `https://source.unsplash.com/random?${project.id}&lang=en`
+                    }
+                    alt={project.title}
+                  />
+                  <CardContent sx={{ p: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '0.9rem' }}>
+                      {project.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {project.year}
+                    </Typography>
+                  </CardContent>
                 </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-        {data && data.projects && data.projects.length === 0 && (
-          <Typography>No projects found</Typography>
-        )}
+              ))}
+            </Box>
+          )}
+          {data && data.projects && data.projects.length === 0 && (
+            <Typography>No projects found</Typography>
+          )}
+        </Box>
       </Box>
     </Modal>
   );

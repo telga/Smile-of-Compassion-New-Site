@@ -235,7 +235,7 @@ function Home() {
                     >
                       <Card 
                         component={Link}
-                        to={`/${item === 'makeSupport' ? 'donate' : item === 'exploreCauses' ? 'projects' : 'contact'}`}
+                        to={``}
                         sx={{ 
                           backgroundColor: [colorPalette.accent2, colorPalette.accent1, colorPalette.primary][index], 
                           aspectRatio: '1 / 1',

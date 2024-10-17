@@ -192,10 +192,10 @@ function Header() {
                   onClick={handleSearchClick}
                   sx={{ 
                     mr: 1,
-                    padding: '4px', // Reduce padding to make the button smaller
+                    padding: '4px', 
                   }}
                 >
-                  <SearchIcon sx={{ fontSize: '1.2rem' }} /> {/* Reduce the icon size */}
+                  <SearchIcon sx={{ fontSize: '1.2rem' }} /> 
                 </IconButton>
                 <IconButton
                   size="small"
