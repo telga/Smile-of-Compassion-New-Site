@@ -1,9 +1,12 @@
 import React from 'react';
 import { Box, Container, Typography, Link, IconButton, Stack } from '@mui/material';
-import { Facebook, Twitter, Instagram } from '@mui/icons-material';
+import { Facebook, Email } from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
 
 // Footer component: Renders the bottom section of the website
 function Footer() {
+  const { t } = useTranslation();
+
   return (
     <Box
       component="footer"
@@ -13,48 +16,49 @@ function Footer() {
       }}
     >
       <Container maxWidth="lg">
-        {/* Main content area with three columns */}
+        {/* Main content area with two columns */}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={5} justifyContent="space-between">
-          {/* Info column */}
-          <Box>
-            <Typography variant="h6" color="text.primary" gutterBottom>
-              Info
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-                Placeholder text
-            </Typography>
-          </Box>
-
           {/* Contact information column */}
           <Box>
             <Typography variant="h6" color="text.primary" gutterBottom>
-              Contact Us
+              {t('footer.contactUs')}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Email: smileofcompassion@gmail.com
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Tel: +1 234 567 8901
+              Tel: +1 (657) 615-3499
             </Typography>
           </Box>
 
           {/* Social media links column */}
-          <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <Typography variant="h6" color="text.primary" gutterBottom>
-              Socials
+              {t('footer.socials')}
             </Typography>
             {/* Social media icon buttons */}
-            <Stack direction="row" spacing={1}>
-              <IconButton aria-label="Facebook" color="primary">
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <IconButton 
+                aria-label="Facebook" 
+                color="primary" 
+                size="large"
+                sx={{ p: 0 }}
+                href="https://www.facebook.com/smileofcompassionprojects"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <Facebook />
               </IconButton>
-              <IconButton aria-label="Twitter" color="primary">
-                <Twitter />
+              <IconButton 
+                aria-label={t('footer.email')}
+                color="primary" 
+                size="large"
+                sx={{ p: 3 }}
+                href="mailto:smileofcompassion@gmail.com"
+              >
+                <Email />
               </IconButton>
-              <IconButton aria-label="Instagram" color="primary">
-                <Instagram />
-              </IconButton>
-            </Stack>
+            </Box>
           </Box>
         </Stack>
 
@@ -62,7 +66,7 @@ function Footer() {
         <Box mt={5}>
           <Typography variant="body2" color="text.secondary" align="center">
             {'Copyright © '}
-            <Link color="inherit" href="https://loremipsum.org/">
+            <Link color="inherit" href="https://www.facebook.com/smileofcompassionprojects">
               Smile of Compassion
             </Link>{' '}
             {new Date().getFullYear()}
