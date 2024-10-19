@@ -103,8 +103,6 @@ function AppContent() {
         <Route path="/projects/:id" element={<ProjectDetail />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/donate" element={<Donate />} />
-        {/* Catch-all route to redirect to home page */}
-        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
     </motion.div>
