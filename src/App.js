@@ -49,13 +49,16 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+// Define the base path
+const BASE_PATH = '/Smile-of-Compassion-New-Site';
+
 // Main App component: Sets up routing and global providers
 function App() {
   return (
     <ApolloProvider client={client}>
       <LanguageProvider>
         <I18nextProvider i18n={i18n}>
-          <Router>
+          <Router basename={BASE_PATH}>
             <AppContent />
           </Router>
         </I18nextProvider>
@@ -75,9 +78,11 @@ function AppContent() {
   useEffect(() => {
     const handleLinkClick = (e) => {
       const link = e.target.closest('a');
-      if (link && link.href.startsWith(window.location.origin)) {
+      if (link && link.getAttribute('href').startsWith('/')) {
         e.preventDefault();
-        window.location.href = link.href;
+        const path = link.getAttribute('href');
+        const fullPath = `${window.location.origin}${BASE_PATH}${path}`;
+        window.location.href = fullPath;
       }
     };
 
