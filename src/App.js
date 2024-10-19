@@ -55,7 +55,7 @@ function App() {
     <ApolloProvider client={client}>
       <LanguageProvider>
         <I18nextProvider i18n={i18n}>
-          <Router basename="%PUBLIC_URL%/">
+          <Router basename="%PUBLIC_URL%/Smile-of-Compassion-New-Site">
             <AppContent />
           </Router>
         </I18nextProvider>
