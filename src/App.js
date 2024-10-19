@@ -58,7 +58,7 @@ function App() {
     <ApolloProvider client={client}>
       <LanguageProvider>
         <I18nextProvider i18n={i18n}>
-          <Router basename={BASE_PATH}>
+          <Router>
             <AppContent />
           </Router>
         </I18nextProvider>
@@ -80,8 +80,16 @@ function AppContent() {
       const link = e.target.closest('a');
       if (link && link.getAttribute('href').startsWith('/')) {
         e.preventDefault();
-        const path = link.getAttribute('href');
+        let path = link.getAttribute('href');
+        
+        // Remove BASE_PATH from the beginning of the path if it's there
+        if (path.startsWith(BASE_PATH)) {
+          path = path.slice(BASE_PATH.length);
+        }
+        
+        // Construct the full path
         const fullPath = `${window.location.origin}${BASE_PATH}${path}`;
+        
         window.location.href = fullPath;
       }
     };
@@ -93,16 +101,23 @@ function AppContent() {
     };
   }, []);
 
+  // Remove BASE_PATH from the beginning of location.pathname
+  const currentPath = location.pathname.startsWith(BASE_PATH) 
+    ? location.pathname.slice(BASE_PATH.length) 
+    : location.pathname;
+
   return (
     <motion.div>
       <Header />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/projects" element={<Projects />} />
-        <Route path="/projects/:id" element={<ProjectDetail />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/donate" element={<Donate />} />
+        <Route path={`${BASE_PATH}/`} element={<Home />} />
+        <Route path={`${BASE_PATH}/about`} element={<About />} />
+        <Route path={`${BASE_PATH}/projects`} element={<Projects />} />
+        <Route path={`${BASE_PATH}/projects/:id`} element={<ProjectDetail />} />
+        <Route path={`${BASE_PATH}/contact`} element={<Contact />} />
+        <Route path={`${BASE_PATH}/donate`} element={<Donate />} />
+        {/* Catch-all route to redirect to home page */}
+        <Route path="*" element={<Navigate to={`${BASE_PATH}/`} replace />} />
       </Routes>
       <Footer />
     </motion.div>
