@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Button, Box, Container, Card, CardContent, CardMedia, CardActionArea, useTheme, useMediaQuery, Grid } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Typography, Button, Box, Container, Card, CardContent, CardMedia, useMediaQuery, Grid } from '@mui/material';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { gql } from 'graphql-request';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +9,7 @@ import { getAssetPath } from '../assetUtils';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { GET_PROJECTS } from '../queries/projectQueries';
 
 // Define the color palette based on the image
 const colorPalette = {
@@ -21,24 +21,6 @@ const colorPalette = {
   text: '#333333', // Dark gray text
 };
 
-// GraphQL query to fetch recent projects
-const GET_RECENT_PROJECTS = gql`
-  query GetProjects {
-    projects(orderBy: year_DESC) {
-      id
-      title
-      year
-      image {
-        url
-        localizations(locales: [en]) {
-          locale
-          url
-        }
-      }
-    }
-  }
-`;
-
 // Home component: Renders the landing page of the website
 function Home() {
   // State to store recent projects
@@ -46,16 +28,14 @@ function Home() {
   // Get current language from context
   const { language } = useLanguage();
   // Access theme and check for small screen
-  const theme = useTheme();
   const isMobile = useMediaQuery('(max-width:600px)'); // Adjusted from 400px to 600px
-  const isMediumOrLarger = useMediaQuery(theme.breakpoints.up('md'));
   const { t } = useTranslation();
 
   // Effect to fetch recent projects when language changes
   useEffect(() => {
     async function fetchRecentProjects() {
       try {
-        const data = await hygraphClient.request(GET_RECENT_PROJECTS, { language });
+        const data = await hygraphClient.request(GET_PROJECTS, { language });
         setRecentProjects(data.projects);
       } catch (error) {
         console.error('Error fetching recent projects:', error);
@@ -404,7 +384,7 @@ function Home() {
                         project.image?.url || 
                         `https://source.unsplash.com/random?${project.id}&lang=en`
                       }
-                      alt={project.title}
+                      alt={project.localizations?.[0]?.title || project.title}
                       sx={{
                         width: isMobile ? 120 : '100%',
                         height: isMobile ? 120 : 200,
@@ -431,7 +411,7 @@ function Home() {
                           mb: isMobile ? 0 : 1,
                           fontSize: isMobile ? '0.875rem' : 'inherit',
                         }}>
-                          {project.title}
+                          {project.localizations?.[0]?.title || project.title}
                         </Typography>
                         {!isMobile && (
                           <Typography variant="body2" sx={{ 
@@ -442,7 +422,7 @@ function Home() {
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
                           }}>
-                            {project.description}
+                            {project.localizations?.[0]?.description || project.description}
                           </Typography>
                         )}
                       </CardContent>

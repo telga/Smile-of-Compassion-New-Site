@@ -1,29 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Typography, Box, Card, CardContent, CardMedia, Button, Grid, Chip, Modal, useTheme, useMediaQuery } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { gql } from 'graphql-request';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-
-// GraphQL query to fetch projects
-const GET_PROJECTS = gql`
-  query GetProjects {
-    projects(orderBy: year_DESC) {
-      id
-      title
-      year
-      image {
-        url
-        localizations(locales: [en]) {
-          locale
-          url
-        }
-      }
-    }
-  }
-`;
+import { GET_PROJECTS } from '../queries/projectQueries';
 
 // Projects component: Renders a list of projects grouped by year
 function Projects() {
@@ -43,14 +25,14 @@ function Projects() {
   useEffect(() => {
     async function fetchProjects() {
       try {
-        const data = await hygraphClient.request(GET_PROJECTS);
+        const data = await hygraphClient.request(GET_PROJECTS, { language });
         setProjects(data.projects);
       } catch (error) {
         console.error('Error fetching projects:', error);
       }
     }
     fetchProjects();
-  }, []);
+  }, [language]);
 
   // Group projects by year
   const projectsByYear = projects.reduce((acc, project) => {
@@ -68,14 +50,9 @@ function Projects() {
 
   // Update this function to always use the 'en' locale image
   const getImageUrl = (project) => {
-    console.log('Project:', JSON.stringify(project, null, 2));
-
     if (project.image) {
-      console.log('Image data:', JSON.stringify(project.image, null, 2));
-
       // Case 1: Object with URL
       if (typeof project.image === 'object' && project.image.url) {
-        console.log('Using object URL:', project.image.url);
         return project.image.url;
       }
 
@@ -83,13 +60,11 @@ function Projects() {
       if (typeof project.image === 'object' && project.image.localizations) {
         const enImage = project.image.localizations.find(img => img.locale === 'en');
         if (enImage && enImage.url) {
-          console.log('Using EN localized URL:', enImage.url);
           return enImage.url;
         }
       }
     }
   
-    console.log('No suitable image found for project:', project.id);
     return null;
   };
 
@@ -119,6 +94,22 @@ function Projects() {
       transition: {
         type: 'spring',
         stiffness: 100
+      }
+    }
+  };
+
+  const buttonVariants = {
+    initial: { scale: 1 },
+    hover: { 
+      scale: 1.05,
+      transition: {
+        duration: 0.2
+      }
+    },
+    tap: { 
+      scale: 0.95,
+      transition: {
+        duration: 0.1
       }
     }
   };
@@ -164,21 +155,28 @@ function Projects() {
               <Grid container justifyContent="center">
                 <Grid item xs={12} sm={8} md={6} lg={4}>
                   <motion.div variants={itemVariants}>
-                    <Link to={`/projects/${projectsByYear[mostRecentYear][0].id}`} style={{ textDecoration: 'none' }}>
-                      <Card sx={{ display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                        <CardMedia
-                          sx={{ paddingTop: '56.25%' }}
-                          image={getImageUrl(projectsByYear[mostRecentYear][0])}
-                          title={projectsByYear[mostRecentYear][0].title}
-                        />
-                        <CardContent sx={{ p: 2 }}>
-                          <Typography gutterBottom variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                            {projectsByYear[mostRecentYear][0].title}
-                          </Typography>
-                          <Chip label={mostRecentYear} size="small" sx={{ mt: 1, backgroundColor: '#2196f3', color: 'white' }} />
-                        </CardContent>
-                      </Card>
-                    </Link>
+                    <motion.div
+                      variants={buttonVariants}
+                      initial="initial"
+                      whileHover="hover"
+                      whileTap="tap"
+                    >
+                      <Link to={`/projects/${projectsByYear[mostRecentYear][0].id}`} style={{ textDecoration: 'none' }}>
+                        <Card sx={{ display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
+                          <CardMedia
+                            sx={{ paddingTop: '56.25%' }}
+                            image={getImageUrl(projectsByYear[mostRecentYear][0])}
+                            title={projectsByYear[mostRecentYear][0].localizations?.[0]?.title || projectsByYear[mostRecentYear][0].title}
+                          />
+                          <CardContent sx={{ p: 2 }}>
+                            <Typography gutterBottom variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
+                              {projectsByYear[mostRecentYear][0].localizations?.[0]?.title || projectsByYear[mostRecentYear][0].title}
+                            </Typography>
+                            <Chip label={mostRecentYear} size="small" sx={{ mt: 1, backgroundColor: '#2196f3', color: 'white' }} />
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    </motion.div>
                   </motion.div>
                 </Grid>
               </Grid>
@@ -201,23 +199,30 @@ function Projects() {
             {sortedYears.map((year) => (
               <Grid item xs={6} sm={4} md={3} key={year}>
                 <motion.div variants={itemVariants}>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleOpenModal(year)}
-                    sx={{
-                      width: '100%',
-                      height: { xs: '80px', sm: '100px' },
-                      fontSize: { xs: '1rem', sm: '1.2rem' },
-                      fontWeight: 'bold',
-                      borderRadius: '12px',
-                      backgroundColor: '#2196f3',
-                      '&:hover': {
-                        backgroundColor: '#1976d2',
-                      },
-                    }}
+                  <motion.div
+                    variants={buttonVariants}
+                    initial="initial"
+                    whileHover="hover"
+                    whileTap="tap"
                   >
-                    {year}
-                  </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleOpenModal(year)}
+                      sx={{
+                        width: '100%',
+                        height: { xs: '80px', sm: '100px' },
+                        fontSize: { xs: '1rem', sm: '1.2rem' },
+                        fontWeight: 'bold',
+                        borderRadius: '12px',
+                        backgroundColor: '#2196f3',
+                        '&:hover': {
+                          backgroundColor: '#1976d2',
+                        },
+                      }}
+                    >
+                      {year}
+                    </Button>
+                  </motion.div>
                 </motion.div>
               </Grid>
             ))}
@@ -267,40 +272,47 @@ function Projects() {
                     <Grid container spacing={2}>
                       {projectsByYear[openModal].map((project) => (
                         <Grid item xs={6} sm={4} key={project.id}>
-                          <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                            <Card sx={{ 
-                              height: '100%', 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              boxShadow: '0 4px 10px rgba(0,0,0,0.2)', 
-                              borderRadius: '8px', 
-                              overflow: 'hidden',
-                              transition: 'box-shadow 0.3s ease-in-out',
-                              '&:hover': {
-                                boxShadow: '0 6px 15px rgba(0,0,0,0.3)',
-                              },
-                            }}>
-                              <CardMedia
-                                sx={{ paddingTop: '56.25%' }}
-                                image={getImageUrl(project)}
-                                title={project.title}
-                              />
-                              <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                                <Typography 
-                                  gutterBottom 
-                                  variant="subtitle2" 
-                                  component="h2" 
-                                  sx={{ 
-                                    fontWeight: 'medium',
-                                    fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                    lineHeight: 1.2,
-                                  }}
-                                >
-                                  {project.title}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          </Link>
+                          <motion.div
+                            variants={buttonVariants}
+                            initial="initial"
+                            whileHover="hover"
+                            whileTap="tap"
+                          >
+                            <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                              <Card sx={{ 
+                                height: '100%', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.2)', 
+                                borderRadius: '8px', 
+                                overflow: 'hidden',
+                                transition: 'box-shadow 0.3s ease-in-out',
+                                '&:hover': {
+                                  boxShadow: '0 6px 15px rgba(0,0,0,0.3)',
+                                },
+                              }}>
+                                <CardMedia
+                                  sx={{ paddingTop: '56.25%' }}
+                                  image={getImageUrl(project)}
+                                  title={project.localizations?.[0]?.title || project.title}
+                                />
+                                <CardContent sx={{ flexGrow: 1, p: 1 }}>
+                                  <Typography 
+                                    gutterBottom 
+                                    variant="subtitle2" 
+                                    component="h2" 
+                                    sx={{ 
+                                      fontWeight: 'medium',
+                                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {project.localizations?.[0]?.title || project.title}
+                                  </Typography>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          </motion.div>
                         </Grid>
                       ))}
                     </Grid>

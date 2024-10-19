@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, gql } from '@apollo/client';
+import { useQuery } from '@apollo/client';
 import { 
   Modal, 
   Card, 
@@ -7,45 +7,32 @@ import {
   Typography, 
   Box, 
   TextField, 
-  CardMedia,
   IconButton
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
-import { useLanguage } from '../components/LanguageContext'; // Import the language context
-
-export const SEARCH_PROJECTS = gql`
-  query SearchProjects($searchTerm: String!, $language: Locale!) {
-    projects(where: { title_contains: $searchTerm }, locales: [$language]) {
-      id
-      title
-      year
-      image {
-        url
-        localizations(locales: [en]) {
-          locale
-          url
-        }
-      }
-    }
-  }
-`;
+import { useLanguage } from '../components/LanguageContext';
+import { SEARCH_PROJECTS } from '../queries/projectQueries';
 
 const SearchModal = ({ open, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
   const navigate = useNavigate();
-  const { language } = useLanguage(); // Get the current language
+  const { language } = useLanguage();
 
-  const { loading, error, data, refetch} = useQuery(SEARCH_PROJECTS, {
-    variables: { searchTerm, language }, // Pass the language to the query
+  const { loading, error, data, refetch } = useQuery(SEARCH_PROJECTS, {
+    variables: { searchTerm, language },
     skip: searchTerm.length < 3,
   });
 
   useEffect(() => {
     if (searchTerm.length >= 3) {
-      refetch({ searchTerm });
+      refetch({ searchTerm, language });
+      setHasSearched(true);
+    } else {
+      setHasSearched(false);
     }
-  }, [searchTerm, refetch]);
+  }, [searchTerm, language, refetch]);
 
   const handleProjectClick = (id) => {
     navigate(`/projects/${id}`);
@@ -54,8 +41,14 @@ const SearchModal = ({ open, onClose }) => {
 
   const handleClose = () => {
     setSearchTerm('');
+    setHasSearched(false);
     onClose();
   };
+
+  // Sort projects by year in descending order
+  const sortedProjects = data?.projects
+    ? [...data.projects].sort((a, b) => b.year - a.year)
+    : [];
 
   return (
     <Modal 
@@ -97,9 +90,9 @@ const SearchModal = ({ open, onClose }) => {
         <Box sx={{ flexGrow: 1, overflowY: 'auto', pr: 1 }}>
           {loading && <Typography>Loading...</Typography>}
           {error && <Typography color="error">Error: {error.message}</Typography>}
-          {data && data.projects && (
+          {sortedProjects.length > 0 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {data.projects.map((project) => (
+              {sortedProjects.map((project) => (
                 <Card 
                   key={project.id}
                   sx={{ 
@@ -108,20 +101,10 @@ const SearchModal = ({ open, onClose }) => {
                     flexDirection: 'column',
                     cursor: 'pointer',
                     '&:hover': { boxShadow: 3 },
-                    mb: 2, // Add margin bottom for spacing between cards
+                    mb: 2,
                   }}
                   onClick={() => handleProjectClick(project.id)}
                 >
-                  <CardMedia
-                    component="img"
-                    height="120" // Slightly increased height for better visibility
-                    image={
-                      project.image?.localizations?.[0]?.url || 
-                      project.image?.url || 
-                      `https://source.unsplash.com/random?${project.id}&lang=en`
-                    }
-                    alt={project.title}
-                  />
                   <CardContent sx={{ p: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '0.9rem' }}>
                       {project.title}
@@ -134,7 +117,7 @@ const SearchModal = ({ open, onClose }) => {
               ))}
             </Box>
           )}
-          {data && data.projects && data.projects.length === 0 && (
+          {hasSearched && sortedProjects.length === 0 && !loading && (
             <Typography>No projects found</Typography>
           )}
         </Box>

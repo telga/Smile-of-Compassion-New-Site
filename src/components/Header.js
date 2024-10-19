@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Button, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Container, InputBase } from '@mui/material';
+import { AppBar, Toolbar, Button, IconButton, Box, Drawer, List, ListItem, ListItemText, useMediaQuery, useTheme, Container } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
@@ -29,46 +29,12 @@ const ModernNavButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const Search = styled('div')({
-  position: 'relative',
-  borderRadius: '20px',
-  backgroundColor: 'rgba(0, 0, 0, 0.08)',
-  '&:hover': {
-    backgroundColor: 'rgba(0, 0, 0, 0.12)',
-  },
-  marginRight: '16px',
-  marginLeft: '24px',
-  width: 'auto',
-  height: '28px',
-});
-
-const SearchIconWrapper = styled('div')({
-  padding: '0 8px',
-  height: '100%',
-  position: 'absolute',
-  pointerEvents: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-});
-
-const StyledInputBase = styled(InputBase)({
-  color: 'inherit',
-  height: '100%',
-  '& .MuiInputBase-input': {
-    padding: '4px 4px 4px 0',
-    paddingLeft: 'calc(1em + 24px)',
-    width: '20ch',
-    fontSize: '0.875rem',
-    color: '#333333',
-  },
-});
-
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isLarge = useMediaQuery(theme.breakpoints.up('lg'));
   const { language, changeLanguage } = useLanguage();
   const location = useLocation();
 
@@ -102,7 +68,7 @@ function Header() {
         maxWidth="lg" 
         sx={{ 
           px: { xs: 1, sm: 2, md: 3 },
-          pt: { xs: 2, sm: 0 }
+          pt: isLarge ? 0 : 2, // No top padding for large screens, 16px for others
         }}
       >
         {!isMobile && (
@@ -111,7 +77,7 @@ function Header() {
             elevation={0}
             sx={{ 
               backgroundColor: '#ffffff',
-              borderRadius: '0 0 12px 12px',
+              borderRadius: isLarge ? '0 0 12px 12px' : '12px',
               mb: 0.5,
               height: '32px',
               boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
@@ -167,6 +133,7 @@ function Header() {
             backgroundColor: '#ffffff',
             color: '#333333',
             borderRadius: '12px',
+            mt: isLarge ? 0.5 : 0, // Add margin top for large screens
           }}
         >
           <Toolbar sx={{ justifyContent: 'space-between', minHeight: { xs: '48px', md: '56px' }, py: 0.5 }}>

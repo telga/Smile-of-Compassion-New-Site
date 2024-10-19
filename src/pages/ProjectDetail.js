@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Container, Box, Button, Card, CardMedia, useMediaQuery, useTheme } from '@mui/material';
+import { Typography, Container, Box, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import { gql } from 'graphql-request';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import Slider from 'react-slick';
@@ -13,30 +12,7 @@ import 'slick-carousel/slick/slick-theme.css';
 import { RichText } from '@graphcms/rich-text-react-renderer';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-
-// GraphQL query to fetch project details
-const GET_PROJECT = gql`
-  query GetProject($id: ID!, $language: Locale!) {
-    project(where: { id: $id }, locales: [$language]) {
-      id
-      title
-      description {
-        raw
-      }
-      year
-      image {
-        url
-        width
-        height
-      }
-      images {
-        url
-        width
-        height
-      }
-    }
-  }
-`;
+import { GET_PROJECT } from '../queries/projectQueries';
 
 // ProjectDetail component: Renders detailed information about a specific project
 function ProjectDetail() {
@@ -46,10 +22,6 @@ function ProjectDetail() {
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
   const location = useLocation();
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMedium = useMediaQuery(theme.breakpoints.between('sm', 'md'));
 
   // Fetch project data when component mounts or language changes
   React.useEffect(() => {
@@ -114,10 +86,6 @@ function ProjectDetail() {
       console.log('Logo element not found');
     }
   }, [location]);
-
-  const getLocalizedContent = (content) => {
-    return content && (content[language] || content['en']);
-  };
 
   const getProjectImages = (project) => {
     let images = [];
