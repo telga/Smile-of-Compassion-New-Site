@@ -113,11 +113,6 @@ function Home() {
         <Container maxWidth="lg">
           <Box sx={{ maxWidth: isMobile ? '100%' : '50%', py: 4 }}>
             <motion.div variants={itemVariants}>
-              <Typography variant="overline" sx={{ color: 'white', fontWeight: 'bold', mb: 1, fontSize: isMobile ? '0.7rem' : '0.875rem' }}>
-                {t('home.missionSubtitle')}
-              </Typography>
-            </motion.div>
-            <motion.div variants={itemVariants}>
               <Typography variant="h3" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 2, fontSize: isMobile ? '1.75rem' : '2.5rem' }}>
                 {t('home.mission')}
               </Typography>

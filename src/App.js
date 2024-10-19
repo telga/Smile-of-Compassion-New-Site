@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -54,30 +54,70 @@ function App() {
   return (
     <ApolloProvider client={client}>
       <LanguageProvider>
-        {/* Provide i18n instance to the app for internationalization */}
         <I18nextProvider i18n={i18n}>
-          {/* Set up routing with a custom basename for GitHub Pages deployment */}
-          <Router basename="/Smile-of-Compassion-New-Site">
-            {/* Wrap the entire app content in a motion.div for potential animations */}
-            <motion.div>
-              {/* Global header component */}
-              <Header />
-              {/* Define routes for different pages */}
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/projects" element={<Projects />} />
-                <Route path="/projects/:id" element={<ProjectDetail />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/donate" element={<Donate />} />
-              </Routes>
-              {/* Global footer component */}
-              <Footer />
-            </motion.div>
+          <Router basename="/">
+            <AppContent />
           </Router>
         </I18nextProvider>
       </LanguageProvider>
     </ApolloProvider>
+  );
+}
+
+function AppContent() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Disable the browser's default scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    // Scroll to top on route change
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    // Re-enable default scroll restoration when component unmounts
+    return () => {
+      if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'auto';
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleLinkClick = (e) => {
+      const link = e.target.closest('a');
+      if (link && link.getAttribute('href').startsWith('/')) {
+        e.preventDefault();
+        const path = link.getAttribute('href');
+        navigate(path);
+        setTimeout(() => window.location.reload(), 100);
+      }
+    };
+
+    document.addEventListener('click', handleLinkClick);
+
+    return () => {
+      document.removeEventListener('click', handleLinkClick);
+    };
+  }, [navigate]);
+
+  return (
+    <motion.div>
+      <Header />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/donate" element={<Donate />} />
+      </Routes>
+      <Footer />
+    </motion.div>
   );
 }
 
