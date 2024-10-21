@@ -101,11 +101,12 @@ function AppContent() {
     };
   }, []);
 
-  // Remove BASE_PATH from the beginning of location.pathname
+  /* Remove BASE_PATH from the beginning of location.pathname
   const currentPath = location.pathname.startsWith(BASE_PATH) 
     ? location.pathname.slice(BASE_PATH.length) 
     : location.pathname;
-
+  */
+ 
   return (
     <motion.div>
       <Header />

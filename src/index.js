@@ -11,11 +11,6 @@ favicon.rel = 'icon';
 favicon.type = 'image/png';
 favicon.href = getAssetPath('/assets/favicon.png');
 document.head.appendChild(favicon);
-
-// Log favicon information for debugging purposes
-console.log('Favicon href:', favicon.href);
-console.log('Favicon element:', favicon);
-
 // Create a root for React 18's concurrent mode
 const root = createRoot(document.getElementById('root'));
 
