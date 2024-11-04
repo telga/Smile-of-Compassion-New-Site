@@ -7,6 +7,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { GET_PROJECTS } from '../queries/projectQueries';
 
+const colorPalette = {
+  primary: '#4CAF50',      // Main green (lighter)
+  secondary: '#2E7D32',    // Medium green
+  accent1: '#81C784',      // Light green
+  accent2: '#173F5F',      // Navy blue
+  background: '#FFFFFF',   // White
+  text: '#1A1A1A',        // Near black for main text
+  lightBg: '#F5F8F5',     // Very light green for backgrounds
+};
+
 // Projects component: Renders a list of projects grouped by year
 function Projects() {
   // State to store projects
@@ -98,22 +108,6 @@ function Projects() {
     }
   };
 
-  const buttonVariants = {
-    initial: { scale: 1 },
-    hover: { 
-      scale: 1.05,
-      transition: {
-        duration: 0.2
-      }
-    },
-    tap: { 
-      scale: 0.95,
-      transition: {
-        duration: 0.1
-      }
-    }
-  };
-
   return (
     <Box sx={{ paddingTop: '80px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
@@ -122,21 +116,6 @@ function Projects() {
           animate="visible"
           variants={containerVariants}
         >
-          <motion.div variants={itemVariants}>
-            <Typography 
-              variant={isMobile ? "h3" : "h2"} 
-              component="h1" 
-              gutterBottom 
-              sx={{ 
-                mb: { xs: 3, md: 4 }, 
-                fontWeight: 'bold', 
-                color: '#333',
-                fontSize: { xs: '2.5rem', sm: '3rem', md: '3.75rem' }
-              }}
-            >
-              {t('projects.title')}
-            </Typography>
-          </motion.div>
           
           {mostRecentYear && (
             <Box sx={{ mb: { xs: 4, md: 6 } }}>
@@ -145,38 +124,65 @@ function Projects() {
                   variant={isMobile ? "h5" : "h4"} 
                   sx={{ 
                     mb: { xs: 2, md: 3 }, 
-                    color: '#555',
-                    fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+                    color: colorPalette.accent2,
+                    fontWeight: 600,
+                    fontFamily: '"Poppins", sans-serif',
+                    textAlign: 'center'
                   }}
                 >
                   {t('projects.mostRecentProject')}
                 </Typography>
               </motion.div>
               <Grid container justifyContent="center">
-                <Grid item xs={12} sm={8} md={6} lg={4}>
+                <Grid item xs={12} sm={10} md={8}>
                   <motion.div variants={itemVariants}>
-                    <motion.div
-                      variants={buttonVariants}
-                      initial="initial"
-                      whileHover="hover"
-                      whileTap="tap"
-                    >
-                      <Link to={`/projects/${projectsByYear[mostRecentYear][0].id}`} style={{ textDecoration: 'none' }}>
-                        <Card sx={{ display: 'flex', flexDirection: 'column', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '12px', overflow: 'hidden' }}>
-                          <CardMedia
-                            sx={{ paddingTop: '56.25%' }}
-                            image={getImageUrl(projectsByYear[mostRecentYear][0])}
-                            title={projectsByYear[mostRecentYear][0].localizations?.[0]?.title || projectsByYear[mostRecentYear][0].title}
+                    <Link to={`/projects/${projectsByYear[mostRecentYear][0].id}`} style={{ textDecoration: 'none' }}>
+                      <Card sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)', 
+                        borderRadius: '12px', 
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        }
+                      }}>
+                        <CardMedia
+                          sx={{ paddingTop: '45%' }}
+                          image={getImageUrl(projectsByYear[mostRecentYear][0])}
+                          title={projectsByYear[mostRecentYear][0].title}
+                        />
+                        <CardContent sx={{ 
+                          p: 3, 
+                          backgroundColor: colorPalette.background,
+                          textAlign: 'center'
+                        }}>
+                          <Typography 
+                            variant="h5" 
+                            component="h2" 
+                            sx={{ 
+                              fontWeight: 600,
+                              color: colorPalette.text,
+                              mb: 2,
+                              fontFamily: '"Poppins", sans-serif',
+                            }}
+                          >
+                            {projectsByYear[mostRecentYear][0].title}
+                          </Typography>
+                          <Chip 
+                            label={mostRecentYear} 
+                            size="medium" 
+                            sx={{ 
+                              backgroundColor: colorPalette.primary,
+                              color: '#FFFFFF',
+                              fontWeight: 500,
+                            }} 
                           />
-                          <CardContent sx={{ p: 2 }}>
-                            <Typography gutterBottom variant="h6" component="h2" sx={{ fontWeight: 'bold' }}>
-                              {projectsByYear[mostRecentYear][0].localizations?.[0]?.title || projectsByYear[mostRecentYear][0].title}
-                            </Typography>
-                            <Chip label={mostRecentYear} size="small" sx={{ mt: 1, backgroundColor: '#2196f3', color: 'white' }} />
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    </motion.div>
+                        </CardContent>
+                      </Card>
+                    </Link>
                   </motion.div>
                 </Grid>
               </Grid>
@@ -188,41 +194,51 @@ function Projects() {
               variant={isMobile ? "h5" : "h4"} 
               sx={{ 
                 mb: { xs: 2, md: 3 }, 
-                color: '#555',
-                fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+                color: colorPalette.accent2,
+                fontWeight: 600,
+                fontFamily: '"Poppins", sans-serif',
+                textAlign: 'center'
               }}
             >
               {t('projects.allProjects')}
             </Typography>
           </motion.div>
-          <Grid container spacing={2}>
+          <Grid 
+            container 
+            spacing={2} 
+            justifyContent="center"
+            sx={{ 
+              maxWidth: '900px',
+              margin: '0 auto',
+              px: { xs: 2, md: 4 }
+            }}
+          >
             {sortedYears.map((year) => (
               <Grid item xs={6} sm={4} md={3} key={year}>
                 <motion.div variants={itemVariants}>
-                  <motion.div
-                    variants={buttonVariants}
-                    initial="initial"
-                    whileHover="hover"
-                    whileTap="tap"
+                  <Button
+                    variant="contained"
+                    onClick={() => handleOpenModal(year)}
+                    sx={{
+                      width: '100%',
+                      height: { xs: '80px', sm: '100px' },
+                      fontSize: { xs: '1.2rem', sm: '1.4rem' },
+                      fontWeight: 600,
+                      fontFamily: '"Poppins", sans-serif',
+                      borderRadius: '12px',
+                      backgroundColor: colorPalette.accent2,
+                      color: '#FFFFFF',
+                      border: '1px solid transparent',
+                      '&:hover': {
+                        backgroundColor: colorPalette.secondary,
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                      },
+                      transition: 'all 0.3s ease',
+                    }}
                   >
-                    <Button
-                      variant="contained"
-                      onClick={() => handleOpenModal(year)}
-                      sx={{
-                        width: '100%',
-                        height: { xs: '80px', sm: '100px' },
-                        fontSize: { xs: '1rem', sm: '1.2rem' },
-                        fontWeight: 'bold',
-                        borderRadius: '12px',
-                        backgroundColor: '#2196f3',
-                        '&:hover': {
-                          backgroundColor: '#1976d2',
-                        },
-                      }}
-                    >
-                      {year}
-                    </Button>
-                  </motion.div>
+                    {year}
+                  </Button>
                 </motion.div>
               </Grid>
             ))}
@@ -238,6 +254,7 @@ function Projects() {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  p: 2,
                 }}
               >
                 <motion.div
@@ -246,73 +263,86 @@ function Projects() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                   style={{
-                    width: isMobile ? '90%' : isTablet ? '80%' : '70%',
-                    maxWidth: '700px',
-                    maxHeight: '85vh',
-                    backgroundColor: '#fff',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    padding: isMobile ? '16px' : '24px',
+                    width: isMobile ? '95%' : isTablet ? '85%' : '75%',
+                    maxWidth: '1200px',
+                    maxHeight: '90vh',
+                    backgroundColor: colorPalette.background,
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                    padding: isMobile ? '20px' : '32px',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column',
                   }}
                 >
                   <Typography 
-                    variant={isMobile ? "h5" : "h4"} 
+                    variant="h4" 
                     sx={{ 
-                      mb: { xs: 2, md: 3 }, 
-                      fontWeight: 'bold',
-                      fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' }
+                      mb: 3,
+                      color: colorPalette.accent2,
+                      fontWeight: 600,
+                      fontFamily: '"Poppins", sans-serif',
                     }}
                   >
                     {t('projects.yearProjects', { year: openModal })}
                   </Typography>
-                  <Box sx={{ overflowY: 'auto', flexGrow: 1, pb: 2, px: 2 }}>
-                    <Grid container spacing={2}>
+                  <Box sx={{ 
+                    overflowY: 'auto', 
+                    flexGrow: 1,
+                    px: 2,
+                    '&::-webkit-scrollbar': {
+                      width: '6px',
+                    },
+                    '&::-webkit-scrollbar-track': {
+                      background: colorPalette.lightBg,
+                      borderRadius: '3px',
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      background: colorPalette.accent1,
+                      borderRadius: '3px',
+                    },
+                  }}>
+                    <Grid container spacing={3}>
                       {projectsByYear[openModal].map((project) => (
-                        <Grid item xs={6} sm={4} key={project.id}>
-                          <motion.div
-                            variants={buttonVariants}
-                            initial="initial"
-                            whileHover="hover"
-                            whileTap="tap"
-                          >
-                            <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                              <Card sx={{ 
-                                height: '100%', 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                boxShadow: '0 4px 10px rgba(0,0,0,0.2)', 
-                                borderRadius: '8px', 
-                                overflow: 'hidden',
-                                transition: 'box-shadow 0.3s ease-in-out',
-                                '&:hover': {
-                                  boxShadow: '0 6px 15px rgba(0,0,0,0.3)',
-                                },
+                        <Grid item xs={12} sm={6} md={4} key={project.id}>
+                          <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                            <Card sx={{ 
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              borderRadius: '12px',
+                              overflow: 'hidden',
+                              transition: 'all 0.3s ease',
+                              backgroundColor: colorPalette.background,
+                              border: `1px solid ${colorPalette.lightBg}`,
+                              '&:hover': {
+                                transform: 'translateY(-4px)',
+                                boxShadow: '0 6px 20px rgba(0,0,0,0.1)',
+                              },
+                            }}>
+                              <CardMedia
+                                sx={{ paddingTop: '56.25%' }}
+                                image={getImageUrl(project)}
+                                title={project.title}
+                              />
+                              <CardContent sx={{ 
+                                p: 2.5,
+                                backgroundColor: colorPalette.background,
                               }}>
-                                <CardMedia
-                                  sx={{ paddingTop: '56.25%' }}
-                                  image={getImageUrl(project)}
-                                  title={project.localizations?.[0]?.title || project.title}
-                                />
-                                <CardContent sx={{ flexGrow: 1, p: 1 }}>
-                                  <Typography 
-                                    gutterBottom 
-                                    variant="subtitle2" 
-                                    component="h2" 
-                                    sx={{ 
-                                      fontWeight: 'medium',
-                                      fontSize: { xs: '0.8rem', sm: '0.9rem' },
-                                      lineHeight: 1.2,
-                                    }}
-                                  >
-                                    {project.localizations?.[0]?.title || project.title}
-                                  </Typography>
-                                </CardContent>
-                              </Card>
-                            </Link>
-                          </motion.div>
+                                <Typography 
+                                  variant="h6" 
+                                  sx={{ 
+                                    fontWeight: 500,
+                                    color: colorPalette.text,
+                                    fontSize: { xs: '1rem', sm: '1.1rem' },
+                                    lineHeight: 1.4,
+                                  }}
+                                >
+                                  {project.title}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Link>
                         </Grid>
                       ))}
                     </Grid>

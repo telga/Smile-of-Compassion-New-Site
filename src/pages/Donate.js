@@ -3,6 +3,7 @@ import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMedi
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'react-qr-code';
+import { Link } from 'react-router-dom';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
@@ -12,6 +13,17 @@ function Donate() {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Update color palette
+  const colorPalette = {
+    primary: '#4CAF50',      // Main green (lighter)
+    secondary: '#2E7D32',    // Medium green
+    accent1: '#81C784',      // Light green
+    accent2: '#173F5F',      // Navy blue
+    background: '#FFFFFF',   // White
+    text: '#1A1A1A',        // Near black for main text
+    lightBg: '#F5F8F5',     // Very light green for backgrounds
+  };
 
   // Handler for changing the payment method
   const handlePaymentMethodChange = (event, newValue) => {
@@ -68,25 +80,29 @@ function Donate() {
       variants={containerVariants}
     >
       <Box sx={{ 
+        backgroundColor: colorPalette.lightBg,
+        minHeight: '100vh',
         paddingTop: { xs: '80px', sm: '120px' }, 
-        paddingBottom: { xs: '80px', sm: '100px' }, // Increased bottom padding
-        minHeight: { xs: 'calc(100vh - 100px)', sm: 'calc(100vh - 80px)' }, // Adjusted minHeight
-        display: 'flex', 
-        alignItems: 'center',
-        justifyContent: 'center',
+        paddingBottom: { xs: '80px', sm: '100px' },
       }}>
         <Container maxWidth="sm">
           <Paper elevation={3} sx={{ 
-            p: { xs: '24px 20px 32px', sm: 5 }, // Adjusted padding for mobile, especially at the bottom
-            borderRadius: 3, 
-            backgroundColor: 'rgba(255, 255, 255, 0.9)', 
-            backdropFilter: 'blur(10px)'
+            p: { xs: '24px 16px 32px', sm: 5 },
+            borderRadius: '12px', 
+            backgroundColor: colorPalette.background,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
           }}>
             <motion.div variants={itemVariants}>
               <Typography 
                 variant="h4" 
                 component="h1" 
-                sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold', color: theme.palette.primary.main }}
+                sx={{ 
+                  mb: 3, 
+                  textAlign: 'center', 
+                  fontWeight: 600, 
+                  color: colorPalette.accent2,
+                  fontFamily: '"Poppins", sans-serif',
+                }}
               >
                 {t('donate.title')}
               </Typography>
@@ -107,12 +123,26 @@ function Donate() {
                   value={paymentMethod} 
                   onChange={handlePaymentMethodChange} 
                   centered 
-                  sx={{ mb: 4 }} 
-                  TabIndicatorProps={{ sx: { height: 3, borderRadius: 3 } }}
+                  sx={{ 
+                    mb: 4,
+                    '& .MuiTab-root': {
+                      color: colorPalette.text,
+                      fontWeight: 600,
+                      fontSize: '1rem',
+                      '&.Mui-selected': {
+                        color: colorPalette.accent2,
+                      }
+                    },
+                    '& .MuiTabs-indicator': {
+                      backgroundColor: colorPalette.primary,
+                      height: 3,
+                      borderRadius: 3
+                    }
+                  }}
                 >
-                  <Tab label="PayPal" sx={{ fontWeight: 'bold', fontSize: '1rem' }} />
-                  <Tab label="Zelle" sx={{ fontWeight: 'bold', fontSize: '1rem' }} />
-                  <Tab label="Interac" sx={{ fontWeight: 'bold', fontSize: '1rem' }} />
+                  <Tab label="PayPal" />
+                  <Tab label="Zelle" />
+                  <Tab label="Interac" />
                 </Tabs>
               </motion.div>
               
@@ -127,19 +157,29 @@ function Donate() {
                   {paymentMethod === 0 && (
                     <Button
                       variant="contained"
-                      color="primary"
                       size="large"
                       fullWidth
                       href={getPayPalDonateLink()}
                       target="_blank"
                       rel="noopener noreferrer"
+                      component={Link}
                       sx={{ 
                         py: 2, 
-                        borderRadius: 2,
-                        transition: 'transform 0.2s',
-                        fontSize: '1.1rem', 
+                        borderRadius: '8px',
+                        backgroundColor: colorPalette.accent2,
+                        color: '#FFFFFF !important',
+                        transition: 'all 0.3s ease',
+                        fontSize: '1.1rem',
+                        fontWeight: 500, 
+                        textDecoration: 'none',
                         '&:hover': {
-                          transform: 'scale(1.02)'
+                          backgroundColor: colorPalette.primary,
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                          color: '#FFFFFF !important',
+                        },
+                        '&:visited': {
+                          color: '#FFFFFF !important',
                         }
                       }}
                     >
@@ -148,24 +188,92 @@ function Donate() {
                   )}
                   
                   {paymentMethod === 1 && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> 
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center'
+                    }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          mb: 3, 
+                          fontSize: '1.1rem',
+                          color: colorPalette.text,
+                          textAlign: 'center'
+                        }}
+                      > 
                         {t('donate.scanZelleQR')}
                       </Typography>
-                      <QRCode value={getZelleQRValue()} size={isMobile ? 200 : 220} /> 
+                      <Box sx={{ 
+                        p: 3, 
+                        backgroundColor: colorPalette.background,
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                      }}>
+                        <QRCode 
+                          value={getZelleQRValue()} 
+                          size={isMobile ? 200 : 220}
+                          bgColor={colorPalette.background}
+                          fgColor="#000000"
+                        /> 
+                      </Box>
                     </Box>
                   )}
                   
                   {paymentMethod === 2 && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Typography variant="body1" sx={{ mb: 3, fontSize: '1.1rem' }}> 
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center'
+                    }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          mb: 3, 
+                          fontSize: '1.1rem',
+                          color: colorPalette.text,
+                          textAlign: 'center'
+                        }}
+                      > 
                         {t('donate.interacETransferInfo')}
                       </Typography>
-                      <Paper elevation={1} sx={{ p: 3, borderRadius: 2, backgroundColor: theme.palette.background.default, width: '100%' }}>
-                        <Typography variant="body1" sx={{ mb: 2, fontSize: '1rem' }}> 
+                      <Paper 
+                        elevation={1} 
+                        sx={{ 
+                          p: { xs: 2, sm: 3 },
+                          borderRadius: '8px', 
+                          backgroundColor: colorPalette.background,
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                          width: '100%',
+                          maxWidth: '100%',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <Typography 
+                          variant="body1" 
+                          sx={{ 
+                            mb: 2, 
+                            fontSize: { xs: '0.9rem', sm: '1rem' },
+                            wordBreak: 'break-word',
+                            color: colorPalette.text,
+                            '& strong': {
+                              color: colorPalette.accent2
+                            }
+                          }}
+                        > 
                           <strong>{t('donate.email')}:</strong> {getInteracETransferInfo().email}
                         </Typography>
-                        <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+                        <Typography 
+                          variant="body1" 
+                          sx={{ 
+                            fontSize: { xs: '0.9rem', sm: '1rem' },
+                            wordBreak: 'break-word',
+                            color: colorPalette.text,
+                            '& strong': {
+                              color: colorPalette.accent2
+                            }
+                          }}
+                        >
                           <strong>{t('donate.message')}:</strong> {getInteracETransferInfo().message}
                         </Typography>
                       </Paper>

@@ -5,7 +5,8 @@
     "projectsButton": "Our Projects",
     "featuredProjects": "Featured Projects",
     "donateNow": "Donate",
-    "makeSupport": "Testing EN Support"
+    "makeSupport": "Testing EN Support",
+    "learnMore": "Learn More"
   },
   "about": {
     "title": "About Us",
@@ -28,8 +29,8 @@
   },
   "projects": {
     "title": "Projects by Year",
-    "recentProjects": "{{year}} Projects",
-    "yearProjects": "{{year}} Projects"
+    "mostRecentProject": "Most Recent Project",
+    "allProjects": "Projects by Year"
   },
   "projectDetail": {
     "backToProjects": "Back to Projects"
