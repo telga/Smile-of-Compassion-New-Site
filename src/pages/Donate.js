@@ -32,7 +32,7 @@ function Donate() {
 
   // Function to generate PayPal donation link
   const getPayPalDonateLink = () => {
-    const baseUrl = 'https://www.paypal.com/donate';
+    const baseUrl = 'https://www.paypal.com/donate/?business=7SSDZ3J4PCJTW&no_recurring=0&item_name=If+you+wish+to+recieve+a+tax+receipt%2C+please+email+me+at+smileofcompassion%40gmail.com+with+your+full+name%2C+email%2C+and+address.&currency_code=USD';
     const businessId = '7SSDZ3J4PCJTW';
     return `${baseUrl}?business=${businessId}&currency_code=USD`;
   };

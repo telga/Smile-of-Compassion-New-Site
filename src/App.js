@@ -49,9 +49,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-// Define the base path
-const BASE_PATH = '/Smile-of-Compassion-New-Site';
-
 // Main App component: Sets up routing and global providers
 function App() {
   return (
@@ -71,7 +68,6 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    // Scroll to top on route change
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
@@ -80,45 +76,28 @@ function AppContent() {
       const link = e.target.closest('a');
       if (link && link.getAttribute('href').startsWith('/')) {
         e.preventDefault();
-        let path = link.getAttribute('href');
-        
-        // Remove BASE_PATH from the beginning of the path if it's there
-        if (path.startsWith(BASE_PATH)) {
-          path = path.slice(BASE_PATH.length);
-        }
-        
-        // Construct the full path
-        const fullPath = `${window.location.origin}${BASE_PATH}${path}`;
-        
-        window.location.href = fullPath;
+        const path = link.getAttribute('href');
+        window.location.href = `${window.location.origin}${path}`;
       }
     };
 
     document.addEventListener('click', handleLinkClick);
-
     return () => {
       document.removeEventListener('click', handleLinkClick);
     };
   }, []);
 
-  /* Remove BASE_PATH from the beginning of location.pathname
-  const currentPath = location.pathname.startsWith(BASE_PATH) 
-    ? location.pathname.slice(BASE_PATH.length) 
-    : location.pathname;
-  */
- 
   return (
     <motion.div>
       <Header />
       <Routes>
-        <Route path={`${BASE_PATH}/`} element={<Home />} />
-        <Route path={`${BASE_PATH}/about`} element={<About />} />
-        <Route path={`${BASE_PATH}/projects`} element={<Projects />} />
-        <Route path={`${BASE_PATH}/projects/:id`} element={<ProjectDetail />} />
-        <Route path={`${BASE_PATH}/contact`} element={<Contact />} />
-        <Route path={`${BASE_PATH}/donate`} element={<Donate />} />
-        {/* Catch-all route to redirect to home page */}
-        <Route path="*" element={<Navigate to={`${BASE_PATH}/`} replace />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/projects/:id" element={<ProjectDetail />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/donate" element={<Donate />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
     </motion.div>

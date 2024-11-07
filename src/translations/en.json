@@ -30,7 +30,8 @@
   "projects": {
     "title": "Projects by Year",
     "mostRecentProject": "Most Recent Project",
-    "allProjects": "Projects by Year"
+    "allProjects": "Projects by Year",
+    "yearProjects": "{{year}} Projects"    
   },
   "projectDetail": {
     "backToProjects": "Back to Projects"
