@@ -70,7 +70,11 @@ function Footer() {
               Smile of Compassion
             </Link>{' '}
             {new Date().getFullYear()}
-            {'. Developed by Gaki Development.'}
+            {'. Developed by '}
+            <Link color="inherit" href="https://brianguyen.works">
+              Gaki Development
+            </Link>
+            {'.'}
           </Typography>
         </Box>
       </Container>
