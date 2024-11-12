@@ -63,8 +63,6 @@ function ProjectDetail() {
   };
 
   useEffect(() => {
-    console.log('Current pathname:', location.pathname);
-    console.log('Current PUBLIC_URL:', process.env.PUBLIC_URL);
 
     // Fix for incorrect base URL on refresh
     if (location.pathname.startsWith('/projects/')) {
@@ -77,16 +75,7 @@ function ProjectDetail() {
         baseElement.href = `${window.location.origin}${process.env.PUBLIC_URL}/`;
       }
     }
-
-    // Debugging: Check logo URL
-    const logoElement = document.querySelector('img[alt="Logo"]');
-    if (logoElement) {
-      console.log('Current logo src:', logoElement.src);
-    } else {
-      console.log('Logo element not found');
-    }
   }, [location]);
-
   const getProjectImages = (project) => {
     let images = [];
     

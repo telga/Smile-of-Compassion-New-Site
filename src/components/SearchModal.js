@@ -35,7 +35,6 @@ const SearchModal = ({ open, onClose }) => {
   }, [searchTerm, language, refetch]);
 
   const handleProjectClick = (id) => {
-    console.log('Project ID:', id);
     navigate(`projects/${id}`);
     onClose();
   };

@@ -3,7 +3,6 @@ import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMedi
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'react-qr-code';
-import { Link } from 'react-router-dom';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
@@ -30,16 +29,9 @@ function Donate() {
     setPaymentMethod(newValue);
   };
 
-  // Function to generate PayPal donation link
-  const getPayPalDonateLink = () => {
-    const baseUrl = 'https://www.paypal.com/donate/?business=7SSDZ3J4PCJTW&no_recurring=0&item_name=If+you+wish+to+recieve+a+tax+receipt%2C+please+email+me+at+smileofcompassion%40gmail.com+with+your+full+name%2C+email%2C+and+address.&currency_code=USD';
-    const businessId = '7SSDZ3J4PCJTW';
-    return `${baseUrl}?business=${businessId}&currency_code=USD`;
-  };
-
   // Function to get Zelle QR code value
   const getZelleQRValue = () => {
-    return `smileofcompassion@gmail.com`;
+    return `https://enroll.zellepay.com/qr-codes?data=ewogICJ0b2tlbiIgOiAic21pbGVvZmNvbXBhc3Npb25AZ21haWwuY29tIiwKICAiYWN0aW9uIiA6ICJwYXltZW50IiwKICAibmFtZSIgOiAiU01JTEUgT0YgQ09NUEFTU0lPTiBQUk9KRUNUIEFTU09DSUFUSU9OIgp9`;
   };
 
   // Function to get Interac e-Transfer information
@@ -159,10 +151,9 @@ function Donate() {
                       variant="contained"
                       size="large"
                       fullWidth
-                      href={getPayPalDonateLink()}
+                      href="https://paypal.me/smileofcompassion"
                       target="_blank"
                       rel="noopener noreferrer"
-                      component={Link}
                       sx={{ 
                         py: 2, 
                         borderRadius: '8px',

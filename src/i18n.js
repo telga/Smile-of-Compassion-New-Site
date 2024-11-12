@@ -28,7 +28,7 @@ i18n
     // Set the default language here
     lng: 'en', // Set default language to English
     // Enable debug mode for development (set to false in production)
-    debug: true,
+    debug: false,
     // Configure language detection
     detection: {
       // Order of methods to detect user language

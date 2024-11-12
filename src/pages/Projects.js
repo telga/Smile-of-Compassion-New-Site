@@ -108,6 +108,13 @@ function Projects() {
     }
   };
 
+  const getLocalizedTitle = (project) => {
+    if (language !== 'en' && project.localizations && project.localizations.length > 0) {
+      return project.localizations[0].title;
+    }
+    return project.title;
+  };
+
   return (
     <Box sx={{ paddingTop: '80px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
@@ -169,7 +176,7 @@ function Projects() {
                               fontFamily: '"Poppins", sans-serif',
                             }}
                           >
-                            {projectsByYear[mostRecentYear][0].title}
+                            {getLocalizedTitle(projectsByYear[mostRecentYear][0])}
                           </Typography>
                           <Chip 
                             label={mostRecentYear} 
@@ -338,7 +345,7 @@ function Projects() {
                                     lineHeight: 1.4,
                                   }}
                                 >
-                                  {project.title}
+                                  {getLocalizedTitle(project)}
                                 </Typography>
                               </CardContent>
                             </Card>

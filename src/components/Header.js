@@ -58,7 +58,6 @@ function Header() {
       setSearchModalOpen(true);
     } else {
       setSearchModalOpen(true);
-      console.log('Desktop search clicked');
     }
   };
 

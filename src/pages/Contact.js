@@ -34,11 +34,9 @@ function Contact() {
     
     emailjs.sendForm('service_nr9jfx7', 'template_unjtefq', form.current, 'S0iKz450LFl3kTl4N')
       .then((result) => {
-          console.log(result.text);
           setSnackbar({ open: true, message: t('contact.successMessage') });
           form.current.reset();
       }, (error) => {
-          console.log(error.text);
           setSnackbar({ open: true, message: t('contact.errorMessage') });
       });
   };
