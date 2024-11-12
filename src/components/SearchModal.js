@@ -36,7 +36,7 @@ const SearchModal = ({ open, onClose }) => {
 
   const handleProjectClick = (id) => {
     console.log('Project ID:', id);
-    navigate(`Smile-of-Compassion-New-Site/projects/${id}`);
+    navigate(`projects/${id}`);
     onClose();
   };
 
