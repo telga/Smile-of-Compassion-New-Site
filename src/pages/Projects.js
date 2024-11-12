@@ -272,12 +272,13 @@ function Projects() {
                   style={{
                     width: isMobile ? '95%' : isTablet ? '85%' : '75%',
                     maxWidth: '1200px',
-                    maxHeight: '90vh',
+                    minHeight: '60vh',
+                    maxHeight: '85vh',
                     backgroundColor: colorPalette.background,
                     borderRadius: '16px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                     padding: isMobile ? '20px' : '32px',
-                    overflow: 'hidden',
+                    overflow: 'auto',
                     display: 'flex',
                     flexDirection: 'column',
                   }}

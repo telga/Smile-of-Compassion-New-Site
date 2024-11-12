@@ -163,6 +163,7 @@ function Donate() {
                         fontSize: '1.1rem',
                         fontWeight: 500, 
                         textDecoration: 'none',
+                        textTransform: 'none',
                         '&:hover': {
                           backgroundColor: colorPalette.primary,
                           transform: 'translateY(-2px)',
