@@ -167,7 +167,14 @@ function ProjectDetail() {
           <Box sx={{ 
             height: { xs: 250, sm: 350, md: 450 },
             mb: { xs: 2, sm: 3, md: 4 },
-            '& .slick-slider, & .slick-list, & .slick-track': { height: '100%' },
+            '& .slick-slider, & .slick-list, & .slick-track': { 
+              height: '100%' 
+            },
+            '& .slick-slide': {
+              '& > div': {
+                height: '100%'
+              }
+            },
             '& .slick-prev, & .slick-next': {
               zIndex: 1,
               '&:before': { display: 'none' },
@@ -188,16 +195,28 @@ function ProjectDetail() {
             {projectImages.length > 0 ? (
               <Slider {...sliderSettings}>
                 {projectImages.map((image, index) => (
-                  <Box key={index} sx={{ height: '100%' }}>
+                  <Box 
+                    key={index} 
+                    sx={{ 
+                      height: '100%',
+                      width: '100%',
+                      backgroundColor: '#000000',
+                      borderRadius: '12px',
+                      display: 'flex !important',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     <img 
                       src={image.url} 
                       alt={`Project ${index + 1}`}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
+                        width: 'auto',
+                        height: 'auto',
+                        objectFit: 'contain',
                         objectPosition: 'center',
-                        borderRadius: '12px',
                       }}
                     />
                   </Box>
@@ -247,16 +266,21 @@ const ArrowStyles = {
   backgroundColor: 'rgba(0, 0, 0, 0.5)',
   borderRadius: '50%',
   zIndex: 2,
-  transition: 'all 0.3s ease',
+  transition: 'background-color 0.3s ease',
   '&:hover': {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    transform: 'scale(1.1)',
   },
 };
 
 const PrevArrow = ({ className, onClick }) => (
   <Box className={className} onClick={onClick} sx={ArrowStyles}>
-    <ArrowBackIosIcon sx={{ color: 'white', fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' } }} />
+    <ArrowBackIosIcon 
+      sx={{ 
+        color: 'white', 
+        fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' },
+        ml: '8px', // Add margin-left to center the icon
+      }} 
+    />
   </Box>
 );
 

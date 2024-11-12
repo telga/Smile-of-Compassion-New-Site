@@ -244,20 +244,24 @@ function Donate() {
                           borderRadius: '8px', 
                           backgroundColor: colorPalette.background,
                           boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          width: '100%',
-                          maxWidth: '100%',
+                          width: '90%',
+                          maxWidth: '800px',
                           overflow: 'hidden',
+                          mx: 'auto',  // Center the paper
+                          my: 2,  // Add some vertical margin
                         }}
                       >
                         <Typography 
                           variant="body1" 
                           sx={{ 
                             mb: 2, 
-                            fontSize: { xs: '0.9rem', sm: '1rem' },
-                            wordBreak: 'break-word',
+                            fontSize: { xs: '0.95rem', sm: '1rem' },
+                            wordBreak: 'break-all',
                             color: colorPalette.text,
                             '& strong': {
-                              color: colorPalette.accent2
+                              color: colorPalette.accent2,
+                              display: 'block',
+                              mb: 0.5,
                             }
                           }}
                         > 
@@ -266,11 +270,13 @@ function Donate() {
                         <Typography 
                           variant="body1" 
                           sx={{ 
-                            fontSize: { xs: '0.9rem', sm: '1rem' },
+                            fontSize: { xs: '0.95rem', sm: '1rem' },
                             wordBreak: 'break-word',
                             color: colorPalette.text,
                             '& strong': {
-                              color: colorPalette.accent2
+                              color: colorPalette.accent2,
+                              display: 'block',
+                              mb: 0.5,
                             }
                           }}
                         >

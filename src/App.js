@@ -49,33 +49,6 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  
-  useEffect(() => {
-    const scrollToTop = () => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant'
-      });
-      document.documentElement.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'instant'
-      });
-    };
-    
-    scrollToTop();
-    // Try again after a short delay to ensure content is rendered
-    const timeoutId = setTimeout(scrollToTop, 100);
-    
-    return () => clearTimeout(timeoutId);
-  }, [pathname]);
-  
-  return null;
-}
-
 // Main App component: Sets up routing and global providers
 function App() {
   return (
@@ -95,24 +68,36 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    const handleLinkClick = (e) => {
-      const link = e.target.closest('a');
-      if (link && link.getAttribute('href').startsWith('/')) {
-        e.preventDefault();
-        const path = link.getAttribute('href');
-        window.location.href = `${window.location.origin}${path}`;
-      }
+    // Force scroll reset
+    window.history.scrollRestoration = 'manual';
+    
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
     };
 
-    document.addEventListener('click', handleLinkClick);
-    return () => {
-      document.removeEventListener('click', handleLinkClick);
-    };
-  }, []);
+    // Reset immediately
+    resetScroll();
+    
+    // And again after a brief delay
+    const timeoutId = setTimeout(resetScroll, 0);
+    
+    return () => clearTimeout(timeoutId);
+  }, [location.pathname]);
 
   return (
-    <motion.div>
-      <ScrollToTop />
+    <motion.div
+      key={location.pathname}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onAnimationStart={() => {
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+      }}
+    >
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />

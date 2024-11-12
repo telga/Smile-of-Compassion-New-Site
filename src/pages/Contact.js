@@ -200,6 +200,7 @@ function Contact() {
                     fontWeight: 500,
                     borderRadius: '8px',
                     transition: 'all 0.3s ease',
+                    textTransform: 'none',
                     '&:hover': {
                       backgroundColor: colorPalette.secondary,  // Medium green on hover
                       transform: 'translateY(-2px)',
