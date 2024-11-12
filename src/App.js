@@ -49,6 +49,33 @@ const client = new ApolloClient({
   cache: new InMemoryCache(),
 });
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  
+  useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+      document.documentElement.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'instant'
+      });
+    };
+    
+    scrollToTop();
+    // Try again after a short delay to ensure content is rendered
+    const timeoutId = setTimeout(scrollToTop, 100);
+    
+    return () => clearTimeout(timeoutId);
+  }, [pathname]);
+  
+  return null;
+}
+
 // Main App component: Sets up routing and global providers
 function App() {
   return (
@@ -68,10 +95,6 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location.pathname]);
-
-  useEffect(() => {
     const handleLinkClick = (e) => {
       const link = e.target.closest('a');
       if (link && link.getAttribute('href').startsWith('/')) {
@@ -89,6 +112,7 @@ function AppContent() {
 
   return (
     <motion.div>
+      <ScrollToTop />
       <Header />
       <Routes>
         <Route path="/" element={<Home />} />

@@ -40,8 +40,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build",
+    "predeploy": "npm run build && echo smileofcompassion.com > build/CNAME",
+    "deploy": "gh-pages --dist build --repo https://github.com/telga/Smile-of-Compassion-New-Site.git --branch gh-pages --message \"Deploy site to GH pages\" --dotfiles true",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
