@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://smileofcompassion.org/sitemap.xml
+Sitemap: https://smileofcompassion.com/sitemap.xml
