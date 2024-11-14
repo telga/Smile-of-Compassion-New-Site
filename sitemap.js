@@ -13,7 +13,7 @@ async function generateSitemap() {
         ];
 
         // Your website URL
-        const baseUrl = 'https://smileofcompassion.org'; // Update this to your actual domain
+        const baseUrl = 'https://smileofcompassion.com'; 
 
         // Generate sitemap XML content
         const sitemap = `
