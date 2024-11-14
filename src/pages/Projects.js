@@ -36,6 +36,7 @@ function Projects() {
     async function fetchProjects() {
       try {
         const data = await hygraphClient.request(GET_PROJECTS, { language });
+        console.log('Fetched projects data:', data);
         setProjects(data.projects);
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -44,9 +45,21 @@ function Projects() {
     fetchProjects();
   }, [language]);
 
-  // Group projects by year
+  // Helper function to extract year from date string with safety check
+  const getYearFromDate = (dateString) => {
+    if (!dateString) return '';
+    // Split by '-' instead of '/' since date format is yyyy-mm-dd
+    const year = dateString.split('-')[0];
+    console.log('Extracting year from date:', dateString, '-> year:', year);
+    return year;
+  };
+
+  // Group projects by year using the extracted year
   const projectsByYear = projects.reduce((acc, project) => {
-    const year = project.year;
+    console.log('Processing project:', project); // Debug log
+    const year = getYearFromDate(project.date);
+    console.log('Year extracted:', year); // Debug log
+    
     if (!acc[year]) {
       acc[year] = [];
     }
@@ -56,7 +69,23 @@ function Projects() {
 
   // Sort years in descending order
   const sortedYears = Object.keys(projectsByYear).sort((a, b) => b - a);
+  console.log('Sorted years:', sortedYears); // Debug log
   const mostRecentYear = sortedYears[0];
+
+  // Add function to sort projects by date within each year
+  const sortProjectsByDate = (projects) => {
+    return projects.sort((a, b) => {
+      const [dayA, monthA] = a.date.split('/');
+      const [dayB, monthB] = b.date.split('/');
+      
+      // Compare months first
+      if (monthA !== monthB) {
+        return monthB - monthA;
+      }
+      // If months are same, compare days
+      return dayB - dayA;
+    });
+  };
 
   // Update this function to always use the 'en' locale image
   const getImageUrl = (project) => {
@@ -124,7 +153,7 @@ function Projects() {
           variants={containerVariants}
         >
           
-          {mostRecentYear && (
+          {mostRecentYear && projectsByYear[mostRecentYear] && projectsByYear[mostRecentYear][0] && (
             <Box sx={{ mb: { xs: 4, md: 6 } }}>
               <motion.div variants={itemVariants}>
                 <Typography 
@@ -179,7 +208,7 @@ function Projects() {
                             {getLocalizedTitle(projectsByYear[mostRecentYear][0])}
                           </Typography>
                           <Chip 
-                            label={mostRecentYear} 
+                            label={projectsByYear[mostRecentYear][0].date} 
                             size="medium" 
                             sx={{ 
                               backgroundColor: colorPalette.primary,
@@ -244,7 +273,8 @@ function Projects() {
                       transition: 'all 0.3s ease',
                     }}
                   >
-                    {year}
+                    {projectsByYear[year] && projectsByYear[year][0] ? 
+                      getYearFromDate(projectsByYear[year][0].date) : year}
                   </Button>
                 </motion.div>
               </Grid>
@@ -292,7 +322,8 @@ function Projects() {
                       fontFamily: '"Poppins", sans-serif',
                     }}
                   >
-                    {t('projects.yearProjects', { year: openModal })}
+                    {openModal && projectsByYear[openModal] && projectsByYear[openModal][0] ? 
+                      t('projects.yearProjects', { year: getYearFromDate(projectsByYear[openModal][0].date) }) : ''}
                   </Typography>
                   <Box sx={{ 
                     overflowY: 'auto', 
@@ -311,7 +342,7 @@ function Projects() {
                     },
                   }}>
                     <Grid container spacing={3}>
-                      {projectsByYear[openModal].map((project) => (
+                      {sortProjectsByDate(projectsByYear[openModal]).map((project) => (
                         <Grid item xs={12} sm={6} md={4} key={project.id}>
                           <Link to={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
                             <Card sx={{ 
@@ -344,9 +375,19 @@ function Projects() {
                                     color: colorPalette.text,
                                     fontSize: { xs: '1rem', sm: '1.1rem' },
                                     lineHeight: 1.4,
+                                    mb: 1, // Add margin bottom for date
                                   }}
                                 >
                                   {getLocalizedTitle(project)}
+                                </Typography>
+                                <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                    color: colorPalette.secondary,
+                                    fontSize: '0.9rem',
+                                  }}
+                                >
+                                  {project.date}
                                 </Typography>
                               </CardContent>
                             </Card>

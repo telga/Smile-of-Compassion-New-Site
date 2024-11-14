@@ -3,10 +3,10 @@ import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`
   query GetProjects($language: Locale!) {
-    projects(orderBy: year_DESC) {
+    projects(orderBy: date_DESC) {
       id
       title
-      year
+      date
       image {
         url
         localizations(locales: [en]) {
@@ -29,7 +29,7 @@ export const GET_PROJECT = gql`
       description {
         raw
       }
-      year
+      date
       image {
         url
         width
@@ -49,7 +49,7 @@ export const SEARCH_PROJECTS = gql`
     projects(where: { title_contains: $searchTerm }, locales: [$language]) {
       id
       title
-      year
+      date
     }
   }
 `;
