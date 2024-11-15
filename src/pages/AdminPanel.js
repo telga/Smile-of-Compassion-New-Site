@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Select, MenuItem } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider  } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -16,7 +16,6 @@ import {
   FormatBold, 
   FormatItalic, 
   FormatUnderlined, 
-  Title, 
   FormatListBulleted, 
   FormatListNumbered 
 } from '@mui/icons-material';
@@ -169,42 +168,6 @@ function AdminPanel() {
   });
 
   const handleTogglePassword = () => setShowPassword(prev => !prev);
-
-  const HeadingSelect = ({ editor }) => {
-    const [headingSize, setHeadingSize] = useState('paragraph');
-
-    const handleHeadingChange = (event) => {
-      const value = event.target.value;
-      setHeadingSize(value);
-      
-      if (value === 'paragraph') {
-        editor?.chain().focus().setParagraph().run();
-      } else {
-        editor?.chain().focus().toggleHeading({ level: parseInt(value) }).run();
-      }
-    };
-
-    return (
-      <Select
-        value={headingSize}
-        onChange={handleHeadingChange}
-        size="small"
-        sx={{ 
-          minWidth: 120,
-          height: '36px',
-          mr: 1,
-          '& .MuiSelect-select': {
-            py: 0.5,
-          }
-        }}
-      >
-        <MenuItem value="paragraph">Normal</MenuItem>
-        <MenuItem value="1">Heading 1</MenuItem>
-        <MenuItem value="2">Heading 2</MenuItem>
-        <MenuItem value="3">Heading 3</MenuItem>
-      </Select>
-    );
-  };
 
   if (!user) {
     return (
@@ -489,7 +452,12 @@ function AdminPanel() {
                   {/* Description Fields */}
                   <Stack spacing={2}>
                     <Typography variant="subtitle1">Description (English)</Typography>
-                    <div className="editor-wrapper" style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '10px' }}>
+                    <div className="editor-wrapper" style={{ 
+                      border: '1px solid #ccc', 
+                      borderRadius: '4px', 
+                      padding: '10px',
+                      backgroundColor: '#fff'
+                    }}>
                       <div className="editor-toolbar" style={{ 
                         borderBottom: '1px solid #eee', 
                         marginBottom: '10px', 
@@ -499,7 +467,45 @@ function AdminPanel() {
                         alignItems: 'center',
                         flexWrap: 'wrap'
                       }}>
-                        <HeadingSelect editor={editorEn} />
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            if (editorEn?.isActive('heading', { level: 1 })) {
+                              editorEn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorEn?.chain().focus().setHeading({ level: 1 }).run();
+                            }
+                          }}
+                          color={editorEn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+                        >
+                          H1
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            if (editorEn?.isActive('heading', { level: 2 })) {
+                              editorEn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorEn?.chain().focus().setHeading({ level: 2 }).run();
+                            }
+                          }}
+                          color={editorEn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
+                        >
+                          H2
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            if (editorEn?.isActive('heading', { level: 3 })) {
+                              editorEn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorEn?.chain().focus().setHeading({ level: 3 }).run();
+                            }
+                          }}
+                          color={editorEn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
+                        >
+                          H3
+                        </IconButton>
                         <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                         <IconButton
                           size="small"
@@ -539,63 +545,102 @@ function AdminPanel() {
                         </IconButton>
                       </div>
                       <EditorContent 
-                        editor={editorEn} 
-                        style={{
-                          minHeight: '200px',  // Make editor start bigger
-                          padding: '12px',
-                          border: 'none',      // Remove highlight border
-                          outline: 'none',     // Remove outline
-                          backgroundColor: '#fafafa',  // Light background
-                          borderRadius: '4px'
-                        }}
+                        editor={editorEn}
                       />
                     </div>
 
                     <Typography variant="subtitle1">Description (Vietnamese)</Typography>
-                    <div className="editor-wrapper" style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '10px' }}>
-                      <div className="editor-toolbar" style={{ borderBottom: '1px solid #eee', marginBottom: '10px', paddingBottom: '10px' }}>
-                        <Button
+                    <div className="editor-wrapper" style={{ 
+                      border: '1px solid #ccc', 
+                      borderRadius: '4px', 
+                      padding: '10px',
+                      backgroundColor: '#fff'
+                    }}>
+                      <div className="editor-toolbar" style={{ 
+                        borderBottom: '1px solid #eee', 
+                        marginBottom: '10px', 
+                        paddingBottom: '10px',
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        flexWrap: 'wrap'
+                      }}>
+                        <IconButton
                           size="small"
-                          onClick={() => editorVn?.chain().focus().toggleHeading({ level: 1 }).run()}
-                          className={editorVn?.isActive('heading', { level: 1 }) ? 'is-active' : ''}
+                          onClick={() => {
+                            if (editorVn?.isActive('heading', { level: 1 })) {
+                              editorVn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorVn?.chain().focus().setHeading({ level: 1 }).run();
+                            }
+                          }}
+                          color={editorVn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
                         >
                           H1
-                        </Button>
-                        <Button
+                        </IconButton>
+                        <IconButton
                           size="small"
-                          onClick={() => editorVn?.chain().focus().toggleHeading({ level: 2 }).run()}
-                          className={editorVn?.isActive('heading', { level: 2 }) ? 'is-active' : ''}
+                          onClick={() => {
+                            if (editorVn?.isActive('heading', { level: 2 })) {
+                              editorVn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorVn?.chain().focus().setHeading({ level: 2 }).run();
+                            }
+                          }}
+                          color={editorVn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
                         >
                           H2
-                        </Button>
-                        <Button
+                        </IconButton>
+                        <IconButton
                           size="small"
-                          onClick={() => editorVn?.chain().focus().toggleHeading({ level: 3 }).run()}
-                          className={editorVn?.isActive('heading', { level: 3 }) ? 'is-active' : ''}
+                          onClick={() => {
+                            if (editorVn?.isActive('heading', { level: 3 })) {
+                              editorVn?.chain().focus().setParagraph().run();
+                            } else {
+                              editorVn?.chain().focus().setHeading({ level: 3 }).run();
+                            }
+                          }}
+                          color={editorVn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
                         >
                           H3
-                        </Button>
-                        <Button
+                        </IconButton>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                        <IconButton
                           size="small"
                           onClick={() => editorVn?.chain().focus().toggleBold().run()}
-                          className={editorVn?.isActive('bold') ? 'is-active' : ''}
+                          color={editorVn?.isActive('bold') ? 'primary' : 'default'}
                         >
-                          Bold
-                        </Button>
-                        <Button
+                          <FormatBold />
+                        </IconButton>
+                        <IconButton
                           size="small"
                           onClick={() => editorVn?.chain().focus().toggleItalic().run()}
-                          className={editorVn?.isActive('italic') ? 'is-active' : ''}
+                          color={editorVn?.isActive('italic') ? 'primary' : 'default'}
                         >
-                          Italic
-                        </Button>
-                        <Button
+                          <FormatItalic />
+                        </IconButton>
+                        <IconButton
                           size="small"
                           onClick={() => editorVn?.chain().focus().toggleUnderline().run()}
-                          className={editorVn?.isActive('underline') ? 'is-active' : ''}
+                          color={editorVn?.isActive('underline') ? 'primary' : 'default'}
                         >
-                          Underline
-                        </Button>
+                          <FormatUnderlined />
+                        </IconButton>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                        <IconButton
+                          size="small"
+                          onClick={() => editorVn?.chain().focus().toggleBulletList().run()}
+                          color={editorVn?.isActive('bulletList') ? 'primary' : 'default'}
+                        >
+                          <FormatListBulleted />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => editorVn?.chain().focus().toggleOrderedList().run()}
+                          color={editorVn?.isActive('orderedList') ? 'primary' : 'default'}
+                        >
+                          <FormatListNumbered />
+                        </IconButton>
                       </div>
                       <EditorContent editor={editorVn} />
                     </div>
