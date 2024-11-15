@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Select, MenuItem } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -11,6 +11,15 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import Highlight from '@tiptap/extension-highlight';
 import CloseIcon from '@mui/icons-material/Close';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { 
+  FormatBold, 
+  FormatItalic, 
+  FormatUnderlined, 
+  Title, 
+  FormatListBulleted, 
+  FormatListNumbered 
+} from '@mui/icons-material';
 
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(0);
@@ -31,6 +40,7 @@ function AdminPanel() {
     image: null,
     images: []
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -158,73 +168,211 @@ function AdminPanel() {
     },
   });
 
+  const handleTogglePassword = () => setShowPassword(prev => !prev);
+
+  const HeadingSelect = ({ editor }) => {
+    const [headingSize, setHeadingSize] = useState('paragraph');
+
+    const handleHeadingChange = (event) => {
+      const value = event.target.value;
+      setHeadingSize(value);
+      
+      if (value === 'paragraph') {
+        editor?.chain().focus().setParagraph().run();
+      } else {
+        editor?.chain().focus().toggleHeading({ level: parseInt(value) }).run();
+      }
+    };
+
+    return (
+      <Select
+        value={headingSize}
+        onChange={handleHeadingChange}
+        size="small"
+        sx={{ 
+          minWidth: 120,
+          height: '36px',
+          mr: 1,
+          '& .MuiSelect-select': {
+            py: 0.5,
+          }
+        }}
+      >
+        <MenuItem value="paragraph">Normal</MenuItem>
+        <MenuItem value="1">Heading 1</MenuItem>
+        <MenuItem value="2">Heading 2</MenuItem>
+        <MenuItem value="3">Heading 3</MenuItem>
+      </Select>
+    );
+  };
+
   if (!user) {
     return (
-      <div style={{ backgroundColor: colorPalette.lightBg, minHeight: '100vh', paddingTop: '80px' }}>
-        <Container sx={{ py: 6 }}>
+      <Box 
+        sx={{ 
+          backgroundColor: colorPalette.lightBg, 
+          minHeight: '100vh',
+          pt: {
+            xs: '100px',  // Mobile (stays the same)
+            md: '220px'  // Desktop (increased to avoid header)
+          }
+        }}
+      >
+        <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 } }}>
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Card sx={{ maxWidth: '400px', margin: '0 auto', p: 4 }}>
+            <Card sx={{ 
+              p: { xs: 3, sm: 4 },
+              borderRadius: 2,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+            }}>
               <Box sx={{ textAlign: 'center', mb: 4 }}>
-                <h2>Admin Login</h2>
-              </Box>
-              {error && (
-                <Box sx={{ color: 'error.main', mb: 2, textAlign: 'center' }}>
-                  {error}
-                </Box>
-              )}
-              <form onSubmit={handleLogin}>
-                <Box sx={{ mb: 2 }}>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email"
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      marginBottom: '10px',
-                    }}
-                  />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                    }}
-                  />
-                </Box>
-                <button
-                  type="submit"
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: colorPalette.primary,
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
+                <Typography 
+                  variant="h4" 
+                  sx={{ 
+                    color: colorPalette.accent2,
+                    fontWeight: 600,
+                    fontFamily: '"Poppins", sans-serif',
+                    mb: 1
                   }}
                 >
-                  Login
-                </button>
+                  Admin Login
+                </Typography>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    fontFamily: '"Poppins", sans-serif',
+                  }}
+                >
+                  Please sign in to continue
+                </Typography>
+              </Box>
+
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Box sx={{ 
+                    bgcolor: '#FFF3F3', 
+                    color: '#E41749', 
+                    p: 2, 
+                    borderRadius: 1, 
+                    mb: 3,
+                    textAlign: 'center',
+                    fontSize: '0.875rem'
+                  }}>
+                    {error}
+                  </Box>
+                </motion.div>
+              )}
+
+              <form onSubmit={handleLogin}>
+                <Stack spacing={3}>
+                  <TextField
+                    fullWidth
+                    type="email"
+                    label="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    variant="outlined"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: 'rgba(0, 0, 0, 0.12)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: colorPalette.primary,
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: colorPalette.primary,
+                        },
+                      },
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    type={showPassword ? "text" : "password"}
+                    label="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    variant="outlined"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleTogglePassword}
+                            edge="end"
+                            sx={{ 
+                              color: 'rgba(0, 0, 0, 0.54)',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                              }
+                            }}
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        '& fieldset': {
+                          borderColor: 'rgba(0, 0, 0, 0.12)',
+                        },
+                        '&:hover fieldset': {
+                          borderColor: colorPalette.primary,
+                        },
+                        '&.Mui-focused fieldset': {
+                          borderColor: colorPalette.primary,
+                        },
+                      },
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    sx={{
+                      py: 1.5,
+                      backgroundColor: colorPalette.primary,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '1rem',
+                      '&:hover': {
+                        backgroundColor: colorPalette.secondary,
+                      },
+                      transition: 'all 0.2s ease-in-out',
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                </Stack>
               </form>
             </Card>
           </motion.div>
         </Container>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div style={{ backgroundColor: colorPalette.lightBg, minHeight: '100vh', paddingTop: '80px' }}>
-      <Container sx={{ py: 6 }}>
+    <Box 
+      sx={{ 
+        backgroundColor: colorPalette.lightBg, 
+        minHeight: '100vh',
+        pt: {
+          xs: '60px',  // Mobile (stays the same)
+          md: '100px'  // Desktop (increased to avoid header)
+        }
+      }}
+    >
+      <Container sx={{ py: 4 }}>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -234,36 +382,45 @@ function AdminPanel() {
             sx={{
               maxWidth: '1200px',
               margin: '0 auto',
-              borderRadius: '12px',
+              borderRadius: '16px',
               backgroundColor: colorPalette.background,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              overflow: 'hidden'
             }}
           >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 4, py: 2 }}>
-              <Box
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center', 
+              px: 4, 
+              py: 3,
+              borderBottom: '1px solid rgba(0,0,0,0.06)'
+            }}>
+              <Typography
+                variant="h5"
                 sx={{
-                  textAlign: 'center',
-                  py: 4,
                   color: colorPalette.accent2,
                   fontWeight: 600,
                   fontFamily: '"Poppins", sans-serif'
                 }}
               >
                 Admin Panel
-              </Box>
-              <button
+              </Typography>
+              <Button
                 onClick={handleLogout}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: colorPalette.accent2,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
+                variant="outlined"
+                sx={{
+                  borderColor: colorPalette.accent2,
+                  color: colorPalette.accent2,
+                  '&:hover': {
+                    backgroundColor: colorPalette.accent2,
+                    color: 'white',
+                  },
+                  transition: 'all 0.2s ease-in-out',
                 }}
               >
                 Logout
-              </button>
+              </Button>
             </Box>
 
             <Tabs
@@ -271,16 +428,26 @@ function AdminPanel() {
               onChange={handleTabChange}
               sx={{
                 backgroundColor: colorPalette.lightBg,
+                borderBottom: '1px solid rgba(0,0,0,0.06)',
+                '& .MuiTabs-indicator': {
+                  backgroundColor: colorPalette.primary,
+                  height: '3px',
+                  borderRadius: '3px 3px 0 0'
+                },
                 '& .MuiTab-root': {
                   color: colorPalette.text,
                   fontFamily: '"Poppins", sans-serif',
                   fontWeight: 500,
+                  fontSize: '0.95rem',
+                  textTransform: 'none',
+                  minHeight: '56px',
                   '&.Mui-selected': {
                     color: colorPalette.primary,
                     fontWeight: 600
                   },
                   '&:hover': {
-                    color: colorPalette.secondary
+                    color: colorPalette.secondary,
+                    backgroundColor: 'rgba(0,0,0,0.02)'
                   }
                 }
               }}
@@ -289,11 +456,20 @@ function AdminPanel() {
               <Tab label="Add Facebook Posts" />
             </Tabs>
 
-            <Box sx={{ p: 6 }}>
+            <Box sx={{ p: { xs: 3, md: 6 } }}>
               {activeTab === 0 && (
                 <Stack spacing={4}>
-                  <Typography variant="h6" sx={{ mb: 2 }}>Add New Post</Typography>
-                  
+                  <Typography 
+                    variant="h5" 
+                    sx={{ 
+                      mb: 3, 
+                      color: colorPalette.accent2,
+                      fontWeight: 600 
+                    }}
+                  >
+                    Create New Post
+                  </Typography>
+
                   {/* Title Fields */}
                   <Stack direction="row" spacing={2}>
                     <TextField
@@ -314,58 +490,65 @@ function AdminPanel() {
                   <Stack spacing={2}>
                     <Typography variant="subtitle1">Description (English)</Typography>
                     <div className="editor-wrapper" style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '10px' }}>
-                      <div className="editor-toolbar" style={{ borderBottom: '1px solid #eee', marginBottom: '10px', paddingBottom: '10px' }}>
-                        <Button
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleHeading({ level: 1 }).run()}
-                          className={editorEn?.isActive('heading', { level: 1 }) ? 'is-active' : ''}
-                        >
-                          H1
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleHeading({ level: 2 }).run()}
-                          className={editorEn?.isActive('heading', { level: 2 }) ? 'is-active' : ''}
-                        >
-                          H2
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleHeading({ level: 3 }).run()}
-                          className={editorEn?.isActive('heading', { level: 3 }) ? 'is-active' : ''}
-                        >
-                          H3
-                        </Button>
-                        <Button
+                      <div className="editor-toolbar" style={{ 
+                        borderBottom: '1px solid #eee', 
+                        marginBottom: '10px', 
+                        paddingBottom: '10px',
+                        display: 'flex',
+                        gap: '4px',
+                        alignItems: 'center',
+                        flexWrap: 'wrap'
+                      }}>
+                        <HeadingSelect editor={editorEn} />
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                        <IconButton
                           size="small"
                           onClick={() => editorEn?.chain().focus().toggleBold().run()}
-                          className={editorEn?.isActive('bold') ? 'is-active' : ''}
+                          color={editorEn?.isActive('bold') ? 'primary' : 'default'}
                         >
-                          Bold
-                        </Button>
-                        <Button
+                          <FormatBold />
+                        </IconButton>
+                        <IconButton
                           size="small"
                           onClick={() => editorEn?.chain().focus().toggleItalic().run()}
-                          className={editorEn?.isActive('italic') ? 'is-active' : ''}
+                          color={editorEn?.isActive('italic') ? 'primary' : 'default'}
                         >
-                          Italic
-                        </Button>
-                        <Button
+                          <FormatItalic />
+                        </IconButton>
+                        <IconButton
                           size="small"
                           onClick={() => editorEn?.chain().focus().toggleUnderline().run()}
-                          className={editorEn?.isActive('underline') ? 'is-active' : ''}
+                          color={editorEn?.isActive('underline') ? 'primary' : 'default'}
                         >
-                          Underline
-                        </Button>
-                        <Button
+                          <FormatUnderlined />
+                        </IconButton>
+                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                        <IconButton
                           size="small"
-                          onClick={() => editorEn?.chain().focus().toggleHighlight().run()}
-                          className={editorEn?.isActive('highlight') ? 'is-active' : ''}
+                          onClick={() => editorEn?.chain().focus().toggleBulletList().run()}
+                          color={editorEn?.isActive('bulletList') ? 'primary' : 'default'}
                         >
-                          Highlight
-                        </Button>
+                          <FormatListBulleted />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={() => editorEn?.chain().focus().toggleOrderedList().run()}
+                          color={editorEn?.isActive('orderedList') ? 'primary' : 'default'}
+                        >
+                          <FormatListNumbered />
+                        </IconButton>
                       </div>
-                      <EditorContent editor={editorEn} />
+                      <EditorContent 
+                        editor={editorEn} 
+                        style={{
+                          minHeight: '200px',  // Make editor start bigger
+                          padding: '12px',
+                          border: 'none',      // Remove highlight border
+                          outline: 'none',     // Remove outline
+                          backgroundColor: '#fafafa',  // Light background
+                          borderRadius: '4px'
+                        }}
+                      />
                     </div>
 
                     <Typography variant="subtitle1">Description (Vietnamese)</Typography>
@@ -440,115 +623,213 @@ function AdminPanel() {
                     />
                   </Stack>
 
-                  {/* Single Image Upload */}
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle2">Featured Image</Typography>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'image')}
-                      style={{ 
-                        '::file-selector-button': { marginRight: 0 },
-                        color: 'transparent'
-                      }}
-                    />
-                    {previews.image && (
-                      <Box sx={{ mt: 2, position: 'relative' }}>
-                        <img 
-                          src={previews.image} 
-                          alt="Preview" 
-                          style={{ 
-                            maxWidth: '200px', 
-                            maxHeight: '200px', 
-                            objectFit: 'contain',
-                            borderRadius: '4px'
-                          }} 
-                        />
-                        <IconButton
-                          size="small"
-                          sx={{
-                            position: 'absolute',
-                            top: -8,
-                            right: -8,
-                            backgroundColor: 'rgba(0,0,0,0.5)',
-                            '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
-                          }}
-                          onClick={() => {
-                            const fileInput = document.querySelector('input[type="file"]:not([multiple])');
-                            if (fileInput) fileInput.value = '';
-                            
-                            setFormData(prev => ({ ...prev, image: null }));
-                            setPreviews(prev => ({ ...prev, image: null }));
-                          }}
-                        >
-                          <CloseIcon sx={{ color: 'white', fontSize: '1rem' }} />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </Stack>
-
-                  {/* Multiple Images Upload */}
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle2">
-                      Additional Images {formData.images.length > 0 && `(${formData.images.length} files)`}
-                    </Typography>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => handleFileChange(e, 'images')}
-                      style={{ 
-                        '::file-selector-button': { marginRight: 0 },
-                        color: 'transparent'  // This hides the "no file selected" text
-                      }}
-                    />
-                    {previews.images.length > 0 && (
-                      <Box sx={{ 
-                        mt: 2, 
-                        display: 'flex', 
-                        flexWrap: 'wrap', 
-                        gap: 2 
-                      }}>
-                        {previews.images.map((preview, index) => (
-                          <Box key={index} sx={{ position: 'relative' }}>
+                  {/* Styled File Upload Buttons */}
+                  <Stack spacing={3}>
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                        Featured Image
+                      </Typography>
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        sx={{
+                          width: '100%',
+                          height: previews.image ? 'auto' : '120px',
+                          border: '2px dashed rgba(0,0,0,0.12)',
+                          borderRadius: 2,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 1,
+                          padding: previews.image ? '0' : '20px',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          '&:hover': {
+                            borderColor: colorPalette.primary,
+                            backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                            '& .remove-overlay': {
+                              opacity: 1
+                            }
+                          }
+                        }}
+                      >
+                        {previews.image ? (
+                          <>
                             <img 
-                              src={preview} 
-                              alt={`Preview ${index + 1}`} 
+                              src={previews.image} 
+                              alt="Preview" 
                               style={{ 
-                                width: '150px', 
-                                height: '150px', 
-                                objectFit: 'cover',
-                                borderRadius: '4px'
+                                width: '100%',
+                                height: 'auto',
+                                display: 'block'
                               }} 
                             />
-                            <IconButton
-                              size="small"
+                            <Box
+                              className="remove-overlay"
                               sx={{
                                 position: 'absolute',
-                                top: -8,
-                                right: -8,
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
                                 backgroundColor: 'rgba(0,0,0,0.5)',
-                                '&:hover': { backgroundColor: 'rgba(0,0,0,0.7)' },
-                              }}
-                              onClick={() => {
-                                const newImages = formData.images.filter((_, i) => i !== index);
-                                const newPreviews = previews.images.filter((_, i) => i !== index);
-                                
-                                if (newImages.length === 0) {
-                                  const fileInput = document.querySelector('input[type="file"][multiple]');
-                                  if (fileInput) fileInput.value = '';
-                                }
-                                
-                                setFormData(prev => ({ ...prev, images: newImages }));
-                                setPreviews(prev => ({ ...prev, images: newPreviews }));
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                opacity: 0,
+                                transition: 'opacity 0.2s ease-in-out',
                               }}
                             >
-                              <CloseIcon sx={{ color: 'white', fontSize: '1rem' }} />
-                            </IconButton>
+                              <IconButton
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setFormData(prev => ({ ...prev, image: null }));
+                                  setPreviews(prev => ({ ...prev, image: null }));
+                                }}
+                                sx={{ color: 'white' }}
+                              >
+                                <CloseIcon />
+                              </IconButton>
+                            </Box>
+                          </>
+                        ) : (
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center'
+                          }}>
+                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                              Drop your image here, or click to browse
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              (Supports: JPG, PNG, WebP)
+                            </Typography>
                           </Box>
-                        ))}
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleFileChange(e, 'image')}
+                          style={{ display: 'none' }}
+                        />
+                      </Button>
+                    </Box>
+
+                    <Box>
+                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                        Additional Images
+                      </Typography>
+                      <Box sx={{ 
+                        border: '2px dashed rgba(0,0,0,0.12)',
+                        borderRadius: 2,
+                        p: 2,
+                        '&:hover': {
+                          borderColor: colorPalette.primary,
+                          backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                        }
+                      }}>
+                        {previews.images.length > 0 && (
+                          <Box sx={{ 
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                            gap: 2,
+                            mb: 2
+                          }}>
+                            {previews.images.map((preview, index) => (
+                              <Box
+                                key={index}
+                                sx={{
+                                  position: 'relative',
+                                  paddingTop: '100%', // 1:1 Aspect ratio
+                                  borderRadius: 1,
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                <img
+                                  src={preview}
+                                  alt={`Preview ${index + 1}`}
+                                  style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover'
+                                  }}
+                                />
+                                <IconButton
+                                  onClick={() => {
+                                    const newImages = [...formData.images];
+                                    newImages.splice(index, 1);
+                                    setFormData(prev => ({ ...prev, images: newImages }));
+                                    
+                                    const newPreviews = [...previews.images];
+                                    URL.revokeObjectURL(newPreviews[index]);
+                                    newPreviews.splice(index, 1);
+                                    setPreviews(prev => ({ ...prev, images: newPreviews }));
+                                  }}
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    backgroundColor: 'rgba(0,0,0,0.5)',
+                                    color: 'white',
+                                    '&:hover': {
+                                      backgroundColor: 'rgba(0,0,0,0.7)'
+                                    },
+                                    padding: '4px',
+                                    '& .MuiSvgIcon-root': {
+                                      fontSize: '1rem'
+                                    }
+                                  }}
+                                >
+                                  <CloseIcon />
+                                </IconButton>
+                              </Box>
+                            ))}
+                          </Box>
+                        )}
+                        <Button
+                          component="label"
+                          variant="outlined"
+                          fullWidth
+                          sx={{
+                            height: '120px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 1,
+                            border: 'none',
+                            '&:hover': {
+                              backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                              border: 'none'
+                            }
+                          }}
+                        >
+                          <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center'
+                          }}>
+                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                              Drop multiple images here, or click to browse
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              (Supports: JPG, PNG, WebP)
+                            </Typography>
+                          </Box>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleFileChange(e, 'images')}
+                            style={{ display: 'none' }}
+                          />
+                        </Button>
                       </Box>
-                    )}
+                    </Box>
                   </Stack>
 
                   {/* Submit Button */}
@@ -556,13 +837,19 @@ function AdminPanel() {
                     variant="contained"
                     onClick={handleSubmit}
                     sx={{
+                      mt: 4,
+                      py: 1.5,
                       backgroundColor: colorPalette.primary,
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      fontSize: '1rem',
                       '&:hover': {
                         backgroundColor: colorPalette.secondary,
                       },
+                      transition: 'all 0.2s ease-in-out',
                     }}
                   >
-                    Send to Hygraph
+                    Publish Post
                   </Button>
                 </Stack>
               )}
@@ -575,7 +862,7 @@ function AdminPanel() {
           </Card>
         </motion.div>
       </Container>
-    </div>
+    </Box>
   );
 }
 
