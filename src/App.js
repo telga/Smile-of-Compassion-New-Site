@@ -9,6 +9,7 @@ import Projects from './pages/Projects';
 import ProjectDetail from './pages/ProjectDetail';
 import Contact from './pages/Contact';
 import Donate from './pages/Donate';
+import AdminPanel from './pages/AdminPanel';
 import { LanguageProvider } from './components/LanguageContext';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
@@ -107,6 +108,7 @@ function AppContent() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/donate" element={<Donate />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/admin" element={<AdminPanel />} />
       </Routes>
       <Footer />
     </motion.div>
