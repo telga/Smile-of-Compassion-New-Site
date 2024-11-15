@@ -1,5 +1,5 @@
 # New Smile of Compassion Site
-Link to gh-page test site: [https://telga.github.io/Smile-of-Compassion-New-Site](https://telga.github.io/Smile-of-Compassion-New-Site)
+Link to deployed site: [https://smileofcompassion.com](https://smileofcompassion.com)
 
 New redesigned site for Smile of Compassion Projects using React and Hygraph as a CMS.
 
