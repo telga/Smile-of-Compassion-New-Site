@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -45,6 +45,8 @@ function AdminPanel() {
     message: '',
     severity: 'success'
   });
+  const [drafts, setDrafts] = useState([]);
+  const [selectedDrafts, setSelectedDrafts] = useState([]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -354,6 +356,157 @@ function AdminPanel() {
 
   const handleTogglePassword = () => setShowPassword(prev => !prev);
 
+  const fetchDrafts = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      // Verify URL and token
+      if (!hygraphUrl || !authToken) {
+        throw new Error('Missing Hygraph configuration');
+      }
+
+      console.log('Fetching from:', hygraphUrl); // Debug URL
+
+      const getDraftsQuery = `
+        query GetAllProjects {
+          draftProjects: projects(stage: DRAFT) {
+            id
+            title
+            date
+            description {
+              raw
+            }
+            localizations {
+              locale
+              title
+              description {
+                raw
+              }
+            }
+          }
+          publishedProjects: projects(stage: PUBLISHED) {
+            id
+          }
+        }
+      `;
+
+      // Add timeout and retry logic
+      const fetchWithTimeout = async (retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+            const response = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: getDraftsQuery
+              }),
+              signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+          } catch (error) {
+            console.error(`Attempt ${i + 1} failed:`, error);
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
+          }
+        }
+      };
+
+      const result = await fetchWithTimeout();
+      
+      if (result.errors) {
+        console.error('GraphQL Errors:', result.errors);
+        throw new Error(`Failed to fetch drafts: ${result.errors[0].message}`);
+      }
+
+      // Filter out drafts that are also in published
+      const publishedIds = new Set(result.data.publishedProjects.map(p => p.id));
+      const trueDrafts = result.data.draftProjects.filter(draft => !publishedIds.has(draft.id));
+
+      console.log('All drafts:', result.data.draftProjects);
+      console.log('Published:', result.data.publishedProjects);
+      console.log('True drafts:', trueDrafts);
+      
+      setDrafts(trueDrafts);
+
+    } catch (error) {
+      console.error('Error fetching drafts:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to fetch drafts: ${error.message}. Please check your network connection and try again.`,
+        severity: 'error'
+      });
+    }
+  };
+
+  const publishSelectedDrafts = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      const publishResults = await Promise.all(
+        selectedDrafts.map(async (draftId) => {
+          const response = await fetch(hygraphUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              query: publishMutation,
+              variables: {
+                id: draftId
+              }
+            })
+          });
+
+          return response.json();
+        })
+      );
+
+      const errors = publishResults.filter(result => result.errors);
+      if (errors.length > 0) {
+        throw new Error(`Failed to publish some drafts: ${errors[0].errors[0].message}`);
+      }
+
+      setSnackbar({
+        open: true,
+        message: `Successfully published ${selectedDrafts.length} draft${selectedDrafts.length === 1 ? '' : 's'}`,
+        severity: 'success'
+      });
+
+      // Refresh drafts list and clear selection
+      setSelectedDrafts([]);
+      fetchDrafts();
+    } catch (error) {
+      console.error('Error publishing drafts:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to publish drafts: ${error.message}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 2) { // Assuming 2 is the index for the drafts tab
+      fetchDrafts();
+    }
+  }, [activeTab]);
+
   if (!user) {
     return (
       <Box 
@@ -602,6 +755,7 @@ function AdminPanel() {
             >
               <Tab label="Add Post" />
               <Tab label="Add Facebook Posts" />
+              <Tab label="Manage Drafts" />
             </Tabs>
 
             <Box sx={{ p: { xs: 3, md: 6 } }}>
@@ -1101,6 +1255,64 @@ function AdminPanel() {
                 <div>
                   {/* Add Facebook Posts content will go here */}
                 </div>
+              )}
+              {activeTab === 2 && (
+                <Box sx={{ mt: 3 }}>
+                  <Stack spacing={2}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="h6">Draft Projects</Typography>
+                      <Button
+                        variant="contained"
+                        disabled={selectedDrafts.length === 0}
+                        onClick={publishSelectedDrafts}
+                        sx={{
+                          backgroundColor: colorPalette.primary,
+                          '&:hover': {
+                            backgroundColor: colorPalette.secondary,
+                          }
+                        }}
+                      >
+                        Publish Selected ({selectedDrafts.length})
+                      </Button>
+                    </Box>
+                    
+                    {drafts.length === 0 ? (
+                      <Typography color="text.secondary">No drafts found</Typography>
+                    ) : (
+                      <Stack spacing={2}>
+                        {drafts.map((draft) => (
+                          <Card key={draft.id} sx={{ p: 2 }}>
+                            <Stack direction="row" alignItems="center" spacing={2}>
+                              <Checkbox
+                                checked={selectedDrafts.includes(draft.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedDrafts([...selectedDrafts, draft.id]);
+                                  } else {
+                                    setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
+                                  }
+                                }}
+                              />
+                              <Stack spacing={1} sx={{ flex: 1 }}>
+                                <Typography variant="h6">{draft.title}</Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                  Date: {new Date(draft.date).toLocaleDateString()}
+                                </Typography>
+                                {draft.localizations?.map((loc) => (
+                                  <Box key={loc.locale}>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                      {loc.locale.toUpperCase()}: {loc.title}
+                                    </Typography>
+                                  </Box>
+                                ))}
+                              </Stack>
+                            </Stack>
+                          </Card>
+                        ))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Box>
               )}
             </Box>
           </Card>
