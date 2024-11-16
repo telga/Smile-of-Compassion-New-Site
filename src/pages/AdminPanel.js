@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -47,6 +47,37 @@ function AdminPanel() {
   });
   const [drafts, setDrafts] = useState([]);
   const [selectedDrafts, setSelectedDrafts] = useState([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingDraft, setEditingDraft] = useState(null);
+  const editEditorEn = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      Highlight,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+      },
+    },
+  });
+  const editEditorVn = useEditor({
+    extensions: [
+      StarterKit,
+      Underline,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+    ],
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+      },
+    },
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -109,11 +140,9 @@ function AdminPanel() {
   }, [previews]);
 
   const publishMutation = `
-    mutation PublishProject($id: ID!) {
-      publishProject(where: { id: $id }) {
+    mutation PublishProject($where: ProjectWhereUniqueInput!) {
+      publishProject(where: $where) {
         id
-        title
-        date
       }
     }
   `;
@@ -457,45 +486,289 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      const publishResults = await Promise.all(
-        selectedDrafts.map(async (draftId) => {
-          const response = await fetch(hygraphUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-              query: publishMutation,
-              variables: {
-                id: draftId
-              }
-            })
-          });
+      const publishMutation = `
+        mutation PublishProject($where: ProjectWhereUniqueInput!) {
+          publishProject(where: $where) {
+            id
+            title
+            date
+          }
+        }
+      `;
 
-          return response.json();
+      // Track successful and failed publishes
+      const results = await Promise.all(
+        selectedDrafts.map(async (draftId) => {
+          try {
+            const response = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: publishMutation,
+                variables: {
+                  where: {
+                    id: draftId
+                  }
+                }
+              })
+            });
+
+            const result = await response.json();
+            if (result.errors) {
+              throw new Error(result.errors[0].message);
+            }
+            return { success: true, id: draftId };
+          } catch (error) {
+            return { success: false, id: draftId, error: error.message };
+          }
         })
       );
 
-      const errors = publishResults.filter(result => result.errors);
-      if (errors.length > 0) {
-        throw new Error(`Failed to publish some drafts: ${errors[0].errors[0].message}`);
+      // Check for any failures
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        throw new Error(`Failed to publish some drafts: ${failures.map(f => f.error).join(', ')}`);
       }
 
       setSnackbar({
         open: true,
-        message: `Successfully published ${selectedDrafts.length} draft${selectedDrafts.length === 1 ? '' : 's'}`,
+        message: 'Selected drafts published successfully!',
         severity: 'success'
       });
 
-      // Refresh drafts list and clear selection
       setSelectedDrafts([]);
       fetchDrafts();
     } catch (error) {
       console.error('Error publishing drafts:', error);
       setSnackbar({
         open: true,
-        message: `Failed to publish drafts: ${error.message}`,
+        message: error.message,
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleEditDraft = (draft) => {
+    setEditingDraft({
+      id: draft.id,
+      titleEn: draft.title,
+      titleVn: draft.localizations?.[0]?.title || '',
+      date: new Date(`${draft.date}T12:00:00`),
+      descriptionEn: draft.description.raw,
+      descriptionVn: draft.localizations?.[0]?.description?.raw || ''
+    });
+
+    // Wait for editors to be ready
+    setTimeout(() => {
+      if (editEditorEn && draft.description.raw) {
+        const enContent = {
+          type: 'doc',
+          content: [{
+            type: 'paragraph',
+            content: [{
+              type: 'text',
+              text: draft.description.raw.children[0].children[0].text || ''
+            }]
+          }]
+        };
+        editEditorEn.commands.setContent(enContent);
+      }
+
+      if (editEditorVn && draft.localizations?.[0]?.description?.raw) {
+        const vnContent = {
+          type: 'doc',
+          content: [{
+            type: 'paragraph',
+            content: [{
+              type: 'text',
+              text: draft.localizations[0].description.raw.children[0].children[0].text || ''
+            }]
+          }]
+        };
+        editEditorVn.commands.setContent(vnContent);
+      }
+    }, 0);
+
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateDraft = async (shouldPublish = false) => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      const updateMutation = `
+        mutation UpdateProject($where: ProjectWhereUniqueInput!, $data: ProjectUpdateInput!) {
+          updateProject(
+            where: $where
+            data: $data
+          ) {
+            id
+            title
+            description {
+              raw
+            }
+            date
+            localizations {
+              locale
+              title
+              description {
+                raw
+              }
+            }
+          }
+        }
+      `;
+
+      // Transform editor content to match Hygraph's rich text format
+      const formatRichText = (editor) => {
+        const content = editor.getJSON();
+        return {
+          children: content.content.map(node => {
+            if (node.type === 'heading') {
+              return {
+                type: 'heading',
+                level: node.attrs.level,
+                children: node.content.map(child => ({
+                  type: child.type,
+                  text: child.text,
+                  ...(child.marks && { marks: child.marks })
+                }))
+              };
+            }
+            if (node.type === 'bulletList') {
+              return {
+                type: 'bulletList',
+                children: node.content.map(listItem => ({
+                  type: 'listItem',
+                  children: listItem.content.map(child => ({
+                    type: child.type,
+                    children: child.content.map(textNode => ({
+                      type: textNode.type,
+                      text: textNode.text,
+                      ...(textNode.marks && { marks: textNode.marks })
+                    }))
+                  }))
+                }))
+              };
+            }
+            if (node.type === 'orderedList') {
+              return {
+                type: 'orderedList',
+                children: node.content.map(listItem => ({
+                  type: 'listItem',
+                  children: listItem.content.map(child => ({
+                    type: child.type,
+                    children: child.content.map(textNode => ({
+                      type: textNode.type,
+                      text: textNode.text,
+                      ...(textNode.marks && { marks: textNode.marks })
+                    }))
+                  }))
+                }))
+              };
+            }
+            // Default paragraph handling
+            return {
+              type: 'paragraph',
+              children: node.content?.map(child => ({
+                type: child.type,
+                text: child.text,
+                ...(child.marks && { marks: child.marks })
+              })) || []
+            };
+          })
+        };
+      };
+
+      const descriptionEn = formatRichText(editEditorEn);
+      const descriptionVn = formatRichText(editEditorVn);
+
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: updateMutation,
+          variables: {
+            where: {
+              id: editingDraft.id
+            },
+            data: {
+              title: editingDraft.titleEn,
+              description: descriptionEn,
+              date: editingDraft.date.toISOString().split('T')[0],
+              localizations: {
+                update: [{
+                  locale: "vn",
+                  data: {
+                    title: editingDraft.titleVn,
+                    description: descriptionVn
+                  }
+                }]
+              }
+            }
+          }
+        })
+      });
+
+      const result = await response.json();
+      if (result.errors) {
+        throw new Error(`Failed to update draft: ${result.errors[0].message}`);
+      }
+
+      if (shouldPublish) {
+        const publishMutation = `
+          mutation PublishProject($where: ProjectWhereUniqueInput!) {
+            publishProject(where: $where) {
+              id
+              title
+              date
+            }
+          }
+        `;
+
+        const publishResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: publishMutation,
+            variables: {
+              where: {
+                id: editingDraft.id
+              }
+            }
+          })
+        });
+
+        const publishResult = await publishResponse.json();
+        if (publishResult.errors) {
+          throw new Error(`Failed to publish: ${publishResult.errors[0].message}`);
+        }
+      }
+
+      setSnackbar({
+        open: true,
+        message: shouldPublish ? 'Draft updated and published!' : 'Draft updated successfully!',
+        severity: 'success'
+      });
+
+      setEditModalOpen(false);
+      setEditingDraft(null);
+      fetchDrafts();
+    } catch (error) {
+      console.error('Error updating draft:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to update draft: ${error.message}`,
         severity: 'error'
       });
     }
@@ -1296,7 +1569,7 @@ function AdminPanel() {
                               <Stack spacing={1} sx={{ flex: 1 }}>
                                 <Typography variant="h6">{draft.title}</Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  Date: {new Date(draft.date).toLocaleDateString()}
+                                  Date: {draft.date.split('-').reverse().join('/')}
                                 </Typography>
                                 {draft.localizations?.map((loc) => (
                                   <Box key={loc.locale}>
@@ -1306,6 +1579,13 @@ function AdminPanel() {
                                   </Box>
                                 ))}
                               </Stack>
+                              <Button
+                                variant="outlined"
+                                onClick={() => handleEditDraft(draft)}
+                                sx={{ minWidth: 100 }}
+                              >
+                                Edit
+                              </Button>
                             </Stack>
                           </Card>
                         ))}
@@ -1332,6 +1612,187 @@ function AdminPanel() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      <Dialog
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Edit Draft</DialogTitle>
+        <DialogContent>
+          <Stack spacing={4} sx={{ mt: 2 }}>
+            {/* Title Fields */}
+            <Stack direction="row" spacing={2}>
+              <TextField
+                fullWidth
+                label="Title (English)"
+                value={editingDraft?.titleEn || ''}
+                onChange={(e) => setEditingDraft(prev => ({ ...prev, titleEn: e.target.value }))}
+              />
+              <TextField
+                fullWidth
+                label="Title (Vietnamese)"
+                value={editingDraft?.titleVn || ''}
+                onChange={(e) => setEditingDraft(prev => ({ ...prev, titleVn: e.target.value }))}
+              />
+            </Stack>
+
+            {/* Description Fields */}
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Description (English)</Typography>
+              <Box sx={{ 
+                border: '1px solid rgba(0, 0, 0, 0.23)', 
+                borderRadius: '4px',
+                minHeight: '100px',
+                '& .ProseMirror': {
+                  padding: '8px 12px',
+                  minHeight: '100px',
+                  '&:focus': {
+                    outline: 'none'
+                  }
+                }
+              }}>
+                <div className="editor-toolbar" style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)', padding: '8px' }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorEn?.chain().focus().toggleBold().run()}
+                  >
+                    <FormatBold />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorEn?.chain().focus().toggleItalic().run()}
+                  >
+                    <FormatItalic />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorEn?.chain().focus().toggleUnderline().run()}
+                  >
+                    <FormatUnderlined />
+                  </IconButton>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorEn?.chain().focus().toggleBulletList().run()}
+                  >
+                    <FormatListBulleted />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorEn?.chain().focus().toggleOrderedList().run()}
+                  >
+                    <FormatListNumbered />
+                  </IconButton>
+                </div>
+                <EditorContent editor={editEditorEn} />
+              </Box>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>Description (Vietnamese)</Typography>
+              <Box sx={{ 
+                border: '1px solid rgba(0, 0, 0, 0.23)', 
+                borderRadius: '4px',
+                minHeight: '100px',
+                '& .ProseMirror': {
+                  padding: '8px 12px',
+                  minHeight: '100px',
+                  '&:focus': {
+                    outline: 'none'
+                  }
+                }
+              }}>
+                <div className="editor-toolbar" style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)', padding: '8px' }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorVn?.chain().focus().toggleBold().run()}
+                  >
+                    <FormatBold />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorVn?.chain().focus().toggleItalic().run()}
+                  >
+                    <FormatItalic />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorVn?.chain().focus().toggleUnderline().run()}
+                  >
+                    <FormatUnderlined />
+                  </IconButton>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorVn?.chain().focus().toggleBulletList().run()}
+                  >
+                    <FormatListBulleted />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEditorVn?.chain().focus().toggleOrderedList().run()}
+                  >
+                    <FormatListNumbered />
+                  </IconButton>
+                </div>
+                <EditorContent editor={editEditorVn} />
+              </Box>
+            </Box>
+
+            {/* Date Picker */}
+            <DatePicker
+              selected={editingDraft?.date}
+              onChange={(date) => {
+                setEditingDraft(prev => ({
+                  ...prev,
+                  date: new Date(
+                    date.getFullYear(),
+                    date.getMonth(),
+                    date.getDate(),
+                    12, // Set to noon
+                    0,
+                    0,
+                    0
+                  )
+                }));
+              }}
+              dateFormat="dd-MM-yyyy"
+              customInput={
+                <TextField
+                  fullWidth
+                  label="Date"
+                  value={editingDraft?.date ? editingDraft.date.toISOString().split('T')[0].split('-').reverse().join('-') : ''}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                />
+              }
+            />
+
+            {/* Image Fields */}
+            {/* ... rest of the image fields ... */}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
+          <Button onClick={() => handleUpdateDraft(false)} variant="outlined">
+            Save Draft
+          </Button>
+          <Button 
+            onClick={() => handleUpdateDraft(true)} 
+            variant="contained"
+            sx={{
+              backgroundColor: colorPalette.primary,
+              '&:hover': {
+                backgroundColor: colorPalette.secondary,
+              }
+            }}
+          >
+            Save & Publish
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
