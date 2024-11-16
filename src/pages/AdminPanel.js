@@ -197,64 +197,80 @@ function AdminPanel() {
 
       // Transform the editor content
       const transformToSlateAST = (editorContent) => {
+        console.log('Editor content before transform:', editorContent);
+
         if (!editorContent || !editorContent.content) {
           return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
         }
 
-        return {
+        const transformed = {
           children: editorContent.content.map(node => {
-            switch (node.type) {
-              case 'heading':
-                return {
-                  type: `heading-${node.attrs.level}`,
-                  children: node.content?.map(child => ({
-                    text: child.text || '',
-                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                  })) || [{ text: '' }]
-                };
-              
-              case 'bulletList':
-                return {
-                  type: 'bulleted-list',
-                  children: node.content?.map(listItem => ({
-                    type: 'list-item',
-                    children: listItem.content?.map(p => ({
-                      type: 'paragraph',
-                      children: p.content?.map(text => ({
-                        text: text.text || '',
-                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                      })) || [{ text: '' }]
-                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
-                  })) || []
-                };
-              
-              case 'orderedList':
-                return {
-                  type: 'numbered-list',
-                  children: node.content?.map(listItem => ({
-                    type: 'list-item',
-                    children: listItem.content?.map(p => ({
-                      type: 'paragraph',
-                      children: p.content?.map(text => ({
-                        text: text.text || '',
-                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                      })) || [{ text: '' }]
-                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
-                  })) || []
-                };
-              
-              case 'paragraph':
-              default:
-                return {
-                  type: 'paragraph',
-                  children: node.content?.map(child => ({
-                    text: child.text || '',
-                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                  })) || [{ text: '' }]
-                };
+            if (node.type === 'heading') {
+              // Map TipTap heading levels to Hygraph heading types
+              const headingType = {
+                1: 'heading-one',
+                2: 'heading-two',
+                3: 'heading-three'
+              }[node.attrs.level];
+
+              return {
+                type: headingType,
+                children: [{
+                  text: node.content?.[0]?.text || '',
+                  ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
+                    ...acc,
+                    [mark.type]: true
+                  }), {}))
+                }]
+              };
             }
+
+            if (node.type === 'bulletList') {
+              return {
+                type: 'bulleted-list',
+                children: node.content.map(listItem => ({
+                  type: 'list-item',
+                  children: [{
+                    type: 'paragraph',
+                    children: [{
+                      text: listItem.content?.[0]?.content?.[0]?.text || ''
+                    }]
+                  }]
+                }))
+              };
+            }
+
+            if (node.type === 'orderedList') {
+              return {
+                type: 'numbered-list',
+                children: node.content.map(listItem => ({
+                  type: 'list-item',
+                  children: [{
+                    type: 'paragraph',
+                    children: [{
+                      text: listItem.content?.[0]?.content?.[0]?.text || ''
+                    }]
+                  }]
+                }))
+              };
+            }
+
+            // Default paragraph handling
+            return {
+              type: 'paragraph',
+              children: node.content?.map(child => ({
+                text: child.text || '',
+                ...(child.marks?.reduce((acc, mark) => ({
+                  ...acc,
+                  [mark.type]: true
+                }), {}))
+              })) || [{ text: '' }]
+            };
           })
         };
+
+        console.log('Transformed to Slate AST:', transformed);
+        return transformed;
       };
 
       const descriptionEn = transformToSlateAST(editorEn.getJSON());
@@ -569,78 +585,6 @@ function AdminPanel() {
     }
   };
 
-  // Helper function to get text marks
-  const getMarks = (node) => {
-    const marks = [];
-    if (node.bold) marks.push({ type: 'bold' });
-    if (node.italic) marks.push({ type: 'italic' });
-    if (node.underline) marks.push({ type: 'underline' });
-    return marks;
-  };
-
-  // Convert Hygraph Slate AST to TipTap format
-  const convertToTipTap = (slateAst) => {
-    const content = slateAst.children.map(node => {
-      switch (node.type) {
-        case 'heading-one':
-          return {
-            type: 'heading',
-            attrs: { level: 1 },
-            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
-          };
-        case 'heading-two':
-          return {
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
-          };
-        case 'heading-three':
-          return {
-            type: 'heading',
-            attrs: { level: 3 },
-            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
-          };
-        case 'bulleted-list':
-          return {
-            type: 'bulletList',
-            content: node.children.map(item => ({
-              type: 'listItem',
-              content: item.children.map(p => ({
-                type: 'paragraph',
-                content: [{ type: 'text', text: p.children[0].text, marks: getMarks(p.children[0]) }]
-              }))
-            }))
-          };
-        case 'numbered-list':
-          return {
-            type: 'orderedList',
-            content: node.children.map(item => ({
-              type: 'listItem',
-              content: item.children.map(p => ({
-                type: 'paragraph',
-                content: [{ type: 'text', text: p.children[0].text, marks: getMarks(p.children[0]) }]
-              }))
-            }))
-          };
-        case 'paragraph':
-        default:
-          return {
-            type: 'paragraph',
-            content: node.children.map(child => ({
-              type: 'text',
-              text: child.text,
-              marks: getMarks(child)
-            }))
-          };
-      }
-    });
-
-    return {
-      type: 'doc',
-      content
-    };
-  };
-
   const handleEditDraft = (draft) => {
     setEditingDraft({
       id: draft.id,
@@ -654,13 +598,162 @@ function AdminPanel() {
     // Wait for editors to be ready
     setTimeout(() => {
       if (editEditorEn && draft.description.raw) {
-        const enContent = convertToTipTap(draft.description.raw);
-        editEditorEn.commands.setContent(enContent);
+        try {
+          const enContent = {
+            type: 'doc',
+            content: draft.description.raw.children.map(node => {
+              // Ensure text is never empty
+              const text = node.children?.[0]?.text || ' ';
+              
+              // Collect all marks into an array
+              const marks = [];
+              const nodeMarks = node.children?.[0] || {};
+              if (nodeMarks.bold) marks.push({ type: 'bold' });
+              if (nodeMarks.italic) marks.push({ type: 'italic' });
+              if (nodeMarks.underline) marks.push({ type: 'underline' });
+
+              // Create the appropriate node structure
+              switch (node.type) {
+                case 'heading-one':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 1 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-two':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-three':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 3 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'bulleted-list':
+                  return {
+                    type: 'bulletList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                case 'numbered-list':
+                  return {
+                    type: 'orderedList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                default:
+                  return {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text, marks }]
+                  };
+              }
+            })
+          };
+
+          console.log('Setting EN content:', JSON.stringify(enContent, null, 2));
+          editEditorEn.commands.setContent(enContent);
+        } catch (error) {
+          console.error('Error setting EN content:', error);
+        }
       }
 
       if (editEditorVn && draft.localizations?.[0]?.description?.raw) {
-        const vnContent = convertToTipTap(draft.localizations[0].description.raw);
-        editEditorVn.commands.setContent(vnContent);
+        try {
+          // Same logic for Vietnamese content
+          const vnContent = {
+            type: 'doc',
+            content: draft.localizations[0].description.raw.children.map(node => {
+              const text = node.children?.[0]?.text || ' ';
+              const marks = [];
+              const nodeMarks = node.children?.[0] || {};
+              if (nodeMarks.bold) marks.push({ type: 'bold' });
+              if (nodeMarks.italic) marks.push({ type: 'italic' });
+              if (nodeMarks.underline) marks.push({ type: 'underline' });
+
+              switch (node.type) {
+                case 'heading-one':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 1 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-two':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-three':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 3 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'bulleted-list':
+                  return {
+                    type: 'bulletList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                case 'numbered-list':
+                  return {
+                    type: 'orderedList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                default:
+                  return {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text, marks }]
+                  };
+              }
+            })
+          };
+
+          console.log('Setting VN content:', JSON.stringify(vnContent, null, 2));
+          editEditorVn.commands.setContent(vnContent);
+        } catch (error) {
+          console.error('Error setting VN content:', error);
+        }
       }
     }, 0);
 
@@ -705,64 +798,80 @@ function AdminPanel() {
 
       // Transform TipTap JSON to Hygraph Slate AST
       const transformToSlateAST = (editorContent) => {
+        console.log('Editor content before transform:', editorContent);
+
         if (!editorContent || !editorContent.content) {
           return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
         }
 
-        return {
+        const transformed = {
           children: editorContent.content.map(node => {
-            switch (node.type) {
-              case 'heading':
-                return {
-                  type: `heading-${node.attrs.level}`,
-                  children: node.content?.map(child => ({
-                    text: child.text || '',
-                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                  })) || [{ text: '' }]
-                };
-              
-              case 'bulletList':
-                return {
-                  type: 'bulleted-list',
-                  children: node.content?.map(listItem => ({
-                    type: 'list-item',
-                    children: listItem.content?.map(p => ({
-                      type: 'paragraph',
-                      children: p.content?.map(text => ({
-                        text: text.text || '',
-                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                      })) || [{ text: '' }]
-                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
-                  })) || []
-                };
-              
-              case 'orderedList':
-                return {
-                  type: 'numbered-list',
-                  children: node.content?.map(listItem => ({
-                    type: 'list-item',
-                    children: listItem.content?.map(p => ({
-                      type: 'paragraph',
-                      children: p.content?.map(text => ({
-                        text: text.text || '',
-                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                      })) || [{ text: '' }]
-                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
-                  })) || []
-                };
-              
-              case 'paragraph':
-              default:
-                return {
-                  type: 'paragraph',
-                  children: node.content?.map(child => ({
-                    text: child.text || '',
-                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
-                  })) || [{ text: '' }]
-                };
+            if (node.type === 'heading') {
+              // Map TipTap heading levels to Hygraph heading types
+              const headingType = {
+                1: 'heading-one',
+                2: 'heading-two',
+                3: 'heading-three'
+              }[node.attrs.level];
+
+              return {
+                type: headingType,
+                children: [{
+                  text: node.content?.[0]?.text || '',
+                  ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
+                    ...acc,
+                    [mark.type]: true
+                  }), {}))
+                }]
+              };
             }
+
+            if (node.type === 'bulletList') {
+              return {
+                type: 'bulleted-list',
+                children: node.content.map(listItem => ({
+                  type: 'list-item',
+                  children: [{
+                    type: 'paragraph',
+                    children: [{
+                      text: listItem.content?.[0]?.content?.[0]?.text || ''
+                    }]
+                  }]
+                }))
+              };
+            }
+
+            if (node.type === 'orderedList') {
+              return {
+                type: 'numbered-list',
+                children: node.content.map(listItem => ({
+                  type: 'list-item',
+                  children: [{
+                    type: 'paragraph',
+                    children: [{
+                      text: listItem.content?.[0]?.content?.[0]?.text || ''
+                    }]
+                  }]
+                }))
+              };
+            }
+
+            // Default paragraph handling
+            return {
+              type: 'paragraph',
+              children: node.content?.map(child => ({
+                text: child.text || '',
+                ...(child.marks?.reduce((acc, mark) => ({
+                  ...acc,
+                  [mark.type]: true
+                }), {}))
+              })) || [{ text: '' }]
+            };
           })
         };
+
+        console.log('Transformed to Slate AST:', transformed);
+        return transformed;
       };
 
       const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
