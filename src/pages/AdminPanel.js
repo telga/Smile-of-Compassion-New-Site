@@ -139,6 +139,49 @@ function AdminPanel() {
     };
   }, [previews]);
 
+  const createMutation = `
+    mutation CreateProject(
+      $titleEn: String!
+      $descriptionEn: RichTextAST!
+      $titleVn: String!
+      $descriptionVn: RichTextAST!
+      $date: Date!
+    ) {
+      createProject(
+        data: {
+          title: $titleEn
+          description: $descriptionEn
+          date: $date
+          localizations: {
+            create: [
+              {
+                locale: vn
+                data: {
+                  title: $titleVn
+                  description: $descriptionVn
+                }
+              }
+            ]
+          }
+        }
+      ) {
+        id
+        title
+        description {
+          raw
+        }
+        date
+        localizations {
+          locale
+          title
+          description {
+            raw
+          }
+        }
+      }
+    }
+  `;
+
   const publishMutation = `
     mutation PublishProject($where: ProjectWhereUniqueInput!) {
       publishProject(where: $where) {
@@ -148,68 +191,76 @@ function AdminPanel() {
   `;
 
   const handleSubmit = async (shouldPublish = false) => {
-    console.log('Starting form submission...');
-    
-    // Validation
-    if (!formData.titleEn || !formData.titleVn || !formData.date) {
-      console.error('Form validation failed: Missing required fields');
-      setSnackbar({
-        open: true,
-        message: 'Please fill in all required fields (titles and date)',
-        severity: 'error'
-      });
-      return;
-    }
-
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Create project with both English and Vietnamese content
-      const createMutation = `
-        mutation CreateProject(
-          $titleEn: String!, 
-          $descriptionEn: RichTextAST!, 
-          $titleVn: String!, 
-          $descriptionVn: RichTextAST!, 
-          $date: Date!
-        ) {
-          createProject(
-            data: {
-              title: $titleEn
-              description: $descriptionEn
-              date: $date
-              localizations: {
-                create: [
-                  { 
-                    locale: vn, 
-                    data: { 
-                      title: $titleVn,
-                      description: $descriptionVn
-                    } 
-                  }
-                ]
-              }
-            }
-          ) {
-            id
-            title
-            description {
-              raw
-            }
-            date
-            localizations {
-              locale
-              title
-              description {
-                raw
-              }
-            }
-          }
+      // Transform the editor content
+      const transformToSlateAST = (editorContent) => {
+        if (!editorContent || !editorContent.content) {
+          return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
         }
-      `;
 
-      // Create the draft first
+        return {
+          children: editorContent.content.map(node => {
+            switch (node.type) {
+              case 'heading':
+                return {
+                  type: `heading-${node.attrs.level}`,
+                  children: node.content?.map(child => ({
+                    text: child.text || '',
+                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                  })) || [{ text: '' }]
+                };
+              
+              case 'bulletList':
+                return {
+                  type: 'bulleted-list',
+                  children: node.content?.map(listItem => ({
+                    type: 'list-item',
+                    children: listItem.content?.map(p => ({
+                      type: 'paragraph',
+                      children: p.content?.map(text => ({
+                        text: text.text || '',
+                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                      })) || [{ text: '' }]
+                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
+                  })) || []
+                };
+              
+              case 'orderedList':
+                return {
+                  type: 'numbered-list',
+                  children: node.content?.map(listItem => ({
+                    type: 'list-item',
+                    children: listItem.content?.map(p => ({
+                      type: 'paragraph',
+                      children: p.content?.map(text => ({
+                        text: text.text || '',
+                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                      })) || [{ text: '' }]
+                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
+                  })) || []
+                };
+              
+              case 'paragraph':
+              default:
+                return {
+                  type: 'paragraph',
+                  children: node.content?.map(child => ({
+                    text: child.text || '',
+                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                  })) || [{ text: '' }]
+                };
+            }
+          })
+        };
+      };
+
+      const descriptionEn = transformToSlateAST(editorEn.getJSON());
+      const descriptionVn = transformToSlateAST(editorVn.getJSON());
+
+      // Create the project
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -220,49 +271,22 @@ function AdminPanel() {
           query: createMutation,
           variables: {
             titleEn: formData.titleEn,
-            descriptionEn: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: editorEn.getText()
-                    }
-                  ]
-                }
-              ]
-            },
             titleVn: formData.titleVn,
-            descriptionVn: {
-              type: 'root',
-              children: [
-                {
-                  type: 'paragraph',
-                  children: [
-                    {
-                      type: 'text',
-                      text: editorVn.getText()
-                    }
-                  ]
-                }
-              ]
-            },
+            descriptionEn,
+            descriptionVn,
             date: formData.date.toISOString().split('T')[0]
           }
         })
       });
 
       const result = await response.json();
-      
       if (result.errors) {
-        throw new Error(`Failed to create project: ${result.errors[0].message}`);
+        throw new Error(`Failed to create draft: ${result.errors[0].message}`);
       }
 
-      // If shouldPublish is true, publish the project
-      if (shouldPublish) {
-        const publishResponse = await fetch(hygraphUrl, {
+      // If shouldPublish is true, publish the created project
+      if (shouldPublish && result.data?.createProject?.id) {
+        await fetch(hygraphUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -271,19 +295,21 @@ function AdminPanel() {
           body: JSON.stringify({
             query: publishMutation,
             variables: {
-              id: result.data.createProject.id
+              where: {
+                id: result.data.createProject.id
+              }
             }
           })
         });
-
-        const publishResult = await publishResponse.json();
-        
-        if (publishResult.errors) {
-          throw new Error(`Failed to publish project: ${publishResult.errors[0].message}`);
-        }
       }
 
-      // Clear form and show success message
+      setSnackbar({
+        open: true,
+        message: shouldPublish ? 'Draft created and published!' : 'Draft created successfully!',
+        severity: 'success'
+      });
+
+      // Reset form
       setFormData({
         titleEn: '',
         titleVn: '',
@@ -293,22 +319,14 @@ function AdminPanel() {
         image: null,
         images: []
       });
-      
-      // Clear editors
-      if (editorEn) editorEn.commands.setContent('');
-      if (editorVn) editorVn.commands.setContent('');
-
-      setSnackbar({
-        open: true,
-        message: shouldPublish ? 'Post published successfully!' : 'Draft saved successfully!',
-        severity: 'success'
-      });
-
+      editorEn.commands.setContent('');
+      editorVn.commands.setContent('');
+      fetchDrafts();
     } catch (error) {
-      console.error('Error details:', error);
+      console.error('Error creating draft:', error);
       setSnackbar({
         open: true,
-        message: `Failed to ${shouldPublish ? 'publish' : 'save'} post: ${error.message}`,
+        message: `Failed to create draft: ${error.message}`,
         severity: 'error'
       });
     }
@@ -551,6 +569,78 @@ function AdminPanel() {
     }
   };
 
+  // Helper function to get text marks
+  const getMarks = (node) => {
+    const marks = [];
+    if (node.bold) marks.push({ type: 'bold' });
+    if (node.italic) marks.push({ type: 'italic' });
+    if (node.underline) marks.push({ type: 'underline' });
+    return marks;
+  };
+
+  // Convert Hygraph Slate AST to TipTap format
+  const convertToTipTap = (slateAst) => {
+    const content = slateAst.children.map(node => {
+      switch (node.type) {
+        case 'heading-one':
+          return {
+            type: 'heading',
+            attrs: { level: 1 },
+            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
+          };
+        case 'heading-two':
+          return {
+            type: 'heading',
+            attrs: { level: 2 },
+            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
+          };
+        case 'heading-three':
+          return {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: node.children[0].text, marks: getMarks(node.children[0]) }]
+          };
+        case 'bulleted-list':
+          return {
+            type: 'bulletList',
+            content: node.children.map(item => ({
+              type: 'listItem',
+              content: item.children.map(p => ({
+                type: 'paragraph',
+                content: [{ type: 'text', text: p.children[0].text, marks: getMarks(p.children[0]) }]
+              }))
+            }))
+          };
+        case 'numbered-list':
+          return {
+            type: 'orderedList',
+            content: node.children.map(item => ({
+              type: 'listItem',
+              content: item.children.map(p => ({
+                type: 'paragraph',
+                content: [{ type: 'text', text: p.children[0].text, marks: getMarks(p.children[0]) }]
+              }))
+            }))
+          };
+        case 'paragraph':
+        default:
+          return {
+            type: 'paragraph',
+            content: node.children.map(child => ({
+              type: 'text',
+              text: child.text,
+              marks: getMarks(child)
+            }))
+          };
+      }
+    });
+
+    return {
+      type: 'doc',
+      content
+    };
+  };
+
   const handleEditDraft = (draft) => {
     setEditingDraft({
       id: draft.id,
@@ -564,30 +654,12 @@ function AdminPanel() {
     // Wait for editors to be ready
     setTimeout(() => {
       if (editEditorEn && draft.description.raw) {
-        const enContent = {
-          type: 'doc',
-          content: [{
-            type: 'paragraph',
-            content: [{
-              type: 'text',
-              text: draft.description.raw.children[0].children[0].text || ''
-            }]
-          }]
-        };
+        const enContent = convertToTipTap(draft.description.raw);
         editEditorEn.commands.setContent(enContent);
       }
 
       if (editEditorVn && draft.localizations?.[0]?.description?.raw) {
-        const vnContent = {
-          type: 'doc',
-          content: [{
-            type: 'paragraph',
-            content: [{
-              type: 'text',
-              text: draft.localizations[0].description.raw.children[0].children[0].text || ''
-            }]
-          }]
-        };
+        const vnContent = convertToTipTap(draft.localizations[0].description.raw);
         editEditorVn.commands.setContent(vnContent);
       }
     }, 0);
@@ -610,6 +682,8 @@ function AdminPanel() {
             title
             description {
               raw
+              html
+              text
             }
             date
             localizations {
@@ -617,75 +691,86 @@ function AdminPanel() {
               title
               description {
                 raw
+                html
+                text
               }
             }
           }
         }
       `;
 
-      // Transform editor content to match Hygraph's rich text format
-      const formatRichText = (editor) => {
-        const content = editor.getJSON();
+      // Get the raw editor states
+      console.log('Editor EN JSON:', editEditorEn.getJSON());
+      console.log('Editor VN JSON:', editEditorVn.getJSON());
+
+      // Transform TipTap JSON to Hygraph Slate AST
+      const transformToSlateAST = (editorContent) => {
+        if (!editorContent || !editorContent.content) {
+          return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
+        }
+
         return {
-          children: content.content.map(node => {
-            if (node.type === 'heading') {
-              return {
-                type: 'heading',
-                level: node.attrs.level,
-                children: node.content.map(child => ({
-                  type: child.type,
-                  text: child.text,
-                  ...(child.marks && { marks: child.marks })
-                }))
-              };
+          children: editorContent.content.map(node => {
+            switch (node.type) {
+              case 'heading':
+                return {
+                  type: `heading-${node.attrs.level}`,
+                  children: node.content?.map(child => ({
+                    text: child.text || '',
+                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                  })) || [{ text: '' }]
+                };
+              
+              case 'bulletList':
+                return {
+                  type: 'bulleted-list',
+                  children: node.content?.map(listItem => ({
+                    type: 'list-item',
+                    children: listItem.content?.map(p => ({
+                      type: 'paragraph',
+                      children: p.content?.map(text => ({
+                        text: text.text || '',
+                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                      })) || [{ text: '' }]
+                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
+                  })) || []
+                };
+              
+              case 'orderedList':
+                return {
+                  type: 'numbered-list',
+                  children: node.content?.map(listItem => ({
+                    type: 'list-item',
+                    children: listItem.content?.map(p => ({
+                      type: 'paragraph',
+                      children: p.content?.map(text => ({
+                        text: text.text || '',
+                        ...(text.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                      })) || [{ text: '' }]
+                    })) || [{ type: 'paragraph', children: [{ text: '' }] }]
+                  })) || []
+                };
+              
+              case 'paragraph':
+              default:
+                return {
+                  type: 'paragraph',
+                  children: node.content?.map(child => ({
+                    text: child.text || '',
+                    ...(child.marks?.reduce((acc, mark) => ({ ...acc, [mark.type]: true }), {}))
+                  })) || [{ text: '' }]
+                };
             }
-            if (node.type === 'bulletList') {
-              return {
-                type: 'bulletList',
-                children: node.content.map(listItem => ({
-                  type: 'listItem',
-                  children: listItem.content.map(child => ({
-                    type: child.type,
-                    children: child.content.map(textNode => ({
-                      type: textNode.type,
-                      text: textNode.text,
-                      ...(textNode.marks && { marks: textNode.marks })
-                    }))
-                  }))
-                }))
-              };
-            }
-            if (node.type === 'orderedList') {
-              return {
-                type: 'orderedList',
-                children: node.content.map(listItem => ({
-                  type: 'listItem',
-                  children: listItem.content.map(child => ({
-                    type: child.type,
-                    children: child.content.map(textNode => ({
-                      type: textNode.type,
-                      text: textNode.text,
-                      ...(textNode.marks && { marks: textNode.marks })
-                    }))
-                  }))
-                }))
-              };
-            }
-            // Default paragraph handling
-            return {
-              type: 'paragraph',
-              children: node.content?.map(child => ({
-                type: child.type,
-                text: child.text,
-                ...(child.marks && { marks: child.marks })
-              })) || []
-            };
           })
         };
       };
 
-      const descriptionEn = formatRichText(editEditorEn);
-      const descriptionVn = formatRichText(editEditorVn);
+      const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
+      const descriptionVn = transformToSlateAST(editEditorVn.getJSON());
+
+      // Log the transformed content
+      console.log('Transformed EN:', descriptionEn);
+      console.log('Transformed VN:', descriptionVn);
 
       const response = await fetch(hygraphUrl, {
         method: 'POST',
@@ -719,8 +804,12 @@ function AdminPanel() {
 
       const result = await response.json();
       if (result.errors) {
+        console.error('GraphQL Errors:', result.errors);
         throw new Error(`Failed to update draft: ${result.errors[0].message}`);
       }
+
+      // Log the successful response
+      console.log('Update Response:', result);
 
       if (shouldPublish) {
         const publishMutation = `
@@ -1655,6 +1744,46 @@ function AdminPanel() {
                 <div className="editor-toolbar" style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)', padding: '8px' }}>
                   <IconButton
                     size="small"
+                    onClick={() => {
+                      if (editEditorEn?.isActive('heading', { level: 1 })) {
+                        editEditorEn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorEn?.chain().focus().setHeading({ level: 1 }).run();
+                      }
+                    }}
+                    color={editEditorEn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+                  >
+                    H1
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (editEditorEn?.isActive('heading', { level: 2 })) {
+                        editEditorEn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorEn?.chain().focus().setHeading({ level: 2 }).run();
+                      }
+                    }}
+                    color={editEditorEn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
+                  >
+                    H2
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (editEditorEn?.isActive('heading', { level: 3 })) {
+                        editEditorEn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorEn?.chain().focus().setHeading({ level: 3 }).run();
+                      }
+                    }}
+                    color={editEditorEn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
+                  >
+                    H3
+                  </IconButton>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <IconButton
+                    size="small"
                     onClick={() => editEditorEn?.chain().focus().toggleBold().run()}
                   >
                     <FormatBold />
@@ -1704,6 +1833,46 @@ function AdminPanel() {
                 }
               }}>
                 <div className="editor-toolbar" style={{ borderBottom: '1px solid rgba(0, 0, 0, 0.12)', padding: '8px' }}>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (editEditorVn?.isActive('heading', { level: 1 })) {
+                        editEditorVn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorVn?.chain().focus().setHeading({ level: 1 }).run();
+                      }
+                    }}
+                    color={editEditorVn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+                  >
+                    H1
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (editEditorVn?.isActive('heading', { level: 2 })) {
+                        editEditorVn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorVn?.chain().focus().setHeading({ level: 2 }).run();
+                      }
+                    }}
+                    color={editEditorVn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
+                  >
+                    H2
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      if (editEditorVn?.isActive('heading', { level: 3 })) {
+                        editEditorVn?.chain().focus().setParagraph().run();
+                      } else {
+                        editEditorVn?.chain().focus().setHeading({ level: 3 }).run();
+                      }
+                    }}
+                    color={editEditorVn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
+                  >
+                    H3
+                  </IconButton>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                   <IconButton
                     size="small"
                     onClick={() => editEditorVn?.chain().focus().toggleBold().run()}
