@@ -106,7 +106,17 @@ function AdminPanel() {
     };
   }, [previews]);
 
-  const handleSubmit = async () => {
+  const publishMutation = `
+    mutation PublishProject($id: ID!) {
+      publishProject(where: { id: $id }) {
+        id
+        title
+        date
+      }
+    }
+  `;
+
+  const handleSubmit = async (shouldPublish = false) => {
     console.log('Starting form submission...');
     
     // Validation
@@ -168,7 +178,7 @@ function AdminPanel() {
         }
       `;
 
-      // Create both versions in one request
+      // Create the draft first
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -214,10 +224,32 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Creation result:', result);
-
+      
       if (result.errors) {
         throw new Error(`Failed to create project: ${result.errors[0].message}`);
+      }
+
+      // If shouldPublish is true, publish the project
+      if (shouldPublish) {
+        const publishResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: publishMutation,
+            variables: {
+              id: result.data.createProject.id
+            }
+          })
+        });
+
+        const publishResult = await publishResponse.json();
+        
+        if (publishResult.errors) {
+          throw new Error(`Failed to publish project: ${publishResult.errors[0].message}`);
+        }
       }
 
       // Clear form and show success message
@@ -232,27 +264,20 @@ function AdminPanel() {
       });
       
       // Clear editors
-      if (editorEn) {
-        console.log('Clearing English editor...');
-        editorEn.commands.setContent('');
-      }
-      if (editorVn) {
-        console.log('Clearing Vietnamese editor...');
-        editorVn.commands.setContent('');
-      }
+      if (editorEn) editorEn.commands.setContent('');
+      if (editorVn) editorVn.commands.setContent('');
 
       setSnackbar({
         open: true,
-        message: 'Post created successfully with both languages!',
+        message: shouldPublish ? 'Post published successfully!' : 'Draft saved successfully!',
         severity: 'success'
       });
 
     } catch (error) {
       console.error('Error details:', error);
-      console.error('Full error object:', JSON.stringify(error, null, 2));
       setSnackbar({
         open: true,
-        message: `Failed to create post: ${error.message}`,
+        message: `Failed to ${shouldPublish ? 'publish' : 'save'} post: ${error.message}`,
         severity: 'error'
       });
     }
@@ -1038,24 +1063,38 @@ function AdminPanel() {
                   </Stack>
 
                   {/* Submit Button */}
-                  <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    sx={{
-                      mt: 4,
-                      py: 1.5,
-                      backgroundColor: colorPalette.primary,
-                      fontWeight: 600,
-                      textTransform: 'none',
-                      fontSize: '1rem',
-                      '&:hover': {
-                        backgroundColor: colorPalette.secondary,
-                      },
-                      transition: 'all 0.2s ease-in-out',
-                    }}
-                  >
-                    Publish Post
-                  </Button>
+                  <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => handleSubmit(false)}
+                      sx={{
+                        py: 1.5,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        transition: 'all 0.2s ease-in-out',
+                      }}
+                    >
+                      Save as Draft
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleSubmit(true)}
+                      sx={{
+                        py: 1.5,
+                        backgroundColor: colorPalette.primary,
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        '&:hover': {
+                          backgroundColor: colorPalette.secondary,
+                        },
+                        transition: 'all 0.2s ease-in-out',
+                      }}
+                    >
+                      Save & Publish
+                    </Button>
+                  </Stack>
                 </Stack>
               )}
               {activeTab === 1 && (
