@@ -11,12 +11,15 @@ favicon.rel = 'icon';
 favicon.type = 'image/png';
 favicon.href = getAssetPath('/assets/favicon.png');
 document.head.appendChild(favicon);
-// Create a root for React 18's concurrent mode
-const root = createRoot(document.getElementById('root'));
-
-// Render the App component wrapped in StrictMode
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+// Add error handling for root element
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  console.error('Root element not found');
+} else {
+  const root = createRoot(rootElement);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+}

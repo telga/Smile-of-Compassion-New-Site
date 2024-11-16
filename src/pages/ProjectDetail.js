@@ -63,16 +63,14 @@ function ProjectDetail() {
   };
 
   useEffect(() => {
-
-    // Fix for incorrect base URL on refresh
-    if (location.pathname.startsWith('/projects/')) {
+    if (location.pathname.includes('/project/')) {
       const baseElement = document.querySelector('base');
       if (!baseElement) {
         const newBaseElement = document.createElement('base');
-        newBaseElement.href = `${window.location.origin}${process.env.PUBLIC_URL}/`;
+        newBaseElement.href = `${process.env.PUBLIC_URL}/`;
         document.head.appendChild(newBaseElement);
       } else {
-        baseElement.href = `${window.location.origin}${process.env.PUBLIC_URL}/`;
+        baseElement.href = `${process.env.PUBLIC_URL}/`;
       }
     }
   }, [location]);

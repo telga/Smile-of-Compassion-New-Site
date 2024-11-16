@@ -36,7 +36,6 @@ function Projects() {
     async function fetchProjects() {
       try {
         const data = await hygraphClient.request(GET_PROJECTS, { language });
-        console.log('Fetched projects data:', data);
         setProjects(data.projects);
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -48,18 +47,12 @@ function Projects() {
   // Helper function to extract year from date string with safety check
   const getYearFromDate = (dateString) => {
     if (!dateString) return '';
-    // Split by '-' instead of '/' since date format is yyyy-mm-dd
-    const year = dateString.split('-')[0];
-    console.log('Extracting year from date:', dateString, '-> year:', year);
-    return year;
+    return dateString.split('-')[0];
   };
 
   // Group projects by year using the extracted year
   const projectsByYear = projects.reduce((acc, project) => {
-    console.log('Processing project:', project); // Debug log
     const year = getYearFromDate(project.date);
-    console.log('Year extracted:', year); // Debug log
-    
     if (!acc[year]) {
       acc[year] = [];
     }
@@ -69,7 +62,6 @@ function Projects() {
 
   // Sort years in descending order
   const sortedYears = Object.keys(projectsByYear).sort((a, b) => b - a);
-  console.log('Sorted years:', sortedYears); // Debug log
   const mostRecentYear = sortedYears[0];
 
   // Add function to sort projects by date within each year
