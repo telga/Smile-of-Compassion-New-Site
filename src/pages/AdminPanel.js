@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider  } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -40,6 +40,11 @@ function AdminPanel() {
     images: []
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -102,7 +107,184 @@ function AdminPanel() {
   }, [previews]);
 
   const handleSubmit = async () => {
-    console.log('Form data to be sent:', formData);
+    console.log('Starting form submission...');
+    
+    // Validation
+    if (!formData.titleEn || !formData.titleVn || !formData.date) {
+      console.error('Form validation failed: Missing required fields');
+      setSnackbar({
+        open: true,
+        message: 'Please fill in all required fields (titles and date)',
+        severity: 'error'
+      });
+      return;
+    }
+
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      console.log('Preparing submission data...');
+
+      const mutation = `
+        mutation CreateProject($title: String!, $description: RichTextAST!, $date: Date!) {
+          createProject(
+            data: {
+              title: $title
+              description: $description
+              date: $date
+            }
+          ) {
+            id
+            title
+            date
+          }
+        }
+      `;
+
+      // Prepare English version
+      const enVariables = {
+        title: formData.titleEn,
+        description: {
+          type: 'root',
+          children: [
+            {
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  text: editorEn.getText()
+                }
+              ]
+            }
+          ]
+        },
+        date: formData.date.toISOString().split('T')[0]
+      };
+
+      // Prepare Vietnamese version
+      const vnVariables = {
+        title: formData.titleVn,
+        description: {
+          type: 'root',
+          children: [
+            {
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  text: editorVn.getText()
+                }
+              ]
+            }
+          ]
+        },
+        date: formData.date.toISOString().split('T')[0]
+      };
+
+      console.log('Sending requests to Hygraph with data:', {
+        enVariables,
+        vnVariables
+      });
+
+      // Create both versions using fetch
+      const [enResult, vnResult] = await Promise.all([
+        fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: mutation,
+            variables: enVariables
+          })
+        }).then(async res => {
+          if (!res.ok) {
+            const errorData = await res.json();
+            console.error('English version error:', errorData);
+            throw new Error(`HTTP error! status: ${res.status}, details: ${JSON.stringify(errorData)}`);
+          }
+          return res.json();
+        }),
+        fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: mutation,
+            variables: vnVariables
+          })
+        }).then(async res => {
+          if (!res.ok) {
+            const errorData = await res.json();
+            console.error('Vietnamese version error:', errorData);
+            throw new Error(`HTTP error! status: ${res.status}, details: ${JSON.stringify(errorData)}`);
+          }
+          return res.json();
+        })
+      ]);
+
+      if (enResult.errors) {
+        console.error('English version GraphQL errors:', enResult.errors);
+        throw new Error(enResult.errors[0].message);
+      }
+
+      if (vnResult.errors) {
+        console.error('Vietnamese version GraphQL errors:', vnResult.errors);
+        throw new Error(vnResult.errors[0].message);
+      }
+
+      console.log('Posts created successfully:', {
+        en: enResult,
+        vn: vnResult
+      });
+      
+      // Clear the form
+      setFormData({
+        titleEn: '',
+        titleVn: '',
+        descriptionEn: '',
+        descriptionVn: '',
+        date: null,
+        image: null,
+        images: []
+      });
+      
+      // Clear editors
+      if (editorEn) {
+        console.log('Clearing English editor...');
+        editorEn.commands.setContent('');
+      }
+      if (editorVn) {
+        console.log('Clearing Vietnamese editor...');
+        editorVn.commands.setContent('');
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Posts created successfully!',
+        severity: 'success'
+      });
+
+    } catch (error) {
+      console.error('Error details:', error);
+      console.error('Full error object:', JSON.stringify(error, null, 2));
+      setSnackbar({
+        open: true,
+        message: `Failed to create post: ${error.message}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  const handleCloseSnackbar = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbar(prev => ({ ...prev, open: false }));
   };
 
   const colorPalette = {
@@ -907,6 +1089,20 @@ function AdminPanel() {
           </Card>
         </motion.div>
       </Container>
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleCloseSnackbar} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
