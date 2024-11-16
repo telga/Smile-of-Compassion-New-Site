@@ -124,125 +124,103 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      console.log('Preparing submission data...');
-
-      const mutation = `
-        mutation CreateProject($title: String!, $description: RichTextAST!, $date: Date!) {
+      // Create project with both English and Vietnamese content
+      const createMutation = `
+        mutation CreateProject(
+          $titleEn: String!, 
+          $descriptionEn: RichTextAST!, 
+          $titleVn: String!, 
+          $descriptionVn: RichTextAST!, 
+          $date: Date!
+        ) {
           createProject(
             data: {
-              title: $title
-              description: $description
+              title: $titleEn
+              description: $descriptionEn
               date: $date
+              localizations: {
+                create: [
+                  { 
+                    locale: vn, 
+                    data: { 
+                      title: $titleVn,
+                      description: $descriptionVn
+                    } 
+                  }
+                ]
+              }
             }
           ) {
             id
             title
+            description {
+              raw
+            }
             date
+            localizations {
+              locale
+              title
+              description {
+                raw
+              }
+            }
           }
         }
       `;
 
-      // Prepare English version
-      const enVariables = {
-        title: formData.titleEn,
-        description: {
-          type: 'root',
-          children: [
-            {
-              type: 'paragraph',
+      // Create both versions in one request
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: createMutation,
+          variables: {
+            titleEn: formData.titleEn,
+            descriptionEn: {
+              type: 'root',
               children: [
                 {
-                  type: 'text',
-                  text: editorEn.getText()
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: editorEn.getText()
+                    }
+                  ]
                 }
               ]
-            }
-          ]
-        },
-        date: formData.date.toISOString().split('T')[0]
-      };
-
-      // Prepare Vietnamese version
-      const vnVariables = {
-        title: formData.titleVn,
-        description: {
-          type: 'root',
-          children: [
-            {
-              type: 'paragraph',
+            },
+            titleVn: formData.titleVn,
+            descriptionVn: {
+              type: 'root',
               children: [
                 {
-                  type: 'text',
-                  text: editorVn.getText()
+                  type: 'paragraph',
+                  children: [
+                    {
+                      type: 'text',
+                      text: editorVn.getText()
+                    }
+                  ]
                 }
               ]
-            }
-          ]
-        },
-        date: formData.date.toISOString().split('T')[0]
-      };
-
-      console.log('Sending requests to Hygraph with data:', {
-        enVariables,
-        vnVariables
-      });
-
-      // Create both versions using fetch
-      const [enResult, vnResult] = await Promise.all([
-        fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: mutation,
-            variables: enVariables
-          })
-        }).then(async res => {
-          if (!res.ok) {
-            const errorData = await res.json();
-            console.error('English version error:', errorData);
-            throw new Error(`HTTP error! status: ${res.status}, details: ${JSON.stringify(errorData)}`);
+            },
+            date: formData.date.toISOString().split('T')[0]
           }
-          return res.json();
-        }),
-        fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: mutation,
-            variables: vnVariables
-          })
-        }).then(async res => {
-          if (!res.ok) {
-            const errorData = await res.json();
-            console.error('Vietnamese version error:', errorData);
-            throw new Error(`HTTP error! status: ${res.status}, details: ${JSON.stringify(errorData)}`);
-          }
-          return res.json();
         })
-      ]);
-
-      if (enResult.errors) {
-        console.error('English version GraphQL errors:', enResult.errors);
-        throw new Error(enResult.errors[0].message);
-      }
-
-      if (vnResult.errors) {
-        console.error('Vietnamese version GraphQL errors:', vnResult.errors);
-        throw new Error(vnResult.errors[0].message);
-      }
-
-      console.log('Posts created successfully:', {
-        en: enResult,
-        vn: vnResult
       });
-      
-      // Clear the form
+
+      const result = await response.json();
+      console.log('Creation result:', result);
+
+      if (result.errors) {
+        throw new Error(`Failed to create project: ${result.errors[0].message}`);
+      }
+
+      // Clear form and show success message
       setFormData({
         titleEn: '',
         titleVn: '',
@@ -265,7 +243,7 @@ function AdminPanel() {
 
       setSnackbar({
         open: true,
-        message: 'Posts created successfully!',
+        message: 'Post created successfully with both languages!',
         severity: 'success'
       });
 
