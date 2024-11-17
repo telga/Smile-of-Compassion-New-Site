@@ -367,7 +367,17 @@ const deleteAssetMutation = `
 `;
 
 function AdminPanel() {
-  const [activeTab, setActiveTab] = useState(0);
+  // Update the useState declarations
+  const [activeTab, setActiveTab] = useState(() => {
+    const savedTab = localStorage.getItem('adminActiveTab');
+    return savedTab ? parseInt(savedTab) : 0;
+  });
+
+  const [activeSubTab, setActiveSubTab] = useState(() => {
+    const savedSubTab = localStorage.getItem('adminActiveSubTab');
+    return savedSubTab ? parseInt(savedSubTab) : 0;
+  });
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
@@ -481,8 +491,16 @@ function AdminPanel() {
     }
   };
 
+  // Update the tab change handlers
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    localStorage.setItem('adminActiveTab', newValue.toString());
+  };
+
+  // Update the subtab change handler
+  const handleSubTabChange = (event, newValue) => {
+    setActiveSubTab(newValue);
+    localStorage.setItem('adminActiveSubTab', newValue.toString());
   };
 
   const handleInputChange = (field, value) => {
@@ -1865,636 +1883,661 @@ function AdminPanel() {
                 }
               }}
             >
-              <Tab label="Add Post" />
-              <Tab label="Add Facebook Posts" />
-              <Tab label="Manage Drafts" />
-              <Tab label="Manage Published" value={3} />
+              <Tab label="Manual Posting" />
+              <Tab label="Facebook Posting" />
             </Tabs>
 
             <Box sx={{ p: { xs: 3, md: 6 } }}>
               {activeTab === 0 && (
-                <Stack spacing={4}>
-                  <Typography 
-                    variant="h5" 
-                    sx={{ 
-                      mb: 3, 
-                      color: colorPalette.accent2,
-                      fontWeight: 600 
+                <Box>
+                  <Tabs
+                    value={activeSubTab}
+                    onChange={handleSubTabChange}
+                    sx={{
+                      mb: 4,
+                      borderBottom: '1px solid rgba(0,0,0,0.1)',
+                      '& .MuiTab-root': {
+                        textTransform: 'none',
+                        fontSize: '0.9rem',
+                        minHeight: '48px'
+                      }
                     }}
                   >
-                    Create New Post
-                  </Typography>
+                    <Tab label="Add Post" />
+                    <Tab label="Manage Drafts" />
+                    <Tab label="Manage Published" />
+                  </Tabs>
 
-                  {/* Title Fields */}
-                  <Stack direction="row" spacing={2}>
-                    <TextField
-                      fullWidth
-                      label="Title (English)"
-                      value={formData.titleEn}
-                      onChange={(e) => handleInputChange('titleEn', e.target.value)}
-                    />
-                    <TextField
-                      fullWidth
-                      label="Title (Vietnamese)"
-                      value={formData.titleVn}
-                      onChange={(e) => handleInputChange('titleVn', e.target.value)}
-                    />
-                  </Stack>
-
-                  {/* Description Fields */}
-                  <Stack spacing={2}>
-                    <Typography variant="subtitle1">Description (English)</Typography>
-                    <div className="editor-wrapper" style={{ 
-                      border: '1px solid #ccc', 
-                      borderRadius: '4px', 
-                      padding: '10px',
-                      backgroundColor: '#fff'
-                    }}>
-                      <div className="editor-toolbar" style={{ 
-                        borderBottom: '1px solid #eee', 
-                        marginBottom: '10px', 
-                        paddingBottom: '10px',
-                        display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
-                        flexWrap: 'wrap'
-                      }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorEn?.isActive('heading', { level: 1 })) {
-                              editorEn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorEn?.chain().focus().setHeading({ level: 1 }).run();
-                            }
-                          }}
-                          color={editorEn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
-                        >
-                          H1
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorEn?.isActive('heading', { level: 2 })) {
-                              editorEn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorEn?.chain().focus().setHeading({ level: 2 }).run();
-                            }
-                          }}
-                          color={editorEn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
-                        >
-                          H2
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorEn?.isActive('heading', { level: 3 })) {
-                              editorEn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorEn?.chain().focus().setHeading({ level: 3 }).run();
-                            }
-                          }}
-                          color={editorEn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
-                        >
-                          H3
-                        </IconButton>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                        <IconButton
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleBold().run()}
-                          color={editorEn?.isActive('bold') ? 'primary' : 'default'}
-                        >
-                          <FormatBold />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleItalic().run()}
-                          color={editorEn?.isActive('italic') ? 'primary' : 'default'}
-                        >
-                          <FormatItalic />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleUnderline().run()}
-                          color={editorEn?.isActive('underline') ? 'primary' : 'default'}
-                        >
-                          <FormatUnderlined />
-                        </IconButton>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                        <IconButton
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleBulletList().run()}
-                          color={editorEn?.isActive('bulletList') ? 'primary' : 'default'}
-                        >
-                          <FormatListBulleted />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorEn?.chain().focus().toggleOrderedList().run()}
-                          color={editorEn?.isActive('orderedList') ? 'primary' : 'default'}
-                        >
-                          <FormatListNumbered />
-                        </IconButton>
-                      </div>
-                      <EditorContent 
-                        editor={editorEn}
-                      />
-                    </div>
-
-                    <Typography variant="subtitle1">Description (Vietnamese)</Typography>
-                    <div className="editor-wrapper" style={{ 
-                      border: '1px solid #ccc', 
-                      borderRadius: '4px', 
-                      padding: '10px',
-                      backgroundColor: '#fff'
-                    }}>
-                      <div className="editor-toolbar" style={{ 
-                        borderBottom: '1px solid #eee', 
-                        marginBottom: '10px', 
-                        paddingBottom: '10px',
-                        display: 'flex',
-                        gap: '4px',
-                        alignItems: 'center',
-                        flexWrap: 'wrap'
-                      }}>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorVn?.isActive('heading', { level: 1 })) {
-                              editorVn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorVn?.chain().focus().setHeading({ level: 1 }).run();
-                            }
-                          }}
-                          color={editorVn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
-                        >
-                          H1
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorVn?.isActive('heading', { level: 2 })) {
-                              editorVn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorVn?.chain().focus().setHeading({ level: 2 }).run();
-                            }
-                          }}
-                          color={editorVn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
-                        >
-                          H2
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            if (editorVn?.isActive('heading', { level: 3 })) {
-                              editorVn?.chain().focus().setParagraph().run();
-                            } else {
-                              editorVn?.chain().focus().setHeading({ level: 3 }).run();
-                            }
-                          }}
-                          color={editorVn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
-                        >
-                          H3
-                        </IconButton>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                        <IconButton
-                          size="small"
-                          onClick={() => editorVn?.chain().focus().toggleBold().run()}
-                          color={editorVn?.isActive('bold') ? 'primary' : 'default'}
-                        >
-                          <FormatBold />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorVn?.chain().focus().toggleItalic().run()}
-                          color={editorVn?.isActive('italic') ? 'primary' : 'default'}
-                        >
-                          <FormatItalic />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorVn?.chain().focus().toggleUnderline().run()}
-                          color={editorVn?.isActive('underline') ? 'primary' : 'default'}
-                        >
-                          <FormatUnderlined />
-                        </IconButton>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                        <IconButton
-                          size="small"
-                          onClick={() => editorVn?.chain().focus().toggleBulletList().run()}
-                          color={editorVn?.isActive('bulletList') ? 'primary' : 'default'}
-                        >
-                          <FormatListBulleted />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => editorVn?.chain().focus().toggleOrderedList().run()}
-                          color={editorVn?.isActive('orderedList') ? 'primary' : 'default'}
-                        >
-                          <FormatListNumbered />
-                        </IconButton>
-                      </div>
-                      <EditorContent editor={editorVn} />
-                    </div>
-                  </Stack>
-
-                  {/* Date Picker */}
-                  <Stack spacing={1}>
-                    <Typography variant="subtitle2">Date</Typography>
-                    <DatePicker
-                      selected={formData.date}
-                      onChange={(date) => handleInputChange('date', date)}
-                      dateFormat="dd-MM-yyyy"
-                      className="form-control"
-                      wrapperClassName="datePicker"
-                      customInput={
-                        <input
-                          style={{
-                            padding: '8px',
-                            borderRadius: '4px',
-                            border: '1px solid #ccc',
-                            width: '100%'
-                          }}
-                        />
-                      }
-                    />
-                  </Stack>
-
-                  {/* Styled File Upload Buttons */}
-                  <Stack spacing={3}>
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-                        Featured Image
-                      </Typography>
-                      <Button
-                        component="label"
-                        variant="outlined"
-                        sx={{
-                          width: '100%',
-                          height: previews.image ? 'auto' : '120px',
-                          border: '2px dashed rgba(0,0,0,0.12)',
-                          borderRadius: 2,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 1,
-                          padding: previews.image ? '0' : '20px',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          '&:hover': {
-                            borderColor: colorPalette.primary,
-                            backgroundColor: 'rgba(76, 175, 80, 0.04)',
-                            '& .remove-overlay': {
-                              opacity: 1
-                            }
-                          }
+                  {/* Original content for each sub-tab */}
+                  {activeSubTab === 0 && (
+                    // Original "Add Post" content
+                    <Stack spacing={4}>
+                      <Typography 
+                        variant="h5" 
+                        sx={{ 
+                          mb: 3, 
+                          color: colorPalette.accent2,
+                          fontWeight: 600 
                         }}
                       >
-                        {previews.image ? (
-                          <>
-                            <img 
-                              src={previews.image} 
-                              alt="Preview" 
-                              style={{ 
-                                width: '100%',
-                                height: 'auto',
-                                display: 'block'
-                              }} 
-                            />
-                            <Box
-                              className="remove-overlay"
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundColor: 'rgba(0,0,0,0.5)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                opacity: 0,
-                                transition: 'opacity 0.2s ease-in-out',
-                              }}
-                            >
-                              <IconButton
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setFormData(prev => ({ ...prev, image: null }));
-                                  setPreviews(prev => ({ ...prev, image: null }));
-                                }}
-                                sx={{ color: 'white' }}
-                              >
-                                <CloseIcon />
-                              </IconButton>
-                            </Box>
-                          </>
-                        ) : (
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center'
-                          }}>
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                              Drop your image here, or click to browse
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              (Supports: JPG, PNG, WebP)
-                            </Typography>
-                          </Box>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => handleFileChange(e, 'image')}
-                          style={{ display: 'none' }}
-                        />
-                      </Button>
-                    </Box>
-
-                    <Box>
-                      <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-                        Additional Images
+                        Create New Post
                       </Typography>
-                      <Box sx={{ 
-                        border: '2px dashed rgba(0,0,0,0.12)',
-                        borderRadius: 2,
-                        p: 2,
-                        '&:hover': {
-                          borderColor: colorPalette.primary,
-                          backgroundColor: 'rgba(76, 175, 80, 0.04)'
-                        }
-                      }}>
-                        {previews.images.length > 0 && (
-                          <Box sx={{ 
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-                            gap: 2,
-                            mb: 2
+
+                      {/* Title Fields */}
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          fullWidth
+                          label="Title (English)"
+                          value={formData.titleEn}
+                          onChange={(e) => handleInputChange('titleEn', e.target.value)}
+                        />
+                        <TextField
+                          fullWidth
+                          label="Title (Vietnamese)"
+                          value={formData.titleVn}
+                          onChange={(e) => handleInputChange('titleVn', e.target.value)}
+                        />
+                      </Stack>
+
+                      {/* Description Fields */}
+                      <Stack spacing={2}>
+                        <Typography variant="subtitle1">Description (English)</Typography>
+                        <div className="editor-wrapper" style={{ 
+                          border: '1px solid #ccc', 
+                          borderRadius: '4px', 
+                          padding: '10px',
+                          backgroundColor: '#fff'
+                        }}>
+                          <div className="editor-toolbar" style={{ 
+                            borderBottom: '1px solid #eee', 
+                            marginBottom: '10px', 
+                            paddingBottom: '10px',
+                            display: 'flex',
+                            gap: '4px',
+                            alignItems: 'center',
+                            flexWrap: 'wrap'
                           }}>
-                            {previews.images.map((preview, index) => (
-                              <Box
-                                key={index}
-                                sx={{
-                                  position: 'relative',
-                                  paddingTop: '100%', // 1:1 Aspect ratio
-                                  borderRadius: 1,
-                                  overflow: 'hidden'
-                                }}
-                              >
-                                <img
-                                  src={preview}
-                                  alt={`Preview ${index + 1}`}
-                                  style={{
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorEn?.isActive('heading', { level: 1 })) {
+                                  editorEn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorEn?.chain().focus().setHeading({ level: 1 }).run();
+                                }
+                              }}
+                              color={editorEn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+                            >
+                              H1
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorEn?.isActive('heading', { level: 2 })) {
+                                  editorEn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorEn?.chain().focus().setHeading({ level: 2 }).run();
+                                }
+                              }}
+                              color={editorEn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
+                            >
+                              H2
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorEn?.isActive('heading', { level: 3 })) {
+                                  editorEn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorEn?.chain().focus().setHeading({ level: 3 }).run();
+                                }
+                              }}
+                              color={editorEn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
+                            >
+                              H3
+                            </IconButton>
+                            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                            <IconButton
+                              size="small"
+                              onClick={() => editorEn?.chain().focus().toggleBold().run()}
+                              color={editorEn?.isActive('bold') ? 'primary' : 'default'}
+                            >
+                              <FormatBold />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorEn?.chain().focus().toggleItalic().run()}
+                              color={editorEn?.isActive('italic') ? 'primary' : 'default'}
+                            >
+                              <FormatItalic />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorEn?.chain().focus().toggleUnderline().run()}
+                              color={editorEn?.isActive('underline') ? 'primary' : 'default'}
+                            >
+                              <FormatUnderlined />
+                            </IconButton>
+                            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                            <IconButton
+                              size="small"
+                              onClick={() => editorEn?.chain().focus().toggleBulletList().run()}
+                              color={editorEn?.isActive('bulletList') ? 'primary' : 'default'}
+                            >
+                              <FormatListBulleted />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorEn?.chain().focus().toggleOrderedList().run()}
+                              color={editorEn?.isActive('orderedList') ? 'primary' : 'default'}
+                            >
+                              <FormatListNumbered />
+                            </IconButton>
+                          </div>
+                          <EditorContent 
+                            editor={editorEn}
+                          />
+                        </div>
+
+                        <Typography variant="subtitle1">Description (Vietnamese)</Typography>
+                        <div className="editor-wrapper" style={{ 
+                          border: '1px solid #ccc', 
+                          borderRadius: '4px', 
+                          padding: '10px',
+                          backgroundColor: '#fff'
+                        }}>
+                          <div className="editor-toolbar" style={{ 
+                            borderBottom: '1px solid #eee', 
+                            marginBottom: '10px', 
+                            paddingBottom: '10px',
+                            display: 'flex',
+                            gap: '4px',
+                            alignItems: 'center',
+                            flexWrap: 'wrap'
+                          }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorVn?.isActive('heading', { level: 1 })) {
+                                  editorVn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorVn?.chain().focus().setHeading({ level: 1 }).run();
+                                }
+                              }}
+                              color={editorVn?.isActive('heading', { level: 1 }) ? 'primary' : 'default'}
+                            >
+                              H1
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorVn?.isActive('heading', { level: 2 })) {
+                                  editorVn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorVn?.chain().focus().setHeading({ level: 2 }).run();
+                                }
+                              }}
+                              color={editorVn?.isActive('heading', { level: 2 }) ? 'primary' : 'default'}
+                            >
+                              H2
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                if (editorVn?.isActive('heading', { level: 3 })) {
+                                  editorVn?.chain().focus().setParagraph().run();
+                                } else {
+                                  editorVn?.chain().focus().setHeading({ level: 3 }).run();
+                                }
+                              }}
+                              color={editorVn?.isActive('heading', { level: 3 }) ? 'primary' : 'default'}
+                            >
+                              H3
+                            </IconButton>
+                            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                            <IconButton
+                              size="small"
+                              onClick={() => editorVn?.chain().focus().toggleBold().run()}
+                              color={editorVn?.isActive('bold') ? 'primary' : 'default'}
+                            >
+                              <FormatBold />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorVn?.chain().focus().toggleItalic().run()}
+                              color={editorVn?.isActive('italic') ? 'primary' : 'default'}
+                            >
+                              <FormatItalic />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorVn?.chain().focus().toggleUnderline().run()}
+                              color={editorVn?.isActive('underline') ? 'primary' : 'default'}
+                            >
+                              <FormatUnderlined />
+                            </IconButton>
+                            <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                            <IconButton
+                              size="small"
+                              onClick={() => editorVn?.chain().focus().toggleBulletList().run()}
+                              color={editorVn?.isActive('bulletList') ? 'primary' : 'default'}
+                            >
+                              <FormatListBulleted />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => editorVn?.chain().focus().toggleOrderedList().run()}
+                              color={editorVn?.isActive('orderedList') ? 'primary' : 'default'}
+                            >
+                              <FormatListNumbered />
+                            </IconButton>
+                          </div>
+                          <EditorContent editor={editorVn} />
+                        </div>
+                      </Stack>
+
+                      {/* Date Picker */}
+                      <Stack spacing={1}>
+                        <Typography variant="subtitle2">Date</Typography>
+                        <DatePicker
+                          selected={formData.date}
+                          onChange={(date) => handleInputChange('date', date)}
+                          dateFormat="dd-MM-yyyy"
+                          className="form-control"
+                          wrapperClassName="datePicker"
+                          customInput={
+                            <input
+                              style={{
+                                padding: '8px',
+                                borderRadius: '4px',
+                                border: '1px solid #ccc',
+                                width: '100%'
+                              }}
+                            />
+                          }
+                        />
+                      </Stack>
+
+                      {/* Styled File Upload Buttons */}
+                      <Stack spacing={3}>
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                            Featured Image
+                          </Typography>
+                          <Button
+                            component="label"
+                            variant="outlined"
+                            sx={{
+                              width: '100%',
+                              height: previews.image ? 'auto' : '120px',
+                              border: '2px dashed rgba(0,0,0,0.12)',
+                              borderRadius: 2,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: 1,
+                              padding: previews.image ? '0' : '20px',
+                              position: 'relative',
+                              overflow: 'hidden',
+                              '&:hover': {
+                                borderColor: colorPalette.primary,
+                                backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                                '& .remove-overlay': {
+                                  opacity: 1
+                                }
+                              }
+                            }}
+                          >
+                            {previews.image ? (
+                              <>
+                                <img 
+                                  src={previews.image} 
+                                  alt="Preview" 
+                                  style={{ 
+                                    width: '100%',
+                                    height: 'auto',
+                                    display: 'block'
+                                  }} 
+                                />
+                                <Box
+                                  className="remove-overlay"
+                                  sx={{
                                     position: 'absolute',
                                     top: 0,
                                     left: 0,
-                                    width: '100%',
-                                    height: '100%',
-                                    objectFit: 'cover'
-                                  }}
-                                />
-                                <IconButton
-                                  onClick={() => {
-                                    const newImages = [...formData.images];
-                                    newImages.splice(index, 1);
-                                    setFormData(prev => ({ ...prev, images: newImages }));
-                                    
-                                    const newPreviews = [...previews.images];
-                                    URL.revokeObjectURL(newPreviews[index]);
-                                    newPreviews.splice(index, 1);
-                                    setPreviews(prev => ({ ...prev, images: newPreviews }));
-                                  }}
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 4,
-                                    right: 4,
+                                    right: 0,
+                                    bottom: 0,
                                     backgroundColor: 'rgba(0,0,0,0.5)',
-                                    color: 'white',
-                                    '&:hover': {
-                                      backgroundColor: 'rgba(0,0,0,0.7)'
-                                    },
-                                    padding: '4px',
-                                    '& .MuiSvgIcon-root': {
-                                      fontSize: '1rem'
-                                    }
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    opacity: 0,
+                                    transition: 'opacity 0.2s ease-in-out',
                                   }}
                                 >
-                                  <CloseIcon />
-                                </IconButton>
+                                  <IconButton
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      setFormData(prev => ({ ...prev, image: null }));
+                                      setPreviews(prev => ({ ...prev, image: null }));
+                                    }}
+                                    sx={{ color: 'white' }}
+                                  >
+                                    <CloseIcon />
+                                  </IconButton>
+                                </Box>
+                              </>
+                            ) : (
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center'
+                              }}>
+                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                  Drop your image here, or click to browse
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  (Supports: JPG, PNG, WebP)
+                                </Typography>
                               </Box>
-                            ))}
-                          </Box>
-                        )}
-                        <Button
-                          component="label"
-                          variant="outlined"
-                          fullWidth
-                          sx={{
-                            height: '120px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 1,
-                            border: 'none',
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleFileChange(e, 'image')}
+                              style={{ display: 'none' }}
+                            />
+                          </Button>
+                        </Box>
+
+                        <Box>
+                          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                            Additional Images
+                          </Typography>
+                          <Box sx={{ 
+                            border: '2px dashed rgba(0,0,0,0.12)',
+                            borderRadius: 2,
+                            p: 2,
                             '&:hover': {
-                              backgroundColor: 'rgba(76, 175, 80, 0.04)',
-                              border: 'none'
+                              borderColor: colorPalette.primary,
+                              backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                            }
+                          }}>
+                            {previews.images.length > 0 && (
+                              <Box sx={{ 
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                                gap: 2,
+                                mb: 2
+                              }}>
+                                {previews.images.map((preview, index) => (
+                                  <Box
+                                    key={index}
+                                    sx={{
+                                      position: 'relative',
+                                      paddingTop: '100%', // 1:1 Aspect ratio
+                                      borderRadius: 1,
+                                      overflow: 'hidden'
+                                    }}
+                                  >
+                                    <img
+                                      src={preview}
+                                      alt={`Preview ${index + 1}`}
+                                      style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                      }}
+                                    />
+                                    <IconButton
+                                      onClick={() => {
+                                        const newImages = [...formData.images];
+                                        newImages.splice(index, 1);
+                                        setFormData(prev => ({ ...prev, images: newImages }));
+                                        
+                                        const newPreviews = [...previews.images];
+                                        URL.revokeObjectURL(newPreviews[index]);
+                                        newPreviews.splice(index, 1);
+                                        setPreviews(prev => ({ ...prev, images: newPreviews }));
+                                      }}
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 4,
+                                        right: 4,
+                                        backgroundColor: 'rgba(0,0,0,0.5)',
+                                        color: 'white',
+                                        '&:hover': {
+                                          backgroundColor: 'rgba(0,0,0,0.7)'
+                                        },
+                                        padding: '4px',
+                                        '& .MuiSvgIcon-root': {
+                                          fontSize: '1rem'
+                                        }
+                                      }}
+                                    >
+                                      <CloseIcon />
+                                    </IconButton>
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
+                            <Button
+                              component="label"
+                              variant="outlined"
+                              fullWidth
+                              sx={{
+                                height: '120px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1,
+                                border: 'none',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                                  border: 'none'
+                                }
+                              }}
+                            >
+                              <Box sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center'
+                              }}>
+                                <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                                  Drop multiple images here, or click to browse
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                  (Supports: JPG, PNG, WebP)
+                                </Typography>
+                              </Box>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                onChange={(e) => handleFileChange(e, 'images')}
+                                style={{ display: 'none' }}
+                              />
+                            </Button>
+                          </Box>
+                        </Box>
+                      </Stack>
+
+                      {/* Submit Button */}
+                      <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
+                        <Button
+                          variant="outlined"
+                          onClick={() => handleSubmit(false)}
+                          sx={{
+                            py: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            fontSize: '1rem',
+                            transition: 'all 0.2s ease-in-out',
+                          }}
+                        >
+                          Save as Draft
+                        </Button>
+                      </Stack>
+                    </Stack>
+                  )}
+                  {activeSubTab === 1 && (
+                    // Original "Manage Drafts" content
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6">Manage Drafts</Typography>
+                        <IconButton 
+                          onClick={() => {
+                            localStorage.setItem('adminActiveTab', activeTab.toString());
+                            window.location.reload();
+                          }}
+                          sx={{ color: colorPalette.primary }}
+                        >
+                          <RefreshIcon />
+                        </IconButton>
+                      </Box>
+                      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                        <Button
+                          variant="contained"
+                          onClick={publishSelectedDrafts}
+                          disabled={selectedDrafts.length === 0}
+                          sx={{
+                            backgroundColor: colorPalette.primary,
+                            '&:hover': {
+                              backgroundColor: colorPalette.secondary,
                             }
                           }}
                         >
-                          <Box sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center'
-                          }}>
-                            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                              Drop multiple images here, or click to browse
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                              (Supports: JPG, PNG, WebP)
-                            </Typography>
-                          </Box>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(e) => handleFileChange(e, 'images')}
-                            style={{ display: 'none' }}
-                          />
+                          Publish Selected
                         </Button>
-                      </Box>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          onClick={deleteSelectedDrafts}
+                          disabled={selectedDrafts.length === 0}
+                        >
+                          Delete Selected
+                        </Button>
+                      </Stack>
+
+                      {drafts.length === 0 ? (
+                        <Typography color="text.secondary">No drafts found</Typography>
+                      ) : (
+                        <Stack spacing={2}>
+                          {drafts.map((draft) => (
+                            <Card key={draft.id} sx={{ p: 2 }}>
+                              <Stack direction="row" alignItems="center" spacing={2}>
+                                <Checkbox
+                                  checked={selectedDrafts.includes(draft.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedDrafts([...selectedDrafts, draft.id]);
+                                    } else {
+                                      setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
+                                    }
+                                  }}
+                                />
+                                <Stack spacing={1} sx={{ flex: 1 }}>
+                                  <Typography variant="h6">{draft.title}</Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Date: {draft.date.split('-').reverse().join('/')}
+                                  </Typography>
+                                  {draft.localizations?.map((loc) => (
+                                    <Box key={loc.locale}>
+                                      <Typography variant="subtitle2" color="text.secondary">
+                                        {loc.locale.toUpperCase()}: {loc.title}
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                </Stack>
+                                <Button
+                                  variant="outlined"
+                                  onClick={() => handleEditDraft(draft, 'drafts')}
+                                  sx={{ minWidth: 100 }}
+                                >
+                                  Edit
+                                </Button>
+                              </Stack>
+                            </Card>
+                          ))}
+                        </Stack>
+                      )}
                     </Box>
-                  </Stack>
+                  )}
+                  {activeSubTab === 2 && (
+                    // Original "Manage Published" content
+                    <Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6">Manage Published</Typography>
+                        <IconButton 
+                          onClick={() => {
+                            localStorage.setItem('adminActiveTab', activeTab.toString());
+                            window.location.reload();
+                          }}
+                          sx={{ color: colorPalette.primary }}
+                        >
+                          <RefreshIcon />
+                        </IconButton>
+                      </Box>
+                      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          onClick={unpublishSelectedPosts}
+                          disabled={selectedPublished.length === 0}
+                        >
+                          Unpublish Selected
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          onClick={deleteSelectedPosts}
+                          disabled={selectedPublished.length === 0}
+                        >
+                          Delete Selected
+                        </Button>
+                      </Stack>
 
-                  {/* Submit Button */}
-                  <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={() => handleSubmit(false)}
-                      sx={{
-                        py: 1.5,
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        fontSize: '1rem',
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                    >
-                      Save as Draft
-                    </Button>
-                  </Stack>
-                </Stack>
-              )}
-              {activeTab === 1 && (
-                <div>
-                  {/* Add Facebook Posts content will go here */}
-                </div>
-              )}
-              {activeTab === 2 && (
-                <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">Manage Drafts</Typography>
-                    <IconButton 
-                      onClick={() => {
-                        localStorage.setItem('adminActiveTab', activeTab.toString());
-                        window.location.reload();
-                      }}
-                      sx={{ color: colorPalette.primary }}
-                    >
-                      <RefreshIcon />
-                    </IconButton>
-                  </Box>
-                  <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                    <Button
-                      variant="contained"
-                      onClick={publishSelectedDrafts}
-                      disabled={selectedDrafts.length === 0}
-                      sx={{
-                        backgroundColor: colorPalette.primary,
-                        '&:hover': {
-                          backgroundColor: colorPalette.secondary,
-                        }
-                      }}
-                    >
-                      Publish Selected
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      onClick={deleteSelectedDrafts}
-                      disabled={selectedDrafts.length === 0}
-                    >
-                      Delete Selected
-                    </Button>
-                  </Stack>
-
-                  {drafts.length === 0 ? (
-                    <Typography color="text.secondary">No drafts found</Typography>
-                  ) : (
-                    <Stack spacing={2}>
-                      {drafts.map((draft) => (
-                        <Card key={draft.id} sx={{ p: 2 }}>
-                          <Stack direction="row" alignItems="center" spacing={2}>
+                      {publishedPosts.map((post) => (
+                        <Card key={post.id} sx={{ mb: 2, p: 2 }}>
+                          <Stack direction="row" spacing={2} alignItems="center">
                             <Checkbox
-                              checked={selectedDrafts.includes(draft.id)}
+                              checked={selectedPublished.includes(post.id)}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setSelectedDrafts([...selectedDrafts, draft.id]);
+                                  setSelectedPublished([...selectedPublished, post.id]);
                                 } else {
-                                  setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
+                                  setSelectedPublished(selectedPublished.filter(id => id !== post.id));
                                 }
                               }}
                             />
-                            <Stack spacing={1} sx={{ flex: 1 }}>
-                              <Typography variant="h6">{draft.title}</Typography>
+                            <Box sx={{ flexGrow: 1 }}>
+                              <Typography variant="h6">{post.title}</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                Date: {draft.date.split('-').reverse().join('/')}
+                                Date: {new Date(post.date).toLocaleDateString()}
                               </Typography>
-                              {draft.localizations?.map((loc) => (
-                                <Box key={loc.locale}>
-                                  <Typography variant="subtitle2" color="text.secondary">
-                                    {loc.locale.toUpperCase()}: {loc.title}
-                                  </Typography>
-                                </Box>
-                              ))}
-                            </Stack>
-                            <Button
-                              variant="outlined"
-                              onClick={() => handleEditDraft(draft, 'drafts')}
-                              sx={{ minWidth: 100 }}
+                            </Box>
+                            <IconButton
+                              onClick={() => handleEditDraft(post, 'published')}
+                              sx={{ color: 'primary.main' }}
                             >
-                              Edit
-                            </Button>
+                              <EditIcon />
+                            </IconButton>
                           </Stack>
                         </Card>
                       ))}
-                    </Stack>
+                    </Box>
                   )}
                 </Box>
               )}
-              {activeTab === 3 && (
+              {activeTab === 1 && (
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">Manage Published</Typography>
-                    <IconButton 
-                      onClick={() => {
-                        localStorage.setItem('adminActiveTab', activeTab.toString());
-                        window.location.reload();
-                      }}
-                      sx={{ color: colorPalette.primary }}
-                    >
-                      <RefreshIcon />
-                    </IconButton>
-                  </Box>
-                  <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="warning"
-                      onClick={unpublishSelectedPosts}
-                      disabled={selectedPublished.length === 0}
-                    >
-                      Unpublish Selected
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      onClick={deleteSelectedPosts}
-                      disabled={selectedPublished.length === 0}
-                    >
-                      Delete Selected
-                    </Button>
-                  </Stack>
-
-                  {publishedPosts.map((post) => (
-                    <Card key={post.id} sx={{ mb: 2, p: 2 }}>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Checkbox
-                          checked={selectedPublished.includes(post.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedPublished([...selectedPublished, post.id]);
-                            } else {
-                              setSelectedPublished(selectedPublished.filter(id => id !== post.id));
-                            }
-                          }}
-                        />
-                        <Box sx={{ flexGrow: 1 }}>
-                          <Typography variant="h6">{post.title}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            Date: {new Date(post.date).toLocaleDateString()}
-                          </Typography>
-                        </Box>
-                        <IconButton
-                          onClick={() => handleEditDraft(post, 'published')}
-                          sx={{ color: 'primary.main' }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Stack>
-                    </Card>
-                  ))}
+                  <Typography variant="h6" sx={{ mb: 3 }}>Facebook Posting</Typography>
+                  {/* Facebook posting content will go here */}
                 </Box>
               )}
             </Box>
