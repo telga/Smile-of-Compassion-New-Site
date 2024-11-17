@@ -846,63 +846,6 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // First, get the draft's featured image ID
-      const getDraftQuery = `
-        query GetDraft($id: ID!) {
-          project(where: { id: $id }) {
-            image {
-              id
-            }
-          }
-        }
-      `;
-
-      const draftResponse = await fetch(hygraphUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          query: getDraftQuery,
-          variables: { id: draftId }
-        })
-      });
-
-      const draftResult = await draftResponse.json();
-      const featuredImageId = draftResult.data?.project?.image?.id;
-
-      // If there's a featured image, publish it first
-      if (featuredImageId) {
-        console.log('Publishing featured image:', featuredImageId);
-        const imageResponse = await fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: `
-              mutation PublishAsset($where: AssetWhereUniqueInput!) {
-                publishAsset(where: $where, to: PUBLISHED) {
-                  id
-                  url
-                }
-              }
-            `,
-            variables: {
-              where: {
-                id: featuredImageId
-              }
-            }
-          })
-        });
-        
-        const imageResult = await imageResponse.json();
-        console.log('Featured image publish result:', imageResult);
-      }
-
-      // Then publish the project
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -920,14 +863,6 @@ function AdminPanel() {
                 id
                 title
                 date
-                image {
-                  id
-                  url
-                }
-                images {
-                  id
-                  url
-                }
                 localizations {
                   locale
                 }
@@ -950,7 +885,7 @@ function AdminPanel() {
       return result.data.publishProject;
     } catch (error) {
       console.error('Error publishing draft:', error);
-      throw error;
+      throw error; // Re-throw to be handled by the caller
     }
   };
 
@@ -966,12 +901,172 @@ function AdminPanel() {
       date: new Date(`${draft.date}T12:00:00`),
       descriptionEn: draft.description?.raw,
       descriptionVn: draft.localizations?.[0]?.description?.raw || '',
-      image: draft.image,  // This should contain { id, url }
+      image: draft.image,
       images: draft.images || [],
       removedImages: [],
       newImages: []
     });
     setEditSource(source);
+
+    // Wait for editors to be ready and mounted
+    setTimeout(() => {
+      if (editEditorEn && draft.description?.raw) {
+        try {
+          // Use the same simple transformation as VN content
+          const enContent = {
+            type: 'doc',
+            content: draft.description.raw.children.map(node => {
+              const text = node.children?.[0]?.text || ' ';
+              const marks = [];
+              const nodeMarks = node.children?.[0] || {};
+              if (nodeMarks.bold) marks.push({ type: 'bold' });
+              if (nodeMarks.italic) marks.push({ type: 'italic' });
+              if (nodeMarks.underline) marks.push({ type: 'underline' });
+
+              switch (node.type) {
+                case 'heading-one':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 1 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-two':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-three':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 3 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'bulleted-list':
+                  return {
+                    type: 'bulletList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                case 'numbered-list':
+                  return {
+                    type: 'orderedList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                default:
+                  return {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text, marks }]
+                  };
+              }
+            })
+          };
+
+          console.log('Setting EN content:', JSON.stringify(enContent, null, 2));
+          editEditorEn.commands.setContent(enContent);
+        } catch (error) {
+          console.error('Error setting EN content:', error);
+        }
+      }
+
+      if (editEditorVn && draft.localizations?.[0]?.description?.raw) {
+        try {
+          // Same logic for Vietnamese content
+          const vnContent = {
+            type: 'doc',
+            content: draft.localizations[0].description.raw.children.map(node => {
+              const text = node.children?.[0]?.text || ' ';
+              const marks = [];
+              const nodeMarks = node.children?.[0] || {};
+              if (nodeMarks.bold) marks.push({ type: 'bold' });
+              if (nodeMarks.italic) marks.push({ type: 'italic' });
+              if (nodeMarks.underline) marks.push({ type: 'underline' });
+
+              switch (node.type) {
+                case 'heading-one':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 1 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-two':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 2 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'heading-three':
+                  return {
+                    type: 'heading',
+                    attrs: { level: 3 },
+                    content: [{ type: 'text', text, marks }]
+                  };
+                case 'bulleted-list':
+                  return {
+                    type: 'bulletList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                case 'numbered-list':
+                  return {
+                    type: 'orderedList',
+                    content: node.children.map(item => ({
+                      type: 'listItem',
+                      content: [{
+                        type: 'paragraph',
+                        content: [{
+                          type: 'text',
+                          text: item.children?.[0]?.children?.[0]?.text || ' ',
+                          marks: []
+                        }]
+                      }]
+                    }))
+                  };
+                default:
+                  return {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text, marks }]
+                  };
+              }
+            })
+          };
+
+          console.log('Setting VN content:', JSON.stringify(vnContent, null, 2));
+          editEditorVn.commands.setContent(vnContent);
+        } catch (error) {
+          console.error('Error setting VN content:', error);
+        }
+      }
+    }, 100); // Increased timeout to ensure editors are ready
+
     setEditModalOpen(true);
   };
 
@@ -980,37 +1075,14 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Handle new featured image upload if exists
-      let newFeaturedImage = null;
-      if (editingDraft.newImage) {
-        console.log('Uploading new featured image:', editingDraft.newImage.name);
-        try {
-          const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
-          await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
-          newFeaturedImage = { id: asset.id };
-          console.log('New featured image uploaded successfully:', newFeaturedImage);
-        } catch (error) {
-          console.error('Failed to upload featured image:', error);
-        }
-      }
-
-      // Prepare update variables
-      const variables = {
+      console.log('Starting update with draft data:', {
         id: editingDraft.id,
-        titleEn: editingDraft.titleEn,
-        titleVn: editingDraft.titleVn,
-        descriptionEn: transformToSlateAST(editEditorEn.getJSON()),
-        descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
-        date: editingDraft.date.toISOString().split('T')[0],
-        imageConnect: newFeaturedImage ? { id: newFeaturedImage.id } : null,  // Connect new image if exists
-        imageDisconnect: editingDraft.removedImage === true
-      };
-
-      console.log('Update variables for image:', {
-        newFeaturedImage,
-        imageConnect: variables.imageConnect,
-        imageDisconnect: variables.imageDisconnect,
-        currentImage: editingDraft.image
+        removedImage: editingDraft.removedImage,
+        removedImages: editingDraft.removedImages,
+        newImage: editingDraft.newImage,
+        newImages: editingDraft.newImages,
+        currentImage: editingDraft.image,
+        currentImages: editingDraft.images
       });
 
       // Handle removed assets first
@@ -1047,7 +1119,21 @@ function AdminPanel() {
       }
 
       // Handle new assets
+      let newFeaturedImage = null;
       let newAdditionalImages = [];
+
+      // Upload new featured image if exists
+      if (editingDraft.newImage) {
+        console.log('Uploading new featured image:', editingDraft.newImage.name);
+        try {
+          const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
+          await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
+          newFeaturedImage = { id: asset.id };
+          console.log('New featured image uploaded successfully:', newFeaturedImage);
+        } catch (error) {
+          console.error('Failed to upload featured image:', error);
+        }
+      }
 
       // Upload new additional images if they exist
       if (editingDraft.newImages?.length > 0) {
@@ -1063,6 +1149,20 @@ function AdminPanel() {
           }
         }
       }
+
+      // Prepare update variables
+      const variables = {
+        id: editingDraft.id,
+        titleEn: editingDraft.titleEn,
+        titleVn: editingDraft.titleVn,
+        descriptionEn: transformToSlateAST(editEditorEn.getJSON()),
+        descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
+        date: editingDraft.date.toISOString().split('T')[0],
+        imageDisconnect: editingDraft.removedImage === true,
+        imageConnect: newFeaturedImage ? { id: newFeaturedImage.id } : 
+                       (editingDraft.removedImage ? null : 
+                       (editingDraft.image ? { id: editingDraft.image.id } : null))
+      };
 
       // Handle additional images connections and disconnections
       const existingImageIds = (editingDraft.images || [])
@@ -1124,51 +1224,14 @@ function AdminPanel() {
       // Handle publishing if needed
       if (shouldPublish) {
         console.log('Starting publish process...');
-        
-        // First publish any assets
-        const assetIds = [];
-        if (editingDraft.image?.id) {
-          assetIds.push(editingDraft.image.id);
-        }
-        if (editingDraft.images) {
-          assetIds.push(...editingDraft.images.map(img => img.id));
-        }
-
-        console.log('Assets to publish:', assetIds);
-        
-        // Publish each asset
-        for (const assetId of assetIds) {
-          const publishResponse = await fetch(hygraphUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-              query: publishAssetsMutation,
-              variables: {
-                where: {
-                  id: assetId
-                }
-              }
-            })
-          });
-
-          const publishResult = await publishResponse.json();
-          console.log('Asset publish result:', assetId, publishResult);
-        }
-
-        // Then publish the draft
         const publishResult = await publishDraft(editingDraft.id);
         console.log('Publish result:', publishResult);
         
-        // Store current tab and force refresh after 3 seconds
-        setTimeout(() => {
-          localStorage.setItem('adminActiveTab', activeTab.toString());
-          window.location.reload();
-        }, 3000);
-        
-        return;
+        // Immediately refresh after successful publish
+        const currentTab = window.location.hash || '#drafts';
+        window.location.href = `${window.location.pathname}${currentTab}`;
+        window.location.reload();
+        return; // Exit early since we're refreshing the page
       }
 
       setSnackbar({
@@ -2805,9 +2868,9 @@ function AdminPanel() {
                     onChange={(e) => {
                       const file = e.target.files[0];
                       if (file) {
-                        setEditingDraft(prev => ({
-                          ...prev,
-                          image: { url: URL.createObjectURL(file) }, // Add this for preview
+                        setEditingDraft(prev => ({ 
+                          ...prev, 
+                          image: URL.createObjectURL(file), // Add this to show preview
                           newImage: file
                         }));
                       }
