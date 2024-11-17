@@ -225,53 +225,70 @@ function Projects() {
                 color: colorPalette.accent2,
                 fontWeight: 600,
                 fontFamily: '"Poppins", sans-serif',
-                textAlign: 'center'
+                textAlign: 'center',
+                width: '100%',
+                position: 'relative',
+                left: '50%',
+                transform: 'translateX(-50%)'  // Center the title
               }}
             >
               {t('projects.allProjects')}
             </Typography>
           </motion.div>
-          <Grid 
-            container 
-            spacing={2} 
-            justifyContent="center"
-            sx={{ 
-              maxWidth: '900px',
-              margin: '0 auto',
-              px: { xs: 2, md: 4 }
+
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'center',
+              width: '100%',
             }}
           >
-            {sortedYears.map((year) => (
-              <Grid item xs={6} sm={4} md={3} key={year}>
-                <motion.div variants={itemVariants}>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleOpenModal(year)}
-                    sx={{
-                      width: '100%',
-                      height: { xs: '80px', sm: '100px' },
-                      fontSize: { xs: '1.2rem', sm: '1.4rem' },
-                      fontWeight: 600,
-                      fontFamily: '"Poppins", sans-serif',
-                      borderRadius: '12px',
-                      backgroundColor: colorPalette.accent2,
-                      color: '#FFFFFF',
-                      border: '1px solid transparent',
-                      '&:hover': {
-                        backgroundColor: colorPalette.secondary,
-                        transform: 'translateY(-2px)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                      },
-                      transition: 'all 0.3s ease',
-                    }}
-                  >
-                    {projectsByYear[year] && projectsByYear[year][0] ? 
-                      getYearFromDate(projectsByYear[year][0].date) : year}
-                  </Button>
-                </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+            <Grid 
+              container 
+              spacing={3}
+              sx={{ 
+                maxWidth: '900px',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              {sortedYears.map((year) => (
+                <Grid 
+                  item 
+                  xs={6} 
+                  sm={4} 
+                  md={3} 
+                  key={year}
+                >
+                  <motion.div variants={itemVariants}>
+                    <Button
+                      variant="contained"
+                      onClick={() => handleOpenModal(year)}
+                      sx={{
+                        width: '100%',
+                        height: { xs: '100px', sm: '100px' },
+                        fontSize: { xs: '1.1rem', sm: '1.4rem' },
+                        fontWeight: 600,
+                        fontFamily: '"Poppins", sans-serif',
+                        borderRadius: '12px',
+                        backgroundColor: colorPalette.accent2,
+                        color: '#FFFFFF',
+                        '&:hover': {
+                          backgroundColor: colorPalette.secondary,
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        },
+                        transition: 'all 0.3s ease',
+                      }}
+                    >
+                      {projectsByYear[year] && projectsByYear[year][0] ? 
+                        getYearFromDate(projectsByYear[year][0].date) : year}
+                    </Button>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
 
           <AnimatePresence>
             {openModal && (
