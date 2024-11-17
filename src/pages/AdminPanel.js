@@ -318,6 +318,24 @@ const uploadFileToS3 = async (file, requestPostData) => {
   }
 };
 
+// Update this mutation to match the docs exactly
+const publishAssetsMutation = `
+  mutation PublishAsset($where: AssetWhereUniqueInput!) {
+    publishAsset(where: $where, to: PUBLISHED) {
+      id
+    }
+  }
+`;
+
+// Add this mutation to delete assets
+const deleteAssetsMutation = `
+  mutation DeleteAssets($where: AssetWhereInput!) {
+    deleteManyAssets(where: $where) {
+      count
+    }
+  }
+`;
+
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(0);
   const [email, setEmail] = useState('');
@@ -665,6 +683,14 @@ function AdminPanel() {
               raw
             }
             date
+            image {
+              id
+              stage
+            }
+            images {
+              id
+              stage
+            }
             localizations {
               locale
               title
@@ -680,6 +706,14 @@ function AdminPanel() {
               raw
             }
             date
+            image {
+              id
+              stage
+            }
+            images {
+              id
+              stage
+            }
             localizations {
               locale
               title
@@ -704,6 +738,19 @@ function AdminPanel() {
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
+
+      // Add detailed logging for drafts and their assets
+      console.log('All drafts:', result.data.drafts);
+      result.data.drafts?.forEach(draft => {
+        console.log('Draft ID:', draft.id);
+        console.log('Draft Title:', draft.title);
+        if (draft.image) {
+          console.log('Draft featured image:', draft.image.id, 'Stage:', draft.image.stage);
+        }
+        if (draft.images) {
+          console.log('Draft additional images:', draft.images.map(img => ({ id: img.id, stage: img.stage })));
+        }
+      });
 
       // Get all drafts and published posts
       const allDrafts = result.data.drafts || [];
@@ -731,11 +778,79 @@ function AdminPanel() {
     fetchDrafts();
   }, []);
 
+  // Update the publishDraft function to also publish connected assets
   const publishDraft = async (draftId) => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // First, get the project's connected assets
+      const getProjectAssetsQuery = `
+        query GetProjectAssets($id: ID!) {
+          project(where: { id: $id }) {
+            image {
+              id
+            }
+            images {
+              id
+            }
+          }
+        }
+      `;
+
+      const assetsResponse = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: getProjectAssetsQuery,
+          variables: { id: draftId }
+        })
+      });
+
+      const assetsResult = await assetsResponse.json();
+      
+      // Collect all asset IDs
+      const assetIds = [];
+      if (assetsResult.data?.project?.image?.id) {
+        assetIds.push(assetsResult.data.project.image.id);
+      }
+      if (assetsResult.data?.project?.images) {
+        assetIds.push(...assetsResult.data.project.images.map(img => img.id));
+      }
+
+      // Publish assets if there are any
+      if (assetIds.length > 0) {
+        // Publish each asset individually
+        for (const assetId of assetIds) {
+          const publishAssetsResponse = await fetch(hygraphUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              query: publishAssetsMutation,
+              variables: {
+                where: {
+                  id: assetId
+                }
+              }
+            })
+          });
+
+          const publishAssetsResult = await publishAssetsResponse.json();
+          if (publishAssetsResult.errors) {
+            console.error('Error publishing asset:', assetId, publishAssetsResult.errors);
+          } else {
+            console.log('Successfully published asset:', assetId);
+          }
+        }
+      }
+
+      // Publish the project
       const publishMutation = `
         mutation PublishProject($where: ProjectWhereUniqueInput!) {
           publishProject(
@@ -770,8 +885,6 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Publish result:', result);
-
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
@@ -1159,15 +1272,89 @@ function AdminPanel() {
 
   const publishSelectedDrafts = async () => {
     try {
-      const results = await Promise.all(
-        selectedDrafts.map(draftId => publishDraft(draftId))
-      );
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      console.log('Publish results:', results);
+      // Get the selected drafts and their assets
+      const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
+      
+      // Collect all asset IDs from selected drafts
+      const assetIds = [];
+      selectedDraftsData.forEach(draft => {
+        if (draft.image?.id) {
+          assetIds.push(draft.image.id);
+        }
+        if (draft.images) {
+          assetIds.push(...draft.images.map(img => img.id));
+        }
+      });
+
+      console.log('Assets to publish:', assetIds);
+
+      // Publish each asset
+      for (const assetId of assetIds) {
+        const publishResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: publishAssetsMutation,
+            variables: {
+              where: {
+                id: assetId
+              }
+            }
+          })
+        });
+
+        const publishResult = await publishResponse.json();
+        console.log('Asset publish result:', assetId, publishResult);
+      }
+
+      // Then publish the selected drafts
+      for (const draftId of selectedDrafts) {
+        const publishResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: `
+              mutation PublishProject($where: ProjectWhereUniqueInput!) {
+                publishProject(
+                  where: $where, 
+                  to: PUBLISHED,
+                  locales: [en, vn]
+                ) {
+                  id
+                  title
+                  date
+                  localizations {
+                    locale
+                  }
+                }
+              }
+            `,
+            variables: {
+              where: {
+                id: draftId
+              }
+            }
+          })
+        });
+
+        const publishResult = await publishResponse.json();
+        if (publishResult.errors) {
+          throw new Error(`Failed to publish project ${draftId}: ${publishResult.errors[0].message}`);
+        }
+      }
 
       setSnackbar({
         open: true,
-        message: 'Selected drafts published successfully!',
+        message: 'Selected drafts and assets published successfully!',
         severity: 'success'
       });
 
@@ -1177,17 +1364,83 @@ function AdminPanel() {
       console.error('Error publishing drafts:', error);
       setSnackbar({
         open: true,
-        message: `Failed to publish drafts: ${error.message}`,
+        message: `Failed to publish: ${error.message}`,
         severity: 'error'
       });
     }
   };
 
+  // Update the deleteSelectedDrafts function to also delete connected assets
   const deleteSelectedDrafts = async () => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // First, get all connected assets for selected drafts
+      const getProjectsAssetsQuery = `
+        query GetProjectsAssets($ids: [ID!]) {
+          projects(where: { id_in: $ids }) {
+            id
+            image {
+              id
+            }
+            images {
+              id
+            }
+          }
+        }
+      `;
+
+      const assetsResponse = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: getProjectsAssetsQuery,
+          variables: { ids: selectedDrafts }
+        })
+      });
+
+      const assetsResult = await assetsResponse.json();
+      
+      // Collect all asset IDs
+      const assetIds = [];
+      assetsResult.data?.projects?.forEach(project => {
+        if (project.image?.id) {
+          assetIds.push(project.image.id);
+        }
+        if (project.images) {
+          assetIds.push(...project.images.map(img => img.id));
+        }
+      });
+
+      // Delete assets if there are any
+      if (assetIds.length > 0) {
+        const deleteAssetsResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: deleteAssetsMutation,
+            variables: {
+              where: {
+                id_in: assetIds
+              }
+            }
+          })
+        });
+
+        const deleteAssetsResult = await deleteAssetsResponse.json();
+        if (deleteAssetsResult.errors) {
+          console.error('Error deleting assets:', deleteAssetsResult.errors);
+        }
+      }
+
+      // Delete the projects
       const deleteMutation = `
         mutation DeleteProject($where: ProjectWhereUniqueInput!) {
           deleteProject(where: $where) {
@@ -1977,23 +2230,6 @@ function AdminPanel() {
                       }}
                     >
                       Save as Draft
-                    </Button>
-                    <Button
-                      variant="contained"
-                      onClick={() => handleSubmit(true)}
-                      sx={{
-                        py: 1.5,
-                        backgroundColor: colorPalette.primary,
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        fontSize: '1rem',
-                        '&:hover': {
-                          backgroundColor: colorPalette.secondary,
-                        },
-                        transition: 'all 0.2s ease-in-out',
-                      }}
-                    >
-                      Save & Publish
                     </Button>
                   </Stack>
                 </Stack>
