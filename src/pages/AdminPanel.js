@@ -2426,8 +2426,19 @@ function AdminPanel() {
                 </Box>
               )}
               {activeTab === 3 && (
-                <Box sx={{ mt: 2 }}>
-                  {console.log('Rendering Manage Published tab, published:', publishedPosts)}
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">Manage Published</Typography>
+                    <IconButton 
+                      onClick={() => {
+                        localStorage.setItem('adminActiveTab', activeTab.toString());
+                        window.location.reload();
+                      }}
+                      sx={{ color: colorPalette.primary }}
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                  </Box>
                   <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                     <Button
                       variant="contained"
