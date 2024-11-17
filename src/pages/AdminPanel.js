@@ -357,6 +357,15 @@ const deleteAssetsMutation = `
   }
 `;
 
+// Add this mutation near your other GraphQL queries
+const deleteAssetMutation = `
+  mutation DeleteAsset($id: ID!) {
+    deleteAsset(where: { id: $id }) {
+      id
+    }
+  }
+`;
+
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(0);
   const [email, setEmail] = useState('');
@@ -2803,8 +2812,34 @@ function AdminPanel() {
                         }}
                       >
                         <IconButton
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.preventDefault();
+                            const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+                            const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+                            // Delete the asset from Hygraph if it has an ID
+                            if (editingDraft.image?.id) {
+                              try {
+                                const response = await fetch(hygraphUrl, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                  },
+                                  body: JSON.stringify({
+                                    query: deleteAssetMutation,
+                                    variables: {
+                                      id: editingDraft.image.id
+                                    }
+                                  })
+                                });
+                                const result = await response.json();
+                                console.log('Asset deletion result:', result);
+                              } catch (error) {
+                                console.error('Error deleting asset:', error);
+                              }
+                            }
+
                             setEditingDraft(prev => ({ ...prev, image: null, removedImage: true }));
                           }}
                           sx={{ color: 'white' }}
@@ -2835,7 +2870,7 @@ function AdminPanel() {
                       if (file) {
                         setEditingDraft(prev => ({ 
                           ...prev, 
-                          image: URL.createObjectURL(file),
+                          image: URL.createObjectURL(file), // Add this to show preview
                           newImage: file
                         }));
                       }
@@ -2888,9 +2923,36 @@ function AdminPanel() {
                             }}
                           />
                           <IconButton
-                            onClick={() => {
+                            onClick={async () => {
+                              const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+                              const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+                              const removedImage = editingDraft.images[index];
+
+                              // Delete the asset from Hygraph if it has an ID
+                              if (removedImage.id) {
+                                try {
+                                  const response = await fetch(hygraphUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                      'Authorization': `Bearer ${authToken}`
+                                    },
+                                    body: JSON.stringify({
+                                      query: deleteAssetMutation,
+                                      variables: {
+                                        id: removedImage.id
+                                      }
+                                    })
+                                  });
+                                  const result = await response.json();
+                                  console.log('Asset deletion result:', result);
+                                } catch (error) {
+                                  console.error('Error deleting asset:', error);
+                                }
+                              }
+
                               const newImages = [...editingDraft.images];
-                              const removedImage = newImages.splice(index, 1)[0];
+                              newImages.splice(index, 1);
                               setEditingDraft(prev => ({ 
                                 ...prev, 
                                 images: newImages,
