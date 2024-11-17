@@ -2909,23 +2909,33 @@ function AdminPanel() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-          {editSource === 'drafts' && (
-            <Button onClick={() => handleUpdateDraft(false)} variant="outlined">
+          {editSource === 'drafts' ? (
+            <Button 
+              onClick={() => handleUpdateDraft(false)} 
+              variant="contained"
+              sx={{
+                backgroundColor: colorPalette.primary,
+                '&:hover': {
+                  backgroundColor: colorPalette.secondary,
+                }
+              }}
+            >
               Save Draft
             </Button>
+          ) : (
+            <Button 
+              onClick={() => handleUpdateDraft(true)} 
+              variant="contained"
+              sx={{
+                backgroundColor: colorPalette.primary,
+                '&:hover': {
+                  backgroundColor: colorPalette.secondary,
+                }
+              }}
+            >
+              Update Published
+            </Button>
           )}
-          <Button 
-            onClick={() => handleUpdateDraft(true)} 
-            variant="contained"
-            sx={{
-              backgroundColor: colorPalette.primary,
-              '&:hover': {
-                backgroundColor: colorPalette.secondary,
-              }
-            }}
-          >
-            {editSource === 'drafts' ? 'Save & Publish' : 'Update Published'}
-          </Button>
         </DialogActions>
       </Dialog>
     </Box>
