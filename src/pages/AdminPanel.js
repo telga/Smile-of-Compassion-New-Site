@@ -901,15 +901,16 @@ function AdminPanel() {
   };
 
   const handleEditDraft = (draft, source) => {
-    console.log('Draft image data:', draft.image);
-    console.log('Draft additional images:', draft.images);
+    console.log('Draft data:', draft);
+    console.log('EN description raw:', draft.description?.raw);
+    console.log('VN description raw:', draft.localizations?.[0]?.description?.raw);
     
     setEditingDraft({
       id: draft.id,
       titleEn: draft.title,
       titleVn: draft.localizations?.[0]?.title || '',
       date: new Date(`${draft.date}T12:00:00`),
-      descriptionEn: draft.description.raw,
+      descriptionEn: draft.description?.raw,
       descriptionVn: draft.localizations?.[0]?.description?.raw || '',
       image: draft.image,
       images: draft.images || [],
@@ -918,24 +919,21 @@ function AdminPanel() {
     });
     setEditSource(source);
 
-    // Wait for editors to be ready
+    // Wait for editors to be ready and mounted
     setTimeout(() => {
-      if (editEditorEn && draft.description.raw) {
+      if (editEditorEn && draft.description?.raw) {
         try {
+          // Use the same simple transformation as VN content
           const enContent = {
             type: 'doc',
             content: draft.description.raw.children.map(node => {
-              // Ensure text is never empty
               const text = node.children?.[0]?.text || ' ';
-              
-              // Collect all marks into an array
               const marks = [];
               const nodeMarks = node.children?.[0] || {};
               if (nodeMarks.bold) marks.push({ type: 'bold' });
               if (nodeMarks.italic) marks.push({ type: 'italic' });
               if (nodeMarks.underline) marks.push({ type: 'underline' });
 
-              // Create the appropriate node structure
               switch (node.type) {
                 case 'heading-one':
                   return {
@@ -959,7 +957,7 @@ function AdminPanel() {
                   return {
                     type: 'bulletList',
                     content: node.children.map(item => ({
-                      type: 'list-item',
+                      type: 'listItem',
                       content: [{
                         type: 'paragraph',
                         content: [{
@@ -1078,7 +1076,7 @@ function AdminPanel() {
           console.error('Error setting VN content:', error);
         }
       }
-    }, 0);
+    }, 100); // Increased timeout to ensure editors are ready
 
     setEditModalOpen(true);
   };
