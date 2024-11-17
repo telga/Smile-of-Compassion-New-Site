@@ -19,6 +19,115 @@ import {
   FormatListBulleted, 
   FormatListNumbered 
 } from '@mui/icons-material';
+import EditIcon from '@mui/icons-material/Edit';
+
+const transformToSlateAST = (editorContent) => {
+  if (!editorContent || !editorContent.content) {
+    return {
+      children: [{
+        type: 'paragraph',
+        children: [{ text: '' }]
+      }]
+    };
+  }
+
+  const transformedContent = editorContent.content.map(node => {
+    if (node.type === 'heading') {
+      return {
+        type: `heading-${node.attrs.level}`,
+        children: [{
+          text: node.content?.[0]?.text || '',
+          ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
+            ...acc,
+            [mark.type]: true
+          }), {}) || {})
+        }]
+      };
+    }
+
+    if (node.type === 'bulletList') {
+      return {
+        type: 'bulleted-list',
+        children: node.content.map(listItem => ({
+          type: 'list-item',
+          children: [{
+            type: 'list-item-child',
+            children: [{
+              text: listItem.content?.[0]?.content?.[0]?.text || '',
+              ...(listItem.content?.[0]?.content?.[0]?.marks?.reduce((acc, mark) => ({
+                ...acc,
+                [mark.type]: true
+              }), {}) || {})
+            }]
+          }]
+        }))
+      };
+    }
+
+    if (node.type === 'orderedList') {
+      return {
+        type: 'numbered-list',
+        children: node.content.map(listItem => ({
+          type: 'list-item',
+          children: [{
+            type: 'list-item-child',
+            children: [{
+              text: listItem.content?.[0]?.content?.[0]?.text || '',
+              ...(listItem.content?.[0]?.content?.[0]?.marks?.reduce((acc, mark) => ({
+                ...acc,
+                [mark.type]: true
+              }), {}) || {})
+            }]
+          }]
+        }))
+      };
+    }
+
+    // Default paragraph case
+    return {
+      type: 'paragraph',
+      children: [{
+        text: node.content?.[0]?.text || '',
+        ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
+          ...acc,
+          [mark.type]: true
+        }), {}) || {})
+      }]
+    };
+  });
+
+  return {
+    children: transformedContent
+  };
+};
+
+const updateMutation = `
+  mutation UpdateProject(
+    $where: ProjectWhereUniqueInput!
+    $data: ProjectUpdateInput!
+    $locale: Locale!
+  ) {
+    updateProject(
+      where: $where,
+      data: $data,
+      locale: $locale
+    ) {
+      id
+      title
+      description {
+        raw
+      }
+      date
+      localizations {
+        locale
+        title
+        description {
+          raw
+        }
+      }
+    }
+  }
+`;
 
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(0);
@@ -49,6 +158,9 @@ function AdminPanel() {
   const [selectedDrafts, setSelectedDrafts] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingDraft, setEditingDraft] = useState(null);
+  const [publishedPosts, setPublishedPosts] = useState([]);
+  const [selectedPublished, setSelectedPublished] = useState([]);
+  const [editSource, setEditSource] = useState('drafts');
   const editEditorEn = useEditor({
     extensions: [
       StarterKit,
@@ -142,8 +254,8 @@ function AdminPanel() {
   const createMutation = `
     mutation CreateProject(
       $titleEn: String!
-      $descriptionEn: RichTextAST!
       $titleVn: String!
+      $descriptionEn: RichTextAST!
       $descriptionVn: RichTextAST!
       $date: Date!
     ) {
@@ -153,39 +265,22 @@ function AdminPanel() {
           description: $descriptionEn
           date: $date
           localizations: {
-            create: [
-              {
-                locale: vn
-                data: {
-                  title: $titleVn
-                  description: $descriptionVn
-                }
+            create: {
+              locale: vn
+              data: {
+                title: $titleVn
+                description: $descriptionVn
               }
-            ]
+            }
           }
         }
       ) {
         id
         title
-        description {
-          raw
-        }
         date
         localizations {
           locale
-          title
-          description {
-            raw
-          }
         }
-      }
-    }
-  `;
-
-  const publishMutation = `
-    mutation PublishProject($where: ProjectWhereUniqueInput!) {
-      publishProject(where: $where) {
-        id
       }
     }
   `;
@@ -195,88 +290,19 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Transform the editor content
-      const transformToSlateAST = (editorContent) => {
-        console.log('Editor content before transform:', editorContent);
-
-        if (!editorContent || !editorContent.content) {
-          return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
-        }
-
-        const transformed = {
-          children: editorContent.content.map(node => {
-            if (node.type === 'heading') {
-              // Map TipTap heading levels to Hygraph heading types
-              const headingType = {
-                1: 'heading-one',
-                2: 'heading-two',
-                3: 'heading-three'
-              }[node.attrs.level];
-
-              return {
-                type: headingType,
-                children: [{
-                  text: node.content?.[0]?.text || '',
-                  ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
-                    ...acc,
-                    [mark.type]: true
-                  }), {}))
-                }]
-              };
-            }
-
-            if (node.type === 'bulletList') {
-              return {
-                type: 'bulleted-list',
-                children: node.content.map(listItem => ({
-                  type: 'list-item',
-                  children: [{
-                    type: 'paragraph',
-                    children: [{
-                      text: listItem.content?.[0]?.content?.[0]?.text || ''
-                    }]
-                  }]
-                }))
-              };
-            }
-
-            if (node.type === 'orderedList') {
-              return {
-                type: 'numbered-list',
-                children: node.content.map(listItem => ({
-                  type: 'list-item',
-                  children: [{
-                    type: 'paragraph',
-                    children: [{
-                      text: listItem.content?.[0]?.content?.[0]?.text || ''
-                    }]
-                  }]
-                }))
-              };
-            }
-
-            // Default paragraph handling
-            return {
-              type: 'paragraph',
-              children: node.content?.map(child => ({
-                text: child.text || '',
-                ...(child.marks?.reduce((acc, mark) => ({
-                  ...acc,
-                  [mark.type]: true
-                }), {}))
-              })) || [{ text: '' }]
-            };
-          })
-        };
-
-        console.log('Transformed to Slate AST:', transformed);
-        return transformed;
-      };
-
       const descriptionEn = transformToSlateAST(editorEn.getJSON());
       const descriptionVn = transformToSlateAST(editorVn.getJSON());
 
-      // Create the project
+      const variables = {
+        titleEn: formData.titleEn,
+        titleVn: formData.titleVn,
+        descriptionEn: descriptionEn,
+        descriptionVn: descriptionVn,
+        date: formData.date.toISOString().split('T')[0]
+      };
+
+      console.log('Sending to Hygraph:', variables);
+
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -285,61 +311,20 @@ function AdminPanel() {
         },
         body: JSON.stringify({
           query: createMutation,
-          variables: {
-            titleEn: formData.titleEn,
-            titleVn: formData.titleVn,
-            descriptionEn,
-            descriptionVn,
-            date: formData.date.toISOString().split('T')[0]
-          }
+          variables
         })
       });
 
       const result = await response.json();
+      console.log('Create result:', result);
+
       if (result.errors) {
-        throw new Error(`Failed to create draft: ${result.errors[0].message}`);
+        throw new Error(result.errors[0].message);
       }
 
-      // If shouldPublish is true, publish the created project
-      if (shouldPublish && result.data?.createProject?.id) {
-        await fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: publishMutation,
-            variables: {
-              where: {
-                id: result.data.createProject.id
-              }
-            }
-          })
-        });
-      }
-
-      setSnackbar({
-        open: true,
-        message: shouldPublish ? 'Draft created and published!' : 'Draft created successfully!',
-        severity: 'success'
-      });
-
-      // Reset form
-      setFormData({
-        titleEn: '',
-        titleVn: '',
-        descriptionEn: '',
-        descriptionVn: '',
-        date: null,
-        image: null,
-        images: []
-      });
-      editorEn.commands.setContent('');
-      editorVn.commands.setContent('');
-      fetchDrafts();
+      // Rest of your code remains the same...
     } catch (error) {
-      console.error('Error creating draft:', error);
+      console.error('Error creating post:', error);
       setSnackbar({
         open: true,
         message: `Failed to create draft: ${error.message}`,
@@ -424,22 +409,18 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Verify URL and token
-      if (!hygraphUrl || !authToken) {
-        throw new Error('Missing Hygraph configuration');
-      }
+      console.log('Starting fetch from Hygraph...');
+      console.log('URL:', hygraphUrl);
 
-      console.log('Fetching from:', hygraphUrl); // Debug URL
-
-      const getDraftsQuery = `
-        query GetAllProjects {
-          draftProjects: projects(stage: DRAFT) {
+      const query = `
+        {
+          drafts: projects(stage: DRAFT) {
             id
             title
-            date
             description {
               raw
             }
+            date
             localizations {
               locale
               title
@@ -448,144 +429,136 @@ function AdminPanel() {
               }
             }
           }
-          publishedProjects: projects(stage: PUBLISHED) {
+          published: projects(stage: PUBLISHED) {
             id
+            title
+            description {
+              raw
+            }
+            date
+            localizations {
+              locale
+              title
+              description {
+                raw
+              }
+            }
           }
         }
       `;
 
-      // Add timeout and retry logic
-      const fetchWithTimeout = async (retries = 3) => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      console.log('Query being sent:', query);
 
-            const response = await fetch(hygraphUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-              },
-              body: JSON.stringify({
-                query: getDraftsQuery
-              }),
-              signal: controller.signal
-            });
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ query })
+      });
 
-            clearTimeout(timeoutId);
+      const result = await response.json();
+      console.log('Raw response from Hygraph:', result);
 
-            if (!response.ok) {
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return await response.json();
-          } catch (error) {
-            console.error(`Attempt ${i + 1} failed:`, error);
-            if (i === retries - 1) throw error;
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s between retries
-          }
-        }
-      };
-
-      const result = await fetchWithTimeout();
-      
       if (result.errors) {
         console.error('GraphQL Errors:', result.errors);
-        throw new Error(`Failed to fetch drafts: ${result.errors[0].message}`);
+        throw new Error(result.errors[0].message);
       }
 
-      // Filter out drafts that are also in published
-      const publishedIds = new Set(result.data.publishedProjects.map(p => p.id));
-      const trueDrafts = result.data.draftProjects.filter(draft => !publishedIds.has(draft.id));
+      // Get all drafts and published posts
+      const allDrafts = result.data.drafts || [];
+      const publishedPosts = result.data.published || [];
 
-      console.log('All drafts:', result.data.draftProjects);
-      console.log('Published:', result.data.publishedProjects);
-      console.log('True drafts:', trueDrafts);
-      
+      console.log('All drafts from query:', allDrafts);
+      console.log('Published posts from query:', publishedPosts);
+
+      // True drafts are those that exist in DRAFT but not in PUBLISHED
+      const trueDrafts = allDrafts.filter(draft => 
+        !publishedPosts.some(pub => pub.id === draft.id)
+      );
+
+      console.log('Filtered true drafts:', trueDrafts);
+
       setDrafts(trueDrafts);
+      setPublishedPosts(publishedPosts);
+
+      console.log('State updated - Drafts:', trueDrafts.length, 'Published:', publishedPosts.length);
+
+      console.log('Example published post description:', result.data.published[0]?.description);
+      console.log('Example of working rich text structure:', 
+        JSON.stringify(result.data.published[0]?.description, null, 2)
+      );
 
     } catch (error) {
-      console.error('Error fetching drafts:', error);
+      console.error('Error in fetchDrafts:', error);
       setSnackbar({
         open: true,
-        message: `Failed to fetch drafts: ${error.message}. Please check your network connection and try again.`,
+        message: `Failed to fetch posts: ${error.message}`,
         severity: 'error'
       });
     }
   };
 
-  const publishSelectedDrafts = async () => {
+  // Add useEffect to call fetchDrafts when component mounts
+  useEffect(() => {
+    console.log('AdminPanel mounted, calling fetchDrafts...');
+    fetchDrafts();
+  }, []); // Empty dependency array means this runs once on mount
+
+  const publishDraft = async (draftId) => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
       const publishMutation = `
         mutation PublishProject($where: ProjectWhereUniqueInput!) {
-          publishProject(where: $where) {
+          publishProject(
+            where: $where, 
+            to: PUBLISHED,
+            locales: [en, vn]
+          ) {
             id
             title
             date
+            localizations {
+              locale
+            }
           }
         }
       `;
 
-      // Track successful and failed publishes
-      const results = await Promise.all(
-        selectedDrafts.map(async (draftId) => {
-          try {
-            const response = await fetch(hygraphUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${authToken}`
-              },
-              body: JSON.stringify({
-                query: publishMutation,
-                variables: {
-                  where: {
-                    id: draftId
-                  }
-                }
-              })
-            });
-
-            const result = await response.json();
-            if (result.errors) {
-              throw new Error(result.errors[0].message);
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: publishMutation,
+          variables: {
+            where: {
+              id: draftId
             }
-            return { success: true, id: draftId };
-          } catch (error) {
-            return { success: false, id: draftId, error: error.message };
           }
         })
-      );
+      });
 
-      // Check for any failures
-      const failures = results.filter(r => !r.success);
-      if (failures.length > 0) {
-        throw new Error(`Failed to publish some drafts: ${failures.map(f => f.error).join(', ')}`);
+      const result = await response.json();
+      console.log('Publish result:', result);
+
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
       }
 
-      setSnackbar({
-        open: true,
-        message: 'Selected drafts published successfully!',
-        severity: 'success'
-      });
-
-      setSelectedDrafts([]);
-      fetchDrafts();
+      return result.data.publishProject;
     } catch (error) {
-      console.error('Error publishing drafts:', error);
-      setSnackbar({
-        open: true,
-        message: error.message,
-        severity: 'error'
-      });
+      console.error('Error publishing draft:', error);
+      throw error;
     }
   };
 
-  const handleEditDraft = (draft) => {
+  const handleEditDraft = (draft, source) => {
     setEditingDraft({
       id: draft.id,
       titleEn: draft.title,
@@ -594,6 +567,7 @@ function AdminPanel() {
       descriptionEn: draft.description.raw,
       descriptionVn: draft.localizations?.[0]?.description?.raw || ''
     });
+    setEditSource(source);
 
     // Wait for editors to be ready
     setTimeout(() => {
@@ -636,7 +610,7 @@ function AdminPanel() {
                   return {
                     type: 'bulletList',
                     content: node.children.map(item => ({
-                      type: 'listItem',
+                      type: 'list-item',
                       content: [{
                         type: 'paragraph',
                         content: [{
@@ -760,126 +734,13 @@ function AdminPanel() {
     setEditModalOpen(true);
   };
 
-  const handleUpdateDraft = async (shouldPublish = false) => {
+  const handleUpdateDraft = async (shouldPublish) => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      const updateMutation = `
-        mutation UpdateProject($where: ProjectWhereUniqueInput!, $data: ProjectUpdateInput!) {
-          updateProject(
-            where: $where
-            data: $data
-          ) {
-            id
-            title
-            description {
-              raw
-              html
-              text
-            }
-            date
-            localizations {
-              locale
-              title
-              description {
-                raw
-                html
-                text
-              }
-            }
-          }
-        }
-      `;
-
-      // Get the raw editor states
-      console.log('Editor EN JSON:', editEditorEn.getJSON());
-      console.log('Editor VN JSON:', editEditorVn.getJSON());
-
-      // Transform TipTap JSON to Hygraph Slate AST
-      const transformToSlateAST = (editorContent) => {
-        console.log('Editor content before transform:', editorContent);
-
-        if (!editorContent || !editorContent.content) {
-          return { children: [{ type: 'paragraph', children: [{ text: '' }] }] };
-        }
-
-        const transformed = {
-          children: editorContent.content.map(node => {
-            if (node.type === 'heading') {
-              // Map TipTap heading levels to Hygraph heading types
-              const headingType = {
-                1: 'heading-one',
-                2: 'heading-two',
-                3: 'heading-three'
-              }[node.attrs.level];
-
-              return {
-                type: headingType,
-                children: [{
-                  text: node.content?.[0]?.text || '',
-                  ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
-                    ...acc,
-                    [mark.type]: true
-                  }), {}))
-                }]
-              };
-            }
-
-            if (node.type === 'bulletList') {
-              return {
-                type: 'bulleted-list',
-                children: node.content.map(listItem => ({
-                  type: 'list-item',
-                  children: [{
-                    type: 'paragraph',
-                    children: [{
-                      text: listItem.content?.[0]?.content?.[0]?.text || ''
-                    }]
-                  }]
-                }))
-              };
-            }
-
-            if (node.type === 'orderedList') {
-              return {
-                type: 'numbered-list',
-                children: node.content.map(listItem => ({
-                  type: 'list-item',
-                  children: [{
-                    type: 'paragraph',
-                    children: [{
-                      text: listItem.content?.[0]?.content?.[0]?.text || ''
-                    }]
-                  }]
-                }))
-              };
-            }
-
-            // Default paragraph handling
-            return {
-              type: 'paragraph',
-              children: node.content?.map(child => ({
-                text: child.text || '',
-                ...(child.marks?.reduce((acc, mark) => ({
-                  ...acc,
-                  [mark.type]: true
-                }), {}))
-              })) || [{ text: '' }]
-            };
-          })
-        };
-
-        console.log('Transformed to Slate AST:', transformed);
-        return transformed;
-      };
-
       const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
       const descriptionVn = transformToSlateAST(editEditorVn.getJSON());
-
-      // Log the transformed content
-      console.log('Transformed EN:', descriptionEn);
-      console.log('Transformed VN:', descriptionVn);
 
       const response = await fetch(hygraphUrl, {
         method: 'POST',
@@ -898,85 +759,287 @@ function AdminPanel() {
               description: descriptionEn,
               date: editingDraft.date.toISOString().split('T')[0],
               localizations: {
-                update: [{
-                  locale: "vn",
+                upsert: [{
+                  where: { locale: "vn" },
                   data: {
-                    title: editingDraft.titleVn,
-                    description: descriptionVn
+                    create: {
+                      locale: "vn",
+                      title: editingDraft.titleVn,
+                      description: descriptionVn
+                    },
+                    update: {
+                      title: editingDraft.titleVn,
+                      description: descriptionVn
+                    }
                   }
                 }]
               }
-            }
+            },
+            locale: "en"
           }
         })
       });
 
       const result = await response.json();
       if (result.errors) {
-        console.error('GraphQL Errors:', result.errors);
-        throw new Error(`Failed to update draft: ${result.errors[0].message}`);
+        throw new Error(result.errors[0].message);
       }
 
-      // Log the successful response
-      console.log('Update Response:', result);
-
       if (shouldPublish) {
-        const publishMutation = `
-          mutation PublishProject($where: ProjectWhereUniqueInput!) {
-            publishProject(where: $where) {
-              id
-              title
-              date
-            }
-          }
-        `;
-
-        const publishResponse = await fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: publishMutation,
-            variables: {
-              where: {
-                id: editingDraft.id
-              }
-            }
-          })
-        });
-
-        const publishResult = await publishResponse.json();
-        if (publishResult.errors) {
-          throw new Error(`Failed to publish: ${publishResult.errors[0].message}`);
-        }
+        await publishDraft(editingDraft.id);
       }
 
       setSnackbar({
         open: true,
-        message: shouldPublish ? 'Draft updated and published!' : 'Draft updated successfully!',
+        message: `Draft ${shouldPublish ? 'published' : 'saved'} successfully!`,
         severity: 'success'
       });
 
       setEditModalOpen(false);
-      setEditingDraft(null);
       fetchDrafts();
     } catch (error) {
       console.error('Error updating draft:', error);
       setSnackbar({
         open: true,
-        message: `Failed to update draft: ${error.message}`,
+        message: `Failed to ${shouldPublish ? 'publish' : 'save'} draft: ${error.message}`,
         severity: 'error'
       });
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 2) { // Assuming 2 is the index for the drafts tab
-      fetchDrafts();
+  const unpublishSelectedPosts = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      const unpublishMutation = `
+        mutation UnpublishProject($where: ProjectWhereUniqueInput!) {
+          unpublishProject(where: $where) {
+            id
+            title
+            date
+          }
+        }
+      `;
+
+      // Track successful and failed unpublishes
+      const results = await Promise.all(
+        selectedPublished.map(async (postId) => {
+          try {
+            const response = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: unpublishMutation,
+                variables: {
+                  where: {
+                    id: postId
+                  }
+                }
+              })
+            });
+
+            const result = await response.json();
+            if (result.errors) {
+              throw new Error(result.errors[0].message);
+            }
+            return { success: true, id: postId };
+          } catch (error) {
+            return { success: false, id: postId, error: error.message };
+          }
+        })
+      );
+
+      // Check for any failures
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        throw new Error(`Failed to unpublish some posts: ${failures.map(f => f.error).join(', ')}`);
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Selected posts unpublished successfully!',
+        severity: 'success'
+      });
+
+      setSelectedPublished([]);
+      fetchDrafts(); // This will refresh both drafts and published posts
+    } catch (error) {
+      console.error('Error unpublishing posts:', error);
+      setSnackbar({
+        open: true,
+        message: error.message,
+        severity: 'error'
+      });
     }
-  }, [activeTab]);
+  };
+
+  const deleteSelectedPosts = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      const deleteMutation = `
+        mutation DeleteProject($where: ProjectWhereUniqueInput!) {
+          deleteProject(where: $where) {
+            id
+          }
+        }
+      `;
+
+      // Track successful and failed deletes
+      const results = await Promise.all(
+        selectedPublished.map(async (postId) => {
+          try {
+            const response = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: deleteMutation,
+                variables: {
+                  where: {
+                    id: postId
+                  }
+                }
+              })
+            });
+
+            const result = await response.json();
+            if (result.errors) {
+              throw new Error(result.errors[0].message);
+            }
+            return { success: true, id: postId };
+          } catch (error) {
+            return { success: false, id: postId, error: error.message };
+          }
+        })
+      );
+
+      // Check for any failures
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        throw new Error(`Failed to delete some posts: ${failures.map(f => f.error).join(', ')}`);
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Selected posts deleted successfully!',
+        severity: 'success'
+      });
+
+      setSelectedPublished([]);
+      fetchDrafts(); // This will refresh both drafts and published posts
+    } catch (error) {
+      console.error('Error deleting posts:', error);
+      setSnackbar({
+        open: true,
+        message: error.message,
+        severity: 'error'
+      });
+    }
+  };
+
+  const publishSelectedDrafts = async () => {
+    try {
+      const results = await Promise.all(
+        selectedDrafts.map(draftId => publishDraft(draftId))
+      );
+
+      console.log('Publish results:', results);
+
+      setSnackbar({
+        open: true,
+        message: 'Selected drafts published successfully!',
+        severity: 'success'
+      });
+
+      setSelectedDrafts([]);
+      fetchDrafts();
+    } catch (error) {
+      console.error('Error publishing drafts:', error);
+      setSnackbar({
+        open: true,
+        message: `Failed to publish drafts: ${error.message}`,
+        severity: 'error'
+      });
+    }
+  };
+
+  const deleteSelectedDrafts = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      const deleteMutation = `
+        mutation DeleteProject($where: ProjectWhereUniqueInput!) {
+          deleteProject(where: $where) {
+            id
+          }
+        }
+      `;
+
+      // Track successful and failed deletes
+      const results = await Promise.all(
+        selectedDrafts.map(async (draftId) => {
+          try {
+            const response = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: deleteMutation,
+                variables: {
+                  where: {
+                    id: draftId
+                  }
+                }
+              })
+            });
+
+            const result = await response.json();
+            console.log('Delete result for draft:', draftId, result);
+
+            if (result.errors) {
+              throw new Error(result.errors[0].message);
+            }
+            return { success: true, id: draftId };
+          } catch (error) {
+            return { success: false, id: draftId, error: error.message };
+          }
+        })
+      );
+
+      // Check for any failures
+      const failures = results.filter(r => !r.success);
+      if (failures.length > 0) {
+        throw new Error(`Failed to delete some drafts: ${failures.map(f => f.error).join(', ')}`);
+      }
+
+      setSnackbar({
+        open: true,
+        message: 'Selected drafts deleted successfully!',
+        severity: 'success'
+      });
+
+      setSelectedDrafts([]);
+      fetchDrafts();
+    } catch (error) {
+      console.error('Error deleting drafts:', error);
+      setSnackbar({
+        open: true,
+        message: error.message,
+        severity: 'error'
+      });
+    }
+  };
 
   if (!user) {
     return (
@@ -1227,6 +1290,7 @@ function AdminPanel() {
               <Tab label="Add Post" />
               <Tab label="Add Facebook Posts" />
               <Tab label="Manage Drafts" />
+              <Tab label="Manage Published" value={3} />
             </Tabs>
 
             <Box sx={{ p: { xs: 3, md: 6 } }}>
@@ -1728,68 +1792,125 @@ function AdminPanel() {
                 </div>
               )}
               {activeTab === 2 && (
-                <Box sx={{ mt: 3 }}>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Typography variant="h6">Draft Projects</Typography>
-                      <Button
-                        variant="contained"
-                        disabled={selectedDrafts.length === 0}
-                        onClick={publishSelectedDrafts}
-                        sx={{
-                          backgroundColor: colorPalette.primary,
-                          '&:hover': {
-                            backgroundColor: colorPalette.secondary,
-                          }
-                        }}
-                      >
-                        Publish Selected ({selectedDrafts.length})
-                      </Button>
-                    </Box>
-                    
-                    {drafts.length === 0 ? (
-                      <Typography color="text.secondary">No drafts found</Typography>
-                    ) : (
-                      <Stack spacing={2}>
-                        {drafts.map((draft) => (
-                          <Card key={draft.id} sx={{ p: 2 }}>
-                            <Stack direction="row" alignItems="center" spacing={2}>
-                              <Checkbox
-                                checked={selectedDrafts.includes(draft.id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedDrafts([...selectedDrafts, draft.id]);
-                                  } else {
-                                    setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
-                                  }
-                                }}
-                              />
-                              <Stack spacing={1} sx={{ flex: 1 }}>
-                                <Typography variant="h6">{draft.title}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                  Date: {draft.date.split('-').reverse().join('/')}
-                                </Typography>
-                                {draft.localizations?.map((loc) => (
-                                  <Box key={loc.locale}>
-                                    <Typography variant="subtitle2" color="text.secondary">
-                                      {loc.locale.toUpperCase()}: {loc.title}
-                                    </Typography>
-                                  </Box>
-                                ))}
-                              </Stack>
-                              <Button
-                                variant="outlined"
-                                onClick={() => handleEditDraft(draft)}
-                                sx={{ minWidth: 100 }}
-                              >
-                                Edit
-                              </Button>
-                            </Stack>
-                          </Card>
-                        ))}
-                      </Stack>
-                    )}
+                <Box sx={{ mt: 2 }}>
+                  <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                    <Button
+                      variant="contained"
+                      onClick={publishSelectedDrafts}
+                      disabled={selectedDrafts.length === 0}
+                      sx={{
+                        backgroundColor: colorPalette.primary,
+                        '&:hover': {
+                          backgroundColor: colorPalette.secondary,
+                        }
+                      }}
+                    >
+                      Publish Selected
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      onClick={deleteSelectedDrafts}
+                      disabled={selectedDrafts.length === 0}
+                    >
+                      Delete Selected
+                    </Button>
                   </Stack>
+
+                  {drafts.length === 0 ? (
+                    <Typography color="text.secondary">No drafts found</Typography>
+                  ) : (
+                    <Stack spacing={2}>
+                      {drafts.map((draft) => (
+                        <Card key={draft.id} sx={{ p: 2 }}>
+                          <Stack direction="row" alignItems="center" spacing={2}>
+                            <Checkbox
+                              checked={selectedDrafts.includes(draft.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedDrafts([...selectedDrafts, draft.id]);
+                                } else {
+                                  setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
+                                }
+                              }}
+                            />
+                            <Stack spacing={1} sx={{ flex: 1 }}>
+                              <Typography variant="h6">{draft.title}</Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                Date: {draft.date.split('-').reverse().join('/')}
+                              </Typography>
+                              {draft.localizations?.map((loc) => (
+                                <Box key={loc.locale}>
+                                  <Typography variant="subtitle2" color="text.secondary">
+                                    {loc.locale.toUpperCase()}: {loc.title}
+                                  </Typography>
+                                </Box>
+                              ))}
+                            </Stack>
+                            <Button
+                              variant="outlined"
+                              onClick={() => handleEditDraft(draft, 'drafts')}
+                              sx={{ minWidth: 100 }}
+                            >
+                              Edit
+                            </Button>
+                          </Stack>
+                        </Card>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+              )}
+              {activeTab === 3 && (
+                <Box sx={{ mt: 2 }}>
+                  {console.log('Rendering Manage Published tab, published:', publishedPosts)}
+                  <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                    <Button
+                      variant="contained"
+                      color="warning"
+                      onClick={unpublishSelectedPosts}
+                      disabled={selectedPublished.length === 0}
+                    >
+                      Unpublish Selected
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      onClick={deleteSelectedPosts}
+                      disabled={selectedPublished.length === 0}
+                    >
+                      Delete Selected
+                    </Button>
+                  </Stack>
+
+                  {publishedPosts.map((post) => (
+                    <Card key={post.id} sx={{ mb: 2, p: 2 }}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Checkbox
+                          checked={selectedPublished.includes(post.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPublished([...selectedPublished, post.id]);
+                            } else {
+                              setSelectedPublished(selectedPublished.filter(id => id !== post.id));
+                            }
+                          }}
+                        />
+                        <Box sx={{ flexGrow: 1 }}>
+                          <Typography variant="h6">{post.title}</Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Date: {new Date(post.date).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                        <IconButton
+                          onClick={() => handleEditDraft(post, 'published')}
+                          sx={{ color: 'primary.main' }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Stack>
+                    </Card>
+                  ))}
                 </Box>
               )}
             </Box>
@@ -2054,9 +2175,11 @@ function AdminPanel() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditModalOpen(false)}>Cancel</Button>
-          <Button onClick={() => handleUpdateDraft(false)} variant="outlined">
-            Save Draft
-          </Button>
+          {editSource === 'drafts' && (
+            <Button onClick={() => handleUpdateDraft(false)} variant="outlined">
+              Save Draft
+            </Button>
+          )}
           <Button 
             onClick={() => handleUpdateDraft(true)} 
             variant="contained"
@@ -2067,7 +2190,7 @@ function AdminPanel() {
               }
             }}
           >
-            Save & Publish
+            {editSource === 'drafts' ? 'Save & Publish' : 'Update Published'}
           </Button>
         </DialogActions>
       </Dialog>
