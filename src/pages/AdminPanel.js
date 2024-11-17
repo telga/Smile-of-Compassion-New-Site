@@ -163,6 +163,155 @@ const updateMutation = `
   }
 `;
 
+// Update the createAssetMutation to be more specific
+const createAssetMutation = `
+  mutation CreateAsset($fileName: String!) {
+    createAsset(data: { fileName: $fileName }) {
+      id
+      url
+      fileName
+      handle
+      mimeType
+      size
+      upload {
+        status
+        expiresAt
+        requestPostData {
+          url
+          date
+          key
+          signature
+          algorithm
+          policy
+          credential
+          securityToken
+        }
+      }
+    }
+  }
+`;
+
+// Add this helper function to handle asset creation
+const createAssetInHygraph = async (file, hygraphUrl, authToken) => {
+  const response = await fetch(hygraphUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${authToken}`
+    },
+    body: JSON.stringify({
+      query: createAssetMutation,
+      variables: {
+        fileName: file.name
+      }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Network error: ${response.status} ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  // Log the full response for debugging
+  console.log('Asset creation response:', JSON.stringify(result, null, 2));
+
+  if (result.errors) {
+    throw new Error(result.errors.map(e => e.message).join(', '));
+  }
+
+  if (!result.data?.createAsset?.upload?.requestPostData) {
+    throw new Error('Invalid response format from asset creation');
+  }
+
+  return result.data.createAsset;
+};
+
+// Keep the original createMutation simple
+const createMutation = `
+  mutation CreateProject(
+    $titleEn: String!
+    $titleVn: String!
+    $descriptionEn: RichTextAST!
+    $descriptionVn: RichTextAST!
+    $date: Date!
+  ) {
+    createProject(
+      data: {
+        title: $titleEn
+        description: $descriptionEn
+        date: $date
+        localizations: {
+          create: {
+            locale: vn
+            data: {
+              title: $titleVn
+              description: $descriptionVn
+            }
+          }
+        }
+      }
+    ) {
+      id
+      title
+      date
+      localizations {
+        locale
+      }
+    }
+  }
+`;
+
+// Add update mutation for assets
+const updateProjectAssetsMutation = `
+  mutation UpdateProjectAssets(
+    $id: ID!
+    $image: ID
+    $images: [ID!]
+  ) {
+    updateProject(
+      where: { id: $id }
+      data: {
+        image: { connect: { id: $image } }
+        images: { connect: { where: { id_in: $images } } }
+      }
+    ) {
+      id
+      image { id url }
+      images { id url }
+    }
+  }
+`;
+
+const uploadFileToS3 = async (file, requestPostData) => {
+  const formData = new FormData();
+  
+  try {
+    // Add all required fields in the correct order
+    formData.append('key', requestPostData.key);
+    formData.append('X-Amz-Algorithm', requestPostData.algorithm);
+    formData.append('X-Amz-Credential', requestPostData.credential);
+    formData.append('X-Amz-Date', requestPostData.date);
+    formData.append('X-Amz-Security-Token', requestPostData.securityToken);
+    formData.append('Policy', requestPostData.policy);
+    formData.append('X-Amz-Signature', requestPostData.signature);
+    formData.append('file', file);
+
+    const response = await fetch(requestPostData.url, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`S3 upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+  } catch (error) {
+    console.error('S3 Upload Error:', error);
+    throw error;
+  }
+};
+
 function AdminPanel() {
   const [activeTab, setActiveTab] = useState(0);
   const [email, setEmail] = useState('');
@@ -285,60 +434,13 @@ function AdminPanel() {
     };
   }, [previews]);
 
-  const createMutation = `
-    mutation CreateProject(
-      $titleEn: String!
-      $titleVn: String!
-      $descriptionEn: RichTextAST!
-      $descriptionVn: RichTextAST!
-      $date: Date!
-    ) {
-      createProject(
-        data: {
-          title: $titleEn
-          description: $descriptionEn
-          date: $date
-          localizations: {
-            create: {
-              locale: vn
-              data: {
-                title: $titleVn
-                description: $descriptionVn
-              }
-            }
-          }
-        }
-      ) {
-        id
-        title
-        date
-        localizations {
-          locale
-        }
-      }
-    }
-  `;
-
   const handleSubmit = async (shouldPublish = false) => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      const descriptionEn = transformToSlateAST(editorEn.getJSON());
-      const descriptionVn = transformToSlateAST(editorVn.getJSON());
-
-      const variables = {
-        titleEn: formData.titleEn,
-        titleVn: formData.titleVn,
-        descriptionEn: descriptionEn,
-        descriptionVn: descriptionVn,
-        date: formData.date.toISOString().split('T')[0]
-      };
-
-      console.log('Sending to Hygraph:', variables);
-
-      // Create the draft
-      const response = await fetch(hygraphUrl, {
+      // 1. First create the project without assets
+      const createResponse = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,20 +448,85 @@ function AdminPanel() {
         },
         body: JSON.stringify({
           query: createMutation,
-          variables
+          variables: {
+            titleEn: formData.titleEn,
+            titleVn: formData.titleVn,
+            descriptionEn: transformToSlateAST(editorEn.getJSON()),
+            descriptionVn: transformToSlateAST(editorVn.getJSON()),
+            date: formData.date.toISOString().split('T')[0]
+          }
         })
       });
 
-      const result = await response.json();
-      console.log('Create result:', result);
-
-      if (result.errors) {
-        throw new Error(result.errors[0].message);
+      const createResult = await createResponse.json();
+      if (createResult.errors) {
+        throw new Error(createResult.errors[0].message);
       }
 
-      // If shouldPublish is true, publish the newly created draft
-      if (shouldPublish && result.data.createProject) {
-        await publishDraft(result.data.createProject.id);
+      const projectId = createResult.data.createProject.id;
+
+      // 2. If there are assets, upload them and update the project
+      let featuredImageId = null;
+      let additionalImageIds = [];
+
+      if (formData.image || formData.images?.length > 0) {
+        try {
+          // Handle featured image
+          if (formData.image) {
+            try {
+              const asset = await createAssetInHygraph(formData.image, hygraphUrl, authToken);
+              await uploadFileToS3(formData.image, asset.upload.requestPostData);
+              featuredImageId = asset.id;
+            } catch (error) {
+              console.warn('Featured image upload failed:', error);
+            }
+          }
+
+          // Handle additional images
+          if (formData.images?.length > 0) {
+            for (const image of formData.images) {
+              try {
+                const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
+                await uploadFileToS3(image, asset.upload.requestPostData);
+                additionalImageIds.push(asset.id);
+              } catch (error) {
+                console.warn(`Additional image upload failed:`, error);
+              }
+            }
+          }
+
+          // Only update if we have successfully uploaded assets
+          if (featuredImageId || additionalImageIds.length > 0) {
+            const updateResponse = await fetch(hygraphUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+              },
+              body: JSON.stringify({
+                query: updateProjectAssetsMutation,
+                variables: {
+                  id: projectId,
+                  ...(featuredImageId && { image: featuredImageId }),
+                  ...(additionalImageIds.length > 0 && { images: additionalImageIds })
+                }
+              })
+            });
+
+            const updateResult = await updateResponse.json();
+            if (updateResult.errors) {
+              console.warn('Asset update failed:', updateResult.errors);
+            }
+          }
+        } catch (error) {
+          console.warn('Asset handling failed:', error);
+          // Continue with the process even if asset handling fails
+        }
+      }
+
+      // 3. Handle publishing if needed
+      if (shouldPublish) {
+        await publishDraft(projectId);
         setSnackbar({
           open: true,
           message: 'Post published successfully!',
@@ -379,7 +546,7 @@ function AdminPanel() {
         titleVn: '',
         descriptionEn: '',
         descriptionVn: '',
-        date: null,
+        date: new Date(),
         image: null,
         images: []
       });
@@ -473,9 +640,6 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      console.log('Starting fetch from Hygraph...');
-      console.log('URL:', hygraphUrl);
-
       const query = `
         {
           drafts: projects(stage: DRAFT) {
@@ -511,8 +675,6 @@ function AdminPanel() {
         }
       `;
 
-      console.log('Query being sent:', query);
-
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -523,10 +685,7 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Raw response from Hygraph:', result);
-
       if (result.errors) {
-        console.error('GraphQL Errors:', result.errors);
         throw new Error(result.errors[0].message);
       }
 
@@ -534,28 +693,15 @@ function AdminPanel() {
       const allDrafts = result.data.drafts || [];
       const publishedPosts = result.data.published || [];
 
-      console.log('All drafts from query:', allDrafts);
-      console.log('Published posts from query:', publishedPosts);
-
       // True drafts are those that exist in DRAFT but not in PUBLISHED
       const trueDrafts = allDrafts.filter(draft => 
         !publishedPosts.some(pub => pub.id === draft.id)
       );
 
-      console.log('Filtered true drafts:', trueDrafts);
-
       setDrafts(trueDrafts);
       setPublishedPosts(publishedPosts);
 
-      console.log('State updated - Drafts:', trueDrafts.length, 'Published:', publishedPosts.length);
-
-      console.log('Example published post description:', result.data.published[0]?.description);
-      console.log('Example of working rich text structure:', 
-        JSON.stringify(result.data.published[0]?.description, null, 2)
-      );
-
     } catch (error) {
-      console.error('Error in fetchDrafts:', error);
       setSnackbar({
         open: true,
         message: `Failed to fetch posts: ${error.message}`,
@@ -564,11 +710,10 @@ function AdminPanel() {
     }
   };
 
-  // Add useEffect to call fetchDrafts when component mounts
+  // Update useEffect to remove console.log
   useEffect(() => {
-    console.log('AdminPanel mounted, calling fetchDrafts...');
     fetchDrafts();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   const publishDraft = async (draftId) => {
     try {
