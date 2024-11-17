@@ -903,7 +903,11 @@ function AdminPanel() {
       titleVn: draft.localizations?.[0]?.title || '',
       date: new Date(`${draft.date}T12:00:00`),
       descriptionEn: draft.description.raw,
-      descriptionVn: draft.localizations?.[0]?.description?.raw || ''
+      descriptionVn: draft.localizations?.[0]?.description?.raw || '',
+      image: draft.image,
+      images: draft.images || [],
+      removedImages: [],
+      newImages: []
     });
     setEditSource(source);
 
@@ -1077,6 +1081,53 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // Handle removed assets first
+      if (editingDraft.removedImage || editingDraft.removedImages?.length > 0) {
+        const removedAssetIds = [];
+        if (editingDraft.removedImage && editingDraft.image?.id) {
+          removedAssetIds.push(editingDraft.image.id);
+        }
+        if (editingDraft.removedImages?.length > 0) {
+          removedAssetIds.push(...editingDraft.removedImages.map(img => img.id).filter(Boolean));
+        }
+
+        if (removedAssetIds.length > 0) {
+          await fetch(hygraphUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              query: deleteAssetsMutation,
+              variables: {
+                where: {
+                  id_in: removedAssetIds
+                }
+              }
+            })
+          });
+        }
+      }
+
+      // Handle new assets
+      let newFeaturedImage = null;
+      let newAdditionalImages = [];
+
+      if (editingDraft.newImage) {
+        const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
+        await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
+        newFeaturedImage = { id: asset.id };
+      }
+
+      if (editingDraft.newImages?.length > 0) {
+        for (const image of editingDraft.newImages) {
+          const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
+          await uploadFileToS3(image, asset.upload.requestPostData);
+          newAdditionalImages.push({ id: asset.id });
+        }
+      }
+
       const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
       const descriptionVn = transformToSlateAST(editEditorVn.getJSON());
 
@@ -1086,7 +1137,11 @@ function AdminPanel() {
         titleVn: editingDraft.titleVn,
         descriptionEn: descriptionEn,
         descriptionVn: descriptionVn,
-        date: editingDraft.date.toISOString().split('T')[0]
+        date: editingDraft.date.toISOString().split('T')[0],
+        ...(newFeaturedImage && { imageConnect: { id: newFeaturedImage.id } }),
+        ...(newAdditionalImages.length > 0 && { 
+          imagesConnect: newAdditionalImages.map(img => ({ where: { id: img.id } }))
+        })
       };
 
       console.log('Sending to Hygraph:', variables);
@@ -2618,7 +2673,231 @@ function AdminPanel() {
             />
 
             {/* Image Fields */}
-            {/* ... rest of the image fields ... */}
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Featured Image
+                </Typography>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  sx={{
+                    width: '100%',
+                    height: editingDraft?.image ? 'auto' : '120px',
+                    border: '2px dashed rgba(0,0,0,0.12)',
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 1,
+                    padding: editingDraft?.image ? '0' : '20px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&:hover': {
+                      borderColor: colorPalette.primary,
+                      backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                      '& .remove-overlay': {
+                        opacity: 1
+                      }
+                    }
+                  }}
+                >
+                  {editingDraft?.image ? (
+                    <>
+                      <img 
+                        src={typeof editingDraft.image === 'string' ? editingDraft.image : editingDraft.image.url} 
+                        alt="Preview" 
+                        style={{ 
+                          width: '100%',
+                          height: 'auto',
+                          display: 'block'
+                        }} 
+                      />
+                      <Box
+                        className="remove-overlay"
+                        sx={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          backgroundColor: 'rgba(0,0,0,0.5)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: 0,
+                          transition: 'opacity 0.2s ease-in-out',
+                        }}
+                      >
+                        <IconButton
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setEditingDraft(prev => ({ ...prev, image: null, removedImage: true }));
+                          }}
+                          sx={{ color: 'white' }}
+                        >
+                          <CloseIcon />
+                        </IconButton>
+                      </Box>
+                    </>
+                  ) : (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center'
+                    }}>
+                      <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                        Drop your image here, or click to browse
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        (Supports: JPG, PNG, WebP)
+                      </Typography>
+                    </Box>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setEditingDraft(prev => ({ 
+                          ...prev, 
+                          image: URL.createObjectURL(file),
+                          newImage: file
+                        }));
+                      }
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                </Button>
+              </Box>
+
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Additional Images
+                </Typography>
+                <Box sx={{ 
+                  border: '2px dashed rgba(0,0,0,0.12)',
+                  borderRadius: 2,
+                  p: 2,
+                  '&:hover': {
+                    borderColor: colorPalette.primary,
+                    backgroundColor: 'rgba(76, 175, 80, 0.04)'
+                  }
+                }}>
+                  {editingDraft?.images?.length > 0 && (
+                    <Box sx={{ 
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                      gap: 2,
+                      mb: 2
+                    }}>
+                      {editingDraft.images.map((image, index) => (
+                        <Box
+                          key={index}
+                          sx={{
+                            position: 'relative',
+                            paddingTop: '100%',
+                            borderRadius: 1,
+                            overflow: 'hidden'
+                          }}
+                        >
+                          <img
+                            src={typeof image === 'string' ? image : image.url}
+                            alt={`Preview ${index + 1}`}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                          <IconButton
+                            onClick={() => {
+                              const newImages = [...editingDraft.images];
+                              const removedImage = newImages.splice(index, 1)[0];
+                              setEditingDraft(prev => ({ 
+                                ...prev, 
+                                images: newImages,
+                                removedImages: [...(prev.removedImages || []), removedImage]
+                              }));
+                            }}
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              backgroundColor: 'rgba(0,0,0,0.5)',
+                              color: 'white',
+                              '&:hover': {
+                                backgroundColor: 'rgba(0,0,0,0.7)'
+                              },
+                              padding: '4px',
+                              '& .MuiSvgIcon-root': {
+                                fontSize: '1rem'
+                              }
+                            }}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    fullWidth
+                    sx={{
+                      height: '120px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 1,
+                      border: 'none',
+                      '&:hover': {
+                        backgroundColor: 'rgba(76, 175, 80, 0.04)',
+                        border: 'none'
+                      }
+                    }}
+                  >
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center'
+                    }}>
+                      <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+                        Drop multiple images here, or click to browse
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        (Supports: JPG, PNG, WebP)
+                      </Typography>
+                    </Box>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files);
+                        const newImageUrls = files.map(file => ({
+                          url: URL.createObjectURL(file),
+                          file
+                        }));
+                        setEditingDraft(prev => ({ 
+                          ...prev, 
+                          images: [...(prev.images || []), ...newImageUrls],
+                          newImages: [...(prev.newImages || []), ...files]
+                        }));
+                      }}
+                      style={{ display: 'none' }}
+                    />
+                  </Button>
+                </Box>
+              </Box>
+            </Stack>
           </Stack>
         </DialogContent>
         <DialogActions>
