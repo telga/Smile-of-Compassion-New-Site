@@ -262,25 +262,31 @@ const createMutation = `
   }
 `;
 
-// Add update mutation for assets
+// Update the updateProjectAssetsMutation to handle both single and multiple images
 const updateProjectAssetsMutation = `
   mutation UpdateProjectAssets(
-    $id: ID!
-    $image: ID
-    $images: [ID!]
+  $id: ID!
+  $imageConnect: AssetWhereUniqueInput
+  $imagesConnect: [AssetConnectInput!]
+) {
+  updateProject(
+    where: { id: $id }
+    data: {
+      image: { connect: $imageConnect }
+      images: { connect: $imagesConnect }
+    }
   ) {
-    updateProject(
-      where: { id: $id }
-      data: {
-        image: { connect: { id: $image } }
-        images: { connect: { where: { id_in: $images } } }
-      }
-    ) {
+    id
+    image {
       id
-      image { id url }
-      images { id url }
+      url
+    }
+    images {
+      id
+      url
     }
   }
+}
 `;
 
 const uploadFileToS3 = async (file, requestPostData) => {
@@ -466,8 +472,8 @@ function AdminPanel() {
       const projectId = createResult.data.createProject.id;
 
       // 2. If there are assets, upload them and update the project
-      let featuredImageId = null;
-      let additionalImageIds = [];
+      let featuredImage = null;
+      let additionalImages = [];
 
       if (formData.image || formData.images?.length > 0) {
         try {
@@ -476,7 +482,7 @@ function AdminPanel() {
             try {
               const asset = await createAssetInHygraph(formData.image, hygraphUrl, authToken);
               await uploadFileToS3(formData.image, asset.upload.requestPostData);
-              featuredImageId = asset.id;
+              featuredImage = { id: asset.id };
             } catch (error) {
               console.warn('Featured image upload failed:', error);
             }
@@ -488,7 +494,7 @@ function AdminPanel() {
               try {
                 const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
                 await uploadFileToS3(image, asset.upload.requestPostData);
-                additionalImageIds.push(asset.id);
+                additionalImages.push({ id: asset.id });
               } catch (error) {
                 console.warn(`Additional image upload failed:`, error);
               }
@@ -496,7 +502,19 @@ function AdminPanel() {
           }
 
           // Only update if we have successfully uploaded assets
-          if (featuredImageId || additionalImageIds.length > 0) {
+          if (featuredImage || additionalImages.length > 0) {
+            const updateVariables = {
+              id: projectId,
+              ...(featuredImage && { 
+                imageConnect: { id: featuredImage.id }
+              }),
+              ...(additionalImages.length > 0 && { 
+                imagesConnect: additionalImages.map(img => ({ where: { id: img.id } }))
+              })
+            };
+
+            console.log('Updating project with assets:', updateVariables);
+
             const updateResponse = await fetch(hygraphUrl, {
               method: 'POST',
               headers: {
@@ -505,17 +523,15 @@ function AdminPanel() {
               },
               body: JSON.stringify({
                 query: updateProjectAssetsMutation,
-                variables: {
-                  id: projectId,
-                  ...(featuredImageId && { image: featuredImageId }),
-                  ...(additionalImageIds.length > 0 && { images: additionalImageIds })
-                }
+                variables: updateVariables
               })
             });
 
             const updateResult = await updateResponse.json();
             if (updateResult.errors) {
-              console.warn('Asset update failed:', updateResult.errors);
+              console.error('Asset update failed:', updateResult.errors);
+            } else {
+              console.log('Assets connected successfully:', updateResult.data);
             }
           }
         } catch (error) {
