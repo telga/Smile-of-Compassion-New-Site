@@ -33,8 +33,23 @@ const transformToSlateAST = (editorContent) => {
 
   const transformedContent = editorContent.content.map(node => {
     if (node.type === 'heading') {
+      let headingType;
+      switch (node.attrs.level) {
+        case 1:
+          headingType = 'heading-one';
+          break;
+        case 2:
+          headingType = 'heading-two';
+          break;
+        case 3:
+          headingType = 'heading-three';
+          break;
+        default:
+          headingType = 'paragraph';
+      }
+      
       return {
-        type: `heading-${node.attrs.level}`,
+        type: headingType,
         children: [{
           text: node.content?.[0]?.text || '',
           ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
@@ -103,14 +118,33 @@ const transformToSlateAST = (editorContent) => {
 
 const updateMutation = `
   mutation UpdateProject(
-    $where: ProjectWhereUniqueInput!
-    $data: ProjectUpdateInput!
-    $locale: Locale!
+    $titleEn: String!
+    $titleVn: String!
+    $descriptionEn: RichTextAST!
+    $descriptionVn: RichTextAST!
+    $date: Date!
+    $id: ID!
   ) {
     updateProject(
-      where: $where,
-      data: $data,
-      locale: $locale
+      where: { id: $id }
+      data: {
+        title: $titleEn
+        description: $descriptionEn
+        date: $date
+        localizations: {
+          upsert: {
+            locale: vn,
+            create: {
+              title: $titleVn
+              description: $descriptionVn
+            }
+            update: {
+              title: $titleVn
+              description: $descriptionVn
+            }
+          }
+        }
+      }
     ) {
       id
       title
@@ -303,6 +337,7 @@ function AdminPanel() {
 
       console.log('Sending to Hygraph:', variables);
 
+      // Create the draft
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -322,12 +357,41 @@ function AdminPanel() {
         throw new Error(result.errors[0].message);
       }
 
-      // Rest of your code remains the same...
+      // If shouldPublish is true, publish the newly created draft
+      if (shouldPublish && result.data.createProject) {
+        await publishDraft(result.data.createProject.id);
+        setSnackbar({
+          open: true,
+          message: 'Post published successfully!',
+          severity: 'success'
+        });
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Draft saved successfully!',
+          severity: 'success'
+        });
+      }
+
+      // Reset form
+      setFormData({
+        titleEn: '',
+        titleVn: '',
+        descriptionEn: '',
+        descriptionVn: '',
+        date: null,
+        image: null,
+        images: []
+      });
+      editorEn.commands.setContent('');
+      editorVn.commands.setContent('');
+      setPreviews({ image: null, images: [] });
+
     } catch (error) {
       console.error('Error creating post:', error);
       setSnackbar({
         open: true,
-        message: `Failed to create draft: ${error.message}`,
+        message: `Failed to ${shouldPublish ? 'publish' : 'save draft'}: ${error.message}`,
         severity: 'error'
       });
     }
@@ -742,6 +806,17 @@ function AdminPanel() {
       const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
       const descriptionVn = transformToSlateAST(editEditorVn.getJSON());
 
+      const variables = {
+        id: editingDraft.id,
+        titleEn: editingDraft.titleEn,
+        titleVn: editingDraft.titleVn,
+        descriptionEn: descriptionEn,
+        descriptionVn: descriptionVn,
+        date: editingDraft.date.toISOString().split('T')[0]
+      };
+
+      console.log('Sending to Hygraph:', variables);
+
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -750,37 +825,13 @@ function AdminPanel() {
         },
         body: JSON.stringify({
           query: updateMutation,
-          variables: {
-            where: {
-              id: editingDraft.id
-            },
-            data: {
-              title: editingDraft.titleEn,
-              description: descriptionEn,
-              date: editingDraft.date.toISOString().split('T')[0],
-              localizations: {
-                upsert: [{
-                  where: { locale: "vn" },
-                  data: {
-                    create: {
-                      locale: "vn",
-                      title: editingDraft.titleVn,
-                      description: descriptionVn
-                    },
-                    update: {
-                      title: editingDraft.titleVn,
-                      description: descriptionVn
-                    }
-                  }
-                }]
-              }
-            },
-            locale: "en"
-          }
+          variables
         })
       });
 
       const result = await response.json();
+      console.log('Create result:', result);
+
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
