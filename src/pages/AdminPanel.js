@@ -20,6 +20,7 @@ import {
   FormatListNumbered 
 } from '@mui/icons-material';
 import EditIcon from '@mui/icons-material/Edit';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -124,6 +125,10 @@ const updateMutation = `
     $descriptionVn: RichTextAST!
     $date: Date!
     $id: ID!
+    $imageConnect: AssetWhereUniqueInput
+    $imageDisconnect: Boolean
+    $imagesConnect: [AssetConnectInput!]
+    $imagesDisconnect: [AssetWhereUniqueInput!]
   ) {
     updateProject(
       where: { id: $id }
@@ -131,9 +136,17 @@ const updateMutation = `
         title: $titleEn
         description: $descriptionEn
         date: $date
+        image: { 
+          connect: $imageConnect
+          disconnect: $imageDisconnect
+        }
+        images: {
+          connect: $imagesConnect
+          disconnect: $imagesDisconnect
+        }
         localizations: {
           upsert: {
-            locale: vn,
+            locale: vn
             create: {
               title: $titleVn
               description: $descriptionVn
@@ -152,6 +165,14 @@ const updateMutation = `
         raw
       }
       date
+      image {
+        id
+        url
+      }
+      images {
+        id
+        url
+      }
       localizations {
         locale
         title
@@ -397,6 +418,34 @@ function AdminPanel() {
       },
     },
   });
+  const [refreshKey] = useState(0);
+
+  // Initialize tab after authentication
+  useEffect(() => {
+    if (user) {  // Only run this after user is authenticated
+      const storedTab = localStorage.getItem('adminActiveTab');
+      if (storedTab) {
+        setActiveTab(parseInt(storedTab));
+        
+        // Update hash to match stored tab
+        const tabToHash = {
+          0: '#add-post',
+          1: '#add-facebook-posts',
+          2: '#drafts',
+          3: '#published'
+        };
+        const hash = tabToHash[parseInt(storedTab)] || '#drafts';
+        window.location.hash = hash;
+      }
+    }
+  }, [user]); // Depend on user state
+
+  // Keep your existing tab change effect
+  useEffect(() => {
+    if (user) {  // Only store tab when authenticated
+      localStorage.setItem('adminActiveTab', activeTab.toString());
+    }
+  }, [activeTab, user]);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -780,97 +829,13 @@ function AdminPanel() {
   // Update useEffect to remove console.log
   useEffect(() => {
     fetchDrafts();
-  }, []);
+  }, [refreshKey]);
 
   // Update the publishDraft function to also publish connected assets
   const publishDraft = async (draftId) => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
-
-      // First, get the project's connected assets
-      const getProjectAssetsQuery = `
-        query GetProjectAssets($id: ID!) {
-          project(where: { id: $id }) {
-            image {
-              id
-            }
-            images {
-              id
-            }
-          }
-        }
-      `;
-
-      const assetsResponse = await fetch(hygraphUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          query: getProjectAssetsQuery,
-          variables: { id: draftId }
-        })
-      });
-
-      const assetsResult = await assetsResponse.json();
-      
-      // Collect all asset IDs
-      const assetIds = [];
-      if (assetsResult.data?.project?.image?.id) {
-        assetIds.push(assetsResult.data.project.image.id);
-      }
-      if (assetsResult.data?.project?.images) {
-        assetIds.push(...assetsResult.data.project.images.map(img => img.id));
-      }
-
-      // Publish assets if there are any
-      if (assetIds.length > 0) {
-        // Publish each asset individually
-        for (const assetId of assetIds) {
-          const publishAssetsResponse = await fetch(hygraphUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-              query: publishAssetsMutation,
-              variables: {
-                where: {
-                  id: assetId
-                }
-              }
-            })
-          });
-
-          const publishAssetsResult = await publishAssetsResponse.json();
-          if (publishAssetsResult.errors) {
-            console.error('Error publishing asset:', assetId, publishAssetsResult.errors);
-          } else {
-            console.log('Successfully published asset:', assetId);
-          }
-        }
-      }
-
-      // Publish the project
-      const publishMutation = `
-        mutation PublishProject($where: ProjectWhereUniqueInput!) {
-          publishProject(
-            where: $where, 
-            to: PUBLISHED,
-            locales: [en, vn]
-          ) {
-            id
-            title
-            date
-            localizations {
-              locale
-            }
-          }
-        }
-      `;
 
       const response = await fetch(hygraphUrl, {
         method: 'POST',
@@ -879,7 +844,22 @@ function AdminPanel() {
           'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          query: publishMutation,
+          query: `
+            mutation PublishProject($where: ProjectWhereUniqueInput!) {
+              publishProject(
+                where: $where, 
+                to: PUBLISHED,
+                locales: [en, vn]
+              ) {
+                id
+                title
+                date
+                localizations {
+                  locale
+                }
+              }
+            }
+          `,
           variables: {
             where: {
               id: draftId
@@ -896,7 +876,7 @@ function AdminPanel() {
       return result.data.publishProject;
     } catch (error) {
       console.error('Error publishing draft:', error);
-      throw error;
+      throw error; // Re-throw to be handled by the caller
     }
   };
 
@@ -1086,71 +1066,133 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Handle removed assets first
-      if (editingDraft.removedImage || editingDraft.removedImages?.length > 0) {
-        const removedAssetIds = [];
-        if (editingDraft.removedImage && editingDraft.image?.id) {
-          removedAssetIds.push(editingDraft.image.id);
-        }
-        if (editingDraft.removedImages?.length > 0) {
-          removedAssetIds.push(...editingDraft.removedImages.map(img => img.id).filter(Boolean));
-        }
+      console.log('Starting update with draft data:', {
+        id: editingDraft.id,
+        removedImage: editingDraft.removedImage,
+        removedImages: editingDraft.removedImages,
+        newImage: editingDraft.newImage,
+        newImages: editingDraft.newImages,
+        currentImage: editingDraft.image,
+        currentImages: editingDraft.images
+      });
 
-        if (removedAssetIds.length > 0) {
-          await fetch(hygraphUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-              query: deleteAssetsMutation,
-              variables: {
-                where: {
-                  id_in: removedAssetIds
-                }
+      // Handle removed assets first
+      const removedAssetIds = [];
+      if (editingDraft.removedImage && editingDraft.image?.id) {
+        removedAssetIds.push(editingDraft.image.id);
+        console.log('Adding featured image to removal list:', editingDraft.image.id);
+      }
+      if (editingDraft.removedImages?.length > 0) {
+        const additionalRemovedIds = editingDraft.removedImages.map(img => img.id).filter(Boolean);
+        removedAssetIds.push(...additionalRemovedIds);
+        console.log('Adding additional images to removal list:', additionalRemovedIds);
+      }
+
+      if (removedAssetIds.length > 0) {
+        console.log('Attempting to delete assets:', removedAssetIds);
+        const deleteResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: deleteAssetsMutation,
+            variables: {
+              where: {
+                id_in: removedAssetIds
               }
-            })
-          });
-        }
+            }
+          })
+        });
+        const deleteResult = await deleteResponse.json();
+        console.log('Delete assets response:', deleteResult);
       }
 
       // Handle new assets
       let newFeaturedImage = null;
       let newAdditionalImages = [];
 
+      // Upload new featured image if exists
       if (editingDraft.newImage) {
-        const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
-        await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
-        newFeaturedImage = { id: asset.id };
-      }
-
-      if (editingDraft.newImages?.length > 0) {
-        for (const image of editingDraft.newImages) {
-          const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
-          await uploadFileToS3(image, asset.upload.requestPostData);
-          newAdditionalImages.push({ id: asset.id });
+        console.log('Uploading new featured image:', editingDraft.newImage.name);
+        try {
+          const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
+          await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
+          newFeaturedImage = { id: asset.id };
+          console.log('New featured image uploaded successfully:', newFeaturedImage);
+        } catch (error) {
+          console.error('Failed to upload featured image:', error);
         }
       }
 
-      const descriptionEn = transformToSlateAST(editEditorEn.getJSON());
-      const descriptionVn = transformToSlateAST(editEditorVn.getJSON());
+      // Upload new additional images if they exist
+      if (editingDraft.newImages?.length > 0) {
+        console.log('Uploading new additional images:', editingDraft.newImages.map(img => img.name));
+        for (const image of editingDraft.newImages) {
+          try {
+            const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
+            await uploadFileToS3(image, asset.upload.requestPostData);
+            newAdditionalImages.push({ id: asset.id });
+            console.log('Additional image uploaded successfully:', asset.id);
+          } catch (error) {
+            console.error('Failed to upload additional image:', error);
+          }
+        }
+      }
 
+      // Prepare update variables
       const variables = {
         id: editingDraft.id,
         titleEn: editingDraft.titleEn,
         titleVn: editingDraft.titleVn,
-        descriptionEn: descriptionEn,
-        descriptionVn: descriptionVn,
+        descriptionEn: transformToSlateAST(editEditorEn.getJSON()),
+        descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
         date: editingDraft.date.toISOString().split('T')[0],
-        ...(newFeaturedImage && { imageConnect: { id: newFeaturedImage.id } }),
-        ...(newAdditionalImages.length > 0 && { 
-          imagesConnect: newAdditionalImages.map(img => ({ where: { id: img.id } }))
-        })
+        imageDisconnect: editingDraft.removedImage === true,
+        imageConnect: newFeaturedImage ? { id: newFeaturedImage.id } : 
+                       (editingDraft.removedImage ? null : 
+                       (editingDraft.image ? { id: editingDraft.image.id } : null))
       };
 
-      console.log('Sending to Hygraph:', variables);
+      // Handle additional images connections and disconnections
+      const existingImageIds = (editingDraft.images || [])
+        .filter(img => !editingDraft.removedImages?.some(removed => removed.id === img.id))
+        .map(img => ({ where: { id: img.id } }))
+        .filter(connection => connection.where.id); // Ensure we have valid IDs
 
+      const newImageConnections = newAdditionalImages
+        .map(img => ({ where: { id: img.id } }))
+        .filter(connection => connection.where.id); // Ensure we have valid IDs
+
+      // Only add imagesConnect if we have valid connections to make
+      if (existingImageIds.length > 0 || newImageConnections.length > 0) {
+        variables.imagesConnect = [...existingImageIds, ...newImageConnections];
+        console.log('Connecting images:', variables.imagesConnect);
+      }
+
+      // Handle disconnections for removed images
+      if (editingDraft.removedImages?.length > 0) {
+        variables.imagesDisconnect = editingDraft.removedImages
+          .filter(img => img.id) // Ensure we have valid IDs
+          .map(img => ({ id: img.id }));
+        console.log('Disconnecting images:', variables.imagesDisconnect);
+      }
+
+      // Log the final variables for debugging
+      console.log('Update variables:', {
+        ...variables,
+        imageStatus: {
+          isRemoving: editingDraft.removedImage,
+          currentImage: editingDraft.image,
+          newImage: newFeaturedImage,
+          existingImages: existingImageIds,
+          newImages: newImageConnections,
+          removedImages: variables.imagesDisconnect
+        }
+      });
+
+      // Update the project
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -1164,29 +1206,40 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Create result:', result);
+      console.log('Update project response:', result);
 
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
 
+      // Handle publishing if needed
       if (shouldPublish) {
-        await publishDraft(editingDraft.id);
+        console.log('Starting publish process...');
+        const publishResult = await publishDraft(editingDraft.id);
+        console.log('Publish result:', publishResult);
+        
+        // Immediately refresh after successful publish
+        const currentTab = window.location.hash || '#drafts';
+        window.location.href = `${window.location.pathname}${currentTab}`;
+        window.location.reload();
+        return; // Exit early since we're refreshing the page
       }
 
       setSnackbar({
         open: true,
-        message: `Draft ${shouldPublish ? 'published' : 'saved'} successfully!`,
+        message: `Draft ${shouldPublish ? 'published' : 'updated'} successfully!`,
         severity: 'success'
       });
 
       setEditModalOpen(false);
+      setSelectedDrafts([]);
       fetchDrafts();
+      
     } catch (error) {
       console.error('Error updating draft:', error);
       setSnackbar({
         open: true,
-        message: `Failed to ${shouldPublish ? 'publish' : 'save'} draft: ${error.message}`,
+        message: `Failed to update draft: ${error.message}`,
         severity: 'error'
       });
     }
@@ -1411,15 +1464,6 @@ function AdminPanel() {
           throw new Error(`Failed to publish project ${draftId}: ${publishResult.errors[0].message}`);
         }
       }
-
-      setSnackbar({
-        open: true,
-        message: 'Selected drafts and assets published successfully!',
-        severity: 'success'
-      });
-
-      setSelectedDrafts([]);
-      fetchDrafts();
     } catch (error) {
       console.error('Error publishing drafts:', error);
       setSnackbar({
@@ -2300,7 +2344,19 @@ function AdminPanel() {
                 </div>
               )}
               {activeTab === 2 && (
-                <Box sx={{ mt: 2 }}>
+                <Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h6">Manage Drafts</Typography>
+                    <IconButton 
+                      onClick={() => {
+                        localStorage.setItem('adminActiveTab', activeTab.toString());
+                        window.location.reload();
+                      }}
+                      sx={{ color: colorPalette.primary }}
+                    >
+                      <RefreshIcon />
+                    </IconButton>
+                  </Box>
                   <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
                     <Button
                       variant="contained"
