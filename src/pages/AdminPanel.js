@@ -686,10 +686,12 @@ function AdminPanel() {
             image {
               id
               stage
+              url
             }
             images {
               id
               stage
+              url
             }
             localizations {
               locale
@@ -709,10 +711,12 @@ function AdminPanel() {
             image {
               id
               stage
+              url
             }
             images {
               id
               stage
+              url
             }
             localizations {
               locale
@@ -897,6 +901,9 @@ function AdminPanel() {
   };
 
   const handleEditDraft = (draft, source) => {
+    console.log('Draft image data:', draft.image);
+    console.log('Draft additional images:', draft.images);
+    
     setEditingDraft({
       id: draft.id,
       titleEn: draft.title,
@@ -2706,7 +2713,7 @@ function AdminPanel() {
                   {editingDraft?.image ? (
                     <>
                       <img 
-                        src={typeof editingDraft.image === 'string' ? editingDraft.image : editingDraft.image.url} 
+                        src={editingDraft.image.url || editingDraft.image} // Add .url check
                         alt="Preview" 
                         style={{ 
                           width: '100%',
@@ -2804,7 +2811,7 @@ function AdminPanel() {
                           }}
                         >
                           <img
-                            src={typeof image === 'string' ? image : image.url}
+                            src={image.url || image} // Add .url check
                             alt={`Preview ${index + 1}`}
                             style={{
                               position: 'absolute',
