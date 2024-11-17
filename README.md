@@ -19,7 +19,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 
 
-**Current Task:** Content migration
+**Current Task:** Admin portal linked to Hygraph for an easier admin experience
 
 - [x] Skeleton site.
 - [x] Logos and backgrounds.
@@ -28,7 +28,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - [x] Contact form backend.
 - [x] Full stylization.
 - [x] Donations. - To add Credit/Debit option
-- [ ] Admin portal linked to Hygraph for an easier admin experience. - WIP
+- [ ] Admin portal linked to Hygraph for an easier admin experience.
 - [ ] Facebook post import to hygraph on admin portal using Meta API.
 - [ ] AI translations using OPENAI-API for unfilled locale in admin panel.
 
