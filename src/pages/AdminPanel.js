@@ -232,9 +232,6 @@ const createAssetInHygraph = async (file, hygraphUrl, authToken) => {
   }
 
   const result = await response.json();
-  
-  // Log the full response for debugging
-  console.log('Asset creation response:', JSON.stringify(result, null, 2));
 
   if (result.errors) {
     throw new Error(result.errors.map(e => e.message).join(', '));
@@ -369,8 +366,6 @@ const deleteAssetMutation = `
 const deleteAssetsForProjects = async (assetIds, hygraphUrl, authToken, drafts, selectedDrafts, publishedPosts, selectedPublished) => {
   if (assetIds.length === 0) return;
   
-  console.log('Starting asset deletion process for:', assetIds);
-
   try {
     // Get the selected posts/drafts data to differentiate between feature image and multiple images
     const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
@@ -390,9 +385,6 @@ const deleteAssetsForProjects = async (assetIds, hygraphUrl, authToken, drafts, 
       }
     });
 
-    console.log('Feature image IDs:', featureImageIds);
-    console.log('Additional image IDs:', additionalImageIds);
-
     // Delete all images one by one
     const allImageIds = [...featureImageIds, ...additionalImageIds];
     for (const imageId of allImageIds) {
@@ -410,7 +402,6 @@ const deleteAssetsForProjects = async (assetIds, hygraphUrl, authToken, drafts, 
         })
       });
       const result = await response.json();
-      console.log(`Delete image ${imageId} result:`, result);
     }
   } catch (error) {
     console.error('Error in asset deletion process:', error);
@@ -658,8 +649,6 @@ function AdminPanel() {
               })
             };
 
-            console.log('Updating project with assets:', updateVariables);
-
             const updateResponse = await fetch(hygraphUrl, {
               method: 'POST',
               headers: {
@@ -675,8 +664,6 @@ function AdminPanel() {
             const updateResult = await updateResponse.json();
             if (updateResult.errors) {
               console.error('Asset update failed:', updateResult.errors);
-            } else {
-              console.log('Assets connected successfully:', updateResult.data);
             }
           }
         } catch (error) {
@@ -870,19 +857,6 @@ function AdminPanel() {
         throw new Error(result.errors[0].message);
       }
 
-      // Add detailed logging for drafts and their assets
-      console.log('All drafts:', result.data.drafts);
-      result.data.drafts?.forEach(draft => {
-        console.log('Draft ID:', draft.id);
-        console.log('Draft Title:', draft.title);
-        if (draft.image) {
-          console.log('Draft featured image:', draft.image.id, 'Stage:', draft.image.stage);
-        }
-        if (draft.images) {
-          console.log('Draft additional images:', draft.images.map(img => ({ id: img.id, stage: img.stage })));
-        }
-      });
-
       // Get all drafts and published posts
       const allDrafts = result.data.drafts || [];
       const publishedPosts = result.data.published || [];
@@ -904,7 +878,6 @@ function AdminPanel() {
     }
   };
 
-  // Update useEffect to remove console.log
   useEffect(() => {
     fetchDrafts();
   }, [refreshKey]);
@@ -943,7 +916,6 @@ function AdminPanel() {
       });
 
       const assetsResult = await assetsResponse.json();
-      console.log('Fresh draft assets data:', assetsResult);
 
       // Collect all asset IDs
       const assetIds = [];
@@ -953,8 +925,6 @@ function AdminPanel() {
       if (assetsResult.data?.project?.images) {
         assetIds.push(...assetsResult.data.project.images.map(img => img.id));
       }
-
-      console.log('Publishing assets:', assetIds);
 
       // Publish each asset first
       for (const assetId of assetIds) {
@@ -974,7 +944,6 @@ function AdminPanel() {
           })
         });
         const assetResult = await publishAssetResponse.json();
-        console.log(`Published asset ${assetId}:`, assetResult);
       }
 
       // Then publish the draft
@@ -1022,9 +991,6 @@ function AdminPanel() {
   };
 
   const handleEditDraft = (draft, source) => {
-    console.log('Draft data:', draft);
-    console.log('EN description raw:', draft.description?.raw);
-    console.log('VN description raw:', draft.localizations?.[0]?.description?.raw);
     
     setEditingDraft({
       id: draft.id,
@@ -1113,7 +1079,6 @@ function AdminPanel() {
             })
           };
 
-          console.log('Setting EN content:', JSON.stringify(enContent, null, 2));
           editEditorEn.commands.setContent(enContent);
         } catch (error) {
           console.error('Error setting EN content:', error);
@@ -1191,7 +1156,6 @@ function AdminPanel() {
             })
           };
 
-          console.log('Setting VN content:', JSON.stringify(vnContent, null, 2));
           editEditorVn.commands.setContent(vnContent);
         } catch (error) {
           console.error('Error setting VN content:', error);
@@ -1207,30 +1171,17 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      console.log('Starting update with draft data:', {
-        id: editingDraft.id,
-        removedImage: editingDraft.removedImage,
-        removedImages: editingDraft.removedImages,
-        newImage: editingDraft.newImage,
-        newImages: editingDraft.newImages,
-        currentImage: editingDraft.image,
-        currentImages: editingDraft.images
-      });
-
       // Handle removed assets first
       const removedAssetIds = [];
       if (editingDraft.removedImage && editingDraft.image?.id) {
         removedAssetIds.push(editingDraft.image.id);
-        console.log('Adding featured image to removal list:', editingDraft.image.id);
       }
       if (editingDraft.removedImages?.length > 0) {
         const additionalRemovedIds = editingDraft.removedImages.map(img => img.id).filter(Boolean);
         removedAssetIds.push(...additionalRemovedIds);
-        console.log('Adding additional images to removal list:', additionalRemovedIds);
       }
 
       if (removedAssetIds.length > 0) {
-        console.log('Attempting to delete assets:', removedAssetIds);
         const deleteResponse = await fetch(hygraphUrl, {
           method: 'POST',
           headers: {
@@ -1247,7 +1198,6 @@ function AdminPanel() {
           })
         });
         const deleteResult = await deleteResponse.json();
-        console.log('Delete assets response:', deleteResult);
       }
 
       // Handle new assets
@@ -1256,12 +1206,10 @@ function AdminPanel() {
 
       // Upload new featured image if exists
       if (editingDraft.newImage) {
-        console.log('Uploading new featured image:', editingDraft.newImage.name);
         try {
           const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
           await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
           newFeaturedImage = { id: asset.id };
-          console.log('New featured image uploaded successfully:', newFeaturedImage);
         } catch (error) {
           console.error('Failed to upload featured image:', error);
         }
@@ -1269,13 +1217,11 @@ function AdminPanel() {
 
       // Upload new additional images if they exist
       if (editingDraft.newImages?.length > 0) {
-        console.log('Uploading new additional images:', editingDraft.newImages.map(img => img.name));
         for (const image of editingDraft.newImages) {
           try {
             const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
             await uploadFileToS3(image, asset.upload.requestPostData);
             newAdditionalImages.push({ id: asset.id });
-            console.log('Additional image uploaded successfully:', asset.id);
           } catch (error) {
             console.error('Failed to upload additional image:', error);
           }
@@ -1309,7 +1255,6 @@ function AdminPanel() {
       // Only add imagesConnect if we have valid connections to make
       if (existingImageIds.length > 0 || newImageConnections.length > 0) {
         variables.imagesConnect = [...existingImageIds, ...newImageConnections];
-        console.log('Connecting images:', variables.imagesConnect);
       }
 
       // Handle disconnections for removed images
@@ -1317,21 +1262,7 @@ function AdminPanel() {
         variables.imagesDisconnect = editingDraft.removedImages
           .filter(img => img.id) // Ensure we have valid IDs
           .map(img => ({ id: img.id }));
-        console.log('Disconnecting images:', variables.imagesDisconnect);
       }
-
-      // Log the final variables for debugging
-      console.log('Update variables:', {
-        ...variables,
-        imageStatus: {
-          isRemoving: editingDraft.removedImage,
-          currentImage: editingDraft.image,
-          newImage: newFeaturedImage,
-          existingImages: existingImageIds,
-          newImages: newImageConnections,
-          removedImages: variables.imagesDisconnect
-        }
-      });
 
       // Update the project
       const response = await fetch(hygraphUrl, {
@@ -1347,7 +1278,6 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Update project response:', result);
 
       if (result.errors) {
         throw new Error(result.errors[0].message);
@@ -1355,9 +1285,7 @@ function AdminPanel() {
 
       // Handle publishing if needed
       if (shouldPublish) {
-        console.log('Starting publish process...');
         const publishResult = await publishDraft(editingDraft.id);
-        console.log('Publish result:', publishResult);
         
         // Immediately refresh after successful publish
         const currentTab = window.location.hash || '#drafts';
@@ -1569,7 +1497,6 @@ function AdminPanel() {
   const publishSelectedDrafts = async () => {
     try {
 
-      console.log('Publishing any unpublished draft assets...');
       await fetchAndPubDraftAssets();
 
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
@@ -1609,24 +1536,19 @@ function AdminPanel() {
       });
 
       const projectsResult = await projectsResponse.json();
-      console.log('Projects with assets:', projectsResult);
 
       // Collect all asset IDs (both feature images and additional images)
       const assetIds = new Set();
       projectsResult.data?.projects?.forEach(project => {
         if (project.image?.id) {
           assetIds.add(project.image.id);
-          console.log(`Added feature image ${project.image.id} (stage: ${project.image.stage})`);
         }
         if (project.images) {
           project.images.forEach(img => {
             assetIds.add(img.id);
-            console.log(`Added additional image ${img.id} (stage: ${img.stage})`);
           });
         }
       });
-
-      console.log('All asset IDs to publish:', Array.from(assetIds));
 
       // Publish all assets first
       for (const assetId of assetIds) {
@@ -1655,7 +1577,6 @@ function AdminPanel() {
           });
 
           const assetResult = await publishAssetResponse.json();
-          console.log(`Published asset ${assetId}:`, assetResult);
         } catch (error) {
           console.error(`Error publishing asset ${assetId}:`, error);
         }
@@ -1694,7 +1615,6 @@ function AdminPanel() {
         if (publishResult.errors) {
           throw new Error(`Failed to publish project ${draftId}: ${publishResult.errors[0].message}`);
         }
-        console.log(`Published project ${draftId}:`, publishResult);
       }
 
       setSnackbar({
@@ -1721,27 +1641,20 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      console.log('Starting draft deletion for IDs:', selectedDrafts);
-
       // First, get the draft data including assets
       const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
-      console.log('Selected drafts data:', selectedDraftsData);
 
       // Collect asset IDs from the drafts data we already have
       const assetIds = [];
       selectedDraftsData.forEach(draft => {
         if (draft.image?.id) {
           assetIds.push(draft.image.id);
-          console.log('Added feature image:', draft.image.id);
         }
         if (draft.images) {
           const imageIds = draft.images.map(img => img.id);
           assetIds.push(...imageIds);
-          console.log('Added additional images:', imageIds);
         }
       });
-
-      console.log('Final asset IDs to delete:', assetIds);
 
       // Delete assets first if there are any
       if (assetIds.length > 0) {
@@ -1778,7 +1691,6 @@ function AdminPanel() {
             });
 
             const result = await response.json();
-            console.log('Delete result for draft:', draftId, result);
 
             if (result.errors) {
               throw new Error(result.errors[0].message);
@@ -1850,11 +1762,9 @@ function AdminPanel() {
       });
 
       const result = await response.json();
-      console.log('Draft assets found:', result);
 
       // Get the asset IDs
       const assetIds = result.data?.assets?.map(asset => asset.id) || [];
-      console.log('Asset IDs to publish:', assetIds);
 
       // Publish each asset
       for (const assetId of assetIds) {
@@ -1884,7 +1794,6 @@ function AdminPanel() {
           });
 
           const publishResult = await publishResponse.json();
-          console.log(`Published asset ${assetId}:`, publishResult);
         } catch (error) {
           console.error(`Error publishing asset ${assetId}:`, error);
         }
@@ -3157,7 +3066,6 @@ function AdminPanel() {
                                   })
                                 });
                                 const result = await response.json();
-                                console.log('Asset deletion result:', result);
                               } catch (error) {
                                 console.error('Error deleting asset:', error);
                               }
@@ -3268,7 +3176,6 @@ function AdminPanel() {
                                     })
                                   });
                                   const result = await response.json();
-                                  console.log('Asset deletion result:', result);
                                 } catch (error) {
                                   console.error('Error deleting asset:', error);
                                 }
