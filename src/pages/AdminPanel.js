@@ -2657,8 +2657,16 @@ function AdminPanel() {
                   {activeSubTab === 1 && (
                     <>
                       <Box>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                          <Typography variant="h6">Manage Drafts</Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                          <Typography 
+                            variant="h5" 
+                            sx={{ 
+                              color: colorPalette.accent2,
+                              fontWeight: 600 
+                            }}
+                          >
+                            Manage Drafts
+                          </Typography>
                           <IconButton 
                             onClick={() => {
                               localStorage.setItem('adminActiveTab', activeTab.toString());
@@ -2739,10 +2747,17 @@ function AdminPanel() {
                     </>
                   )}
                   {activeSubTab === 2 && (
-                    // Original "Manage Published" content
                     <Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h6">Manage Published</Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+                        <Typography 
+                          variant="h5" 
+                          sx={{ 
+                            color: colorPalette.accent2,
+                            fontWeight: 600 
+                          }}
+                        >
+                          Manage Published
+                        </Typography>
                         <IconButton 
                           onClick={() => {
                             localStorage.setItem('adminActiveTab', activeTab.toString());
