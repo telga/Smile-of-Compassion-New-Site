@@ -1568,6 +1568,10 @@ function AdminPanel() {
 
   const publishSelectedDrafts = async () => {
     try {
+
+      console.log('Publishing any unpublished draft assets...');
+      await fetchAndPubDraftAssets();
+
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
@@ -1805,6 +1809,98 @@ function AdminPanel() {
       setSnackbar({
         open: true,
         message: error.message,
+        severity: 'error'
+      });
+    }
+  };
+
+  const fetchAndPubDraftAssets = async () => {
+    try {
+      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+      // First fetch draft assets
+      const query = `
+        query GetDraftAssets {
+          assets(
+            stage: DRAFT
+            where: {
+              AND: [
+                { publishedAt: null }
+                { documentInStages_some: { stage: DRAFT } }
+                { documentInStages_none: { stage: PUBLISHED } }
+              ]
+            }
+          ) {
+            id
+            fileName
+            size
+            locale
+          }
+        }
+      `;
+
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({ query })
+      });
+
+      const result = await response.json();
+      console.log('Draft assets found:', result);
+
+      // Get the asset IDs
+      const assetIds = result.data?.assets?.map(asset => asset.id) || [];
+      console.log('Asset IDs to publish:', assetIds);
+
+      // Publish each asset
+      for (const assetId of assetIds) {
+        try {
+          const publishResponse = await fetch(hygraphUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              query: `
+                mutation PublishAsset($where: AssetWhereUniqueInput!) {
+                  publishAsset(where: $where, to: PUBLISHED) {
+                    id
+                    fileName
+                    stage
+                  }
+                }
+              `,
+              variables: {
+                where: {
+                  id: assetId
+                }
+              }
+            })
+          });
+
+          const publishResult = await publishResponse.json();
+          console.log(`Published asset ${assetId}:`, publishResult);
+        } catch (error) {
+          console.error(`Error publishing asset ${assetId}:`, error);
+        }
+      }
+
+      setSnackbar({
+        open: true,
+        message: `Published ${assetIds.length} draft assets successfully!`,
+        severity: 'success'
+      });
+
+    } catch (error) {
+      console.error('Error in fetch and publish process:', error);
+      setSnackbar({
+        open: true,
+        message: `Error publishing draft assets: ${error.message}`,
         severity: 'error'
       });
     }
@@ -2559,87 +2655,88 @@ function AdminPanel() {
                     </Stack>
                   )}
                   {activeSubTab === 1 && (
-                    // Original "Manage Drafts" content
-                    <Box>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="h6">Manage Drafts</Typography>
-                        <IconButton 
-                          onClick={() => {
-                            localStorage.setItem('adminActiveTab', activeTab.toString());
-                            window.location.reload();
-                          }}
-                          sx={{ color: colorPalette.primary }}
-                        >
-                          <RefreshIcon />
-                        </IconButton>
-                      </Box>
-                      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
-                        <Button
-                          variant="contained"
-                          onClick={publishSelectedDrafts}
-                          disabled={selectedDrafts.length === 0}
-                          sx={{
-                            backgroundColor: colorPalette.primary,
-                            '&:hover': {
-                              backgroundColor: colorPalette.secondary,
-                            }
-                          }}
-                        >
-                          Publish Selected
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="error"
-                          onClick={deleteSelectedDrafts}
-                          disabled={selectedDrafts.length === 0}
-                        >
-                          Delete Selected
-                        </Button>
-                      </Stack>
-
-                      {drafts.length === 0 ? (
-                        <Typography color="text.secondary">No drafts found</Typography>
-                      ) : (
-                        <Stack spacing={2}>
-                          {drafts.map((draft) => (
-                            <Card key={draft.id} sx={{ p: 2 }}>
-                              <Stack direction="row" alignItems="center" spacing={2}>
-                                <Checkbox
-                                  checked={selectedDrafts.includes(draft.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedDrafts([...selectedDrafts, draft.id]);
-                                    } else {
-                                      setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
-                                    }
-                                  }}
-                                />
-                                <Stack spacing={1} sx={{ flex: 1 }}>
-                                  <Typography variant="h6">{draft.title}</Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    Date: {draft.date.split('-').reverse().join('/')}
-                                  </Typography>
-                                  {draft.localizations?.map((loc) => (
-                                    <Box key={loc.locale}>
-                                      <Typography variant="subtitle2" color="text.secondary">
-                                        {loc.locale.toUpperCase()}: {loc.title}
-                                      </Typography>
-                                    </Box>
-                                  ))}
-                                </Stack>
-                                <Button
-                                  variant="outlined"
-                                  onClick={() => handleEditDraft(draft, 'drafts')}
-                                  sx={{ minWidth: 100 }}
-                                >
-                                  Edit
-                                </Button>
-                              </Stack>
-                            </Card>
-                          ))}
+                    <>
+                      <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                          <Typography variant="h6">Manage Drafts</Typography>
+                          <IconButton 
+                            onClick={() => {
+                              localStorage.setItem('adminActiveTab', activeTab.toString());
+                              window.location.reload();
+                            }}
+                            sx={{ color: colorPalette.primary }}
+                          >
+                            <RefreshIcon />
+                          </IconButton>
+                        </Box>
+                        <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+                          <Button
+                            variant="contained"
+                            onClick={publishSelectedDrafts}
+                            disabled={selectedDrafts.length === 0}
+                            sx={{
+                              backgroundColor: colorPalette.primary,
+                              '&:hover': {
+                                backgroundColor: colorPalette.secondary,
+                              }
+                            }}
+                          >
+                            Publish Selected
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            onClick={deleteSelectedDrafts}
+                            disabled={selectedDrafts.length === 0}
+                          >
+                            Delete Selected
+                          </Button>
                         </Stack>
-                      )}
-                    </Box>
+
+                        {drafts.length === 0 ? (
+                          <Typography color="text.secondary">No drafts found</Typography>
+                        ) : (
+                          <Stack spacing={2}>
+                            {drafts.map((draft) => (
+                              <Card key={draft.id} sx={{ p: 2 }}>
+                                <Stack direction="row" alignItems="center" spacing={2}>
+                                  <Checkbox
+                                    checked={selectedDrafts.includes(draft.id)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedDrafts([...selectedDrafts, draft.id]);
+                                      } else {
+                                        setSelectedDrafts(selectedDrafts.filter(id => id !== draft.id));
+                                      }
+                                    }}
+                                  />
+                                  <Stack spacing={1} sx={{ flex: 1 }}>
+                                    <Typography variant="h6">{draft.title}</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                      Date: {draft.date.split('-').reverse().join('/')}
+                                    </Typography>
+                                    {draft.localizations?.map((loc) => (
+                                      <Box key={loc.locale}>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                          {loc.locale.toUpperCase()}: {loc.title}
+                                        </Typography>
+                                      </Box>
+                                    ))}
+                                  </Stack>
+                                  <Button
+                                    variant="outlined"
+                                    onClick={() => handleEditDraft(draft, 'drafts')}
+                                    sx={{ minWidth: 100 }}
+                                  >
+                                    Edit
+                                  </Button>
+                                </Stack>
+                              </Card>
+                            ))}
+                          </Stack>
+                        )}
+                      </Box>
+                    </>
                   )}
                   {activeSubTab === 2 && (
                     // Original "Manage Published" content
