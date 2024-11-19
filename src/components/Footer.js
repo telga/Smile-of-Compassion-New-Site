@@ -27,7 +27,7 @@ function Footer() {
               Email: smileofcompassion@gmail.com
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Tel: +1 (657) 615-3499
+              Tel: +1 (714) 515-9872
             </Typography>
           </Box>
 

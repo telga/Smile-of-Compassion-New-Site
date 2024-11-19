@@ -103,6 +103,37 @@ function Contact() {
               </Typography>
             </motion.div>
 
+            <motion.div variants={itemVariants}>
+              <Box sx={{ 
+                mb: 4, 
+                textAlign: 'center',
+                padding: 2,
+                backgroundColor: colorPalette.lightBg,
+                borderRadius: '8px'
+              }}>
+                <Typography 
+                  variant="subtitle1" 
+                  sx={{ 
+                    color: colorPalette.accent2,
+                    fontWeight: 500,
+                    mb: 1
+                  }}
+                >
+                  {t('contact.phoneTitle', 'Call us at')}
+                </Typography>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: colorPalette.primary,
+                    fontWeight: 600,
+                    fontFamily: '"Poppins", sans-serif',
+                  }}
+                >
+                  +1 (714) 515-9872
+                </Typography>
+              </Box>
+            </motion.div>
+
             <Box 
               component="form" 
               ref={form}
