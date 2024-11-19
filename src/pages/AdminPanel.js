@@ -19,7 +19,6 @@ import {
   FormatListBulleted, 
   FormatListNumbered 
 } from '@mui/icons-material';
-import EditIcon from '@mui/icons-material/Edit';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
 const transformToSlateAST = (editorContent) => {
@@ -365,6 +364,58 @@ const deleteAssetMutation = `
     }
   }
 `;
+
+// Update the deleteAssetsForProjects function to use the correct type
+const deleteAssetsForProjects = async (assetIds, hygraphUrl, authToken, drafts, selectedDrafts, publishedPosts, selectedPublished) => {
+  if (assetIds.length === 0) return;
+  
+  console.log('Starting asset deletion process for:', assetIds);
+
+  try {
+    // Get the selected posts/drafts data to differentiate between feature image and multiple images
+    const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
+    const selectedPublishedData = publishedPosts.filter(post => selectedPublished.includes(post.id));
+    const selectedData = [...selectedDraftsData, ...selectedPublishedData];
+
+    // Separate feature images and additional images
+    const featureImageIds = [];
+    const additionalImageIds = [];
+
+    selectedData.forEach(item => {
+      if (item.image?.id) {
+        featureImageIds.push(item.image.id);
+      }
+      if (item.images) {
+        additionalImageIds.push(...item.images.map(img => img.id));
+      }
+    });
+
+    console.log('Feature image IDs:', featureImageIds);
+    console.log('Additional image IDs:', additionalImageIds);
+
+    // Delete all images one by one
+    const allImageIds = [...featureImageIds, ...additionalImageIds];
+    for (const imageId of allImageIds) {
+      const response = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: deleteAssetMutation,
+          variables: {
+            id: imageId
+          }
+        })
+      });
+      const result = await response.json();
+      console.log(`Delete image ${imageId} result:`, result);
+    }
+  } catch (error) {
+    console.error('Error in asset deletion process:', error);
+  }
+};
 
 function AdminPanel() {
   // Update the useState declarations
@@ -1347,6 +1398,46 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // Get connected assets
+      const getProjectsAssetsQuery = `
+        query GetProjectsAssets($ids: [ID!]) {
+          projects(where: { id_in: $ids }) {
+            id
+            image {
+              id
+            }
+            images {
+              id
+            }
+          }
+        }
+      `;
+
+      const assetsResponse = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: getProjectsAssetsQuery,
+          variables: { ids: selectedPublished }
+        })
+      });
+
+      const assetsResult = await assetsResponse.json();
+      
+      // Collect asset IDs
+      const assetIds = [];
+      assetsResult.data?.projects?.forEach(project => {
+        if (project.image?.id) assetIds.push(project.image.id);
+        if (project.images) assetIds.push(...project.images.map(img => img.id));
+      });
+
+      // Handle asset deletion with all required parameters
+      await deleteAssetsForProjects(assetIds, hygraphUrl, authToken, drafts, selectedDrafts, publishedPosts, selectedPublished);
+
+      // Delete the projects
       const deleteMutation = `
         mutation DeleteProject($where: ProjectWhereUniqueInput!) {
           deleteProject(where: $where) {
@@ -1399,7 +1490,7 @@ function AdminPanel() {
       });
 
       setSelectedPublished([]);
-      fetchDrafts(); // This will refresh both drafts and published posts
+      fetchDrafts();
     } catch (error) {
       console.error('Error deleting posts:', error);
       setSnackbar({
@@ -1501,77 +1592,40 @@ function AdminPanel() {
     }
   };
 
-  // Update the deleteSelectedDrafts function to also delete connected assets
+  // Update the deleteSelectedDrafts function
   const deleteSelectedDrafts = async () => {
     try {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // First, get all connected assets for selected drafts
-      const getProjectsAssetsQuery = `
-        query GetProjectsAssets($ids: [ID!]) {
-          projects(where: { id_in: $ids }) {
-            id
-            image {
-              id
-            }
-            images {
-              id
-            }
-          }
-        }
-      `;
+      console.log('Starting draft deletion for IDs:', selectedDrafts);
 
-      const assetsResponse = await fetch(hygraphUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          query: getProjectsAssetsQuery,
-          variables: { ids: selectedDrafts }
-        })
-      });
+      // First, get the draft data including assets
+      const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
+      console.log('Selected drafts data:', selectedDraftsData);
 
-      const assetsResult = await assetsResponse.json();
-      
-      // Collect all asset IDs
+      // Collect asset IDs from the drafts data we already have
       const assetIds = [];
-      assetsResult.data?.projects?.forEach(project => {
-        if (project.image?.id) {
-          assetIds.push(project.image.id);
+      selectedDraftsData.forEach(draft => {
+        if (draft.image?.id) {
+          assetIds.push(draft.image.id);
+          console.log('Added feature image:', draft.image.id);
         }
-        if (project.images) {
-          assetIds.push(...project.images.map(img => img.id));
+        if (draft.images) {
+          const imageIds = draft.images.map(img => img.id);
+          assetIds.push(...imageIds);
+          console.log('Added additional images:', imageIds);
         }
       });
 
-      // Delete assets if there are any
-      if (assetIds.length > 0) {
-        const deleteAssetsResponse = await fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: deleteAssetsMutation,
-            variables: {
-              where: {
-                id_in: assetIds
-              }
-            }
-          })
-        });
+      console.log('Final asset IDs to delete:', assetIds);
 
-        const deleteAssetsResult = await deleteAssetsResponse.json();
-        if (deleteAssetsResult.errors) {
-          console.error('Error deleting assets:', deleteAssetsResult.errors);
-        }
+      // Delete assets first if there are any
+      if (assetIds.length > 0) {
+        await deleteAssetsForProjects(assetIds, hygraphUrl, authToken, drafts, selectedDrafts, publishedPosts, selectedPublished);
       }
 
-      // Delete the projects
+      // Then delete the drafts
       const deleteMutation = `
         mutation DeleteProject($where: ProjectWhereUniqueInput!) {
           deleteProject(where: $where) {
@@ -2521,12 +2575,7 @@ function AdminPanel() {
                                 Date: {new Date(post.date).toLocaleDateString()}
                               </Typography>
                             </Box>
-                            <IconButton
-                              onClick={() => handleEditDraft(post, 'published')}
-                              sx={{ color: 'primary.main' }}
-                            >
-                              <EditIcon />
-                            </IconButton>
+                            {/* Edit icon removed */}
                           </Stack>
                         </Card>
                       ))}
