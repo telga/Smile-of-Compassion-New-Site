@@ -915,6 +915,69 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // First, fetch the latest draft data to get all asset IDs
+      const getProjectAssetsQuery = `
+        query GetProjectAssets($id: ID!) {
+          project(where: { id: $id }) {
+            id
+            image {
+              id
+            }
+            images {
+              id
+            }
+          }
+        }
+      `;
+
+      const assetsResponse = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: getProjectAssetsQuery,
+          variables: { id: draftId }
+        })
+      });
+
+      const assetsResult = await assetsResponse.json();
+      console.log('Fresh draft assets data:', assetsResult);
+
+      // Collect all asset IDs
+      const assetIds = [];
+      if (assetsResult.data?.project?.image?.id) {
+        assetIds.push(assetsResult.data.project.image.id);
+      }
+      if (assetsResult.data?.project?.images) {
+        assetIds.push(...assetsResult.data.project.images.map(img => img.id));
+      }
+
+      console.log('Publishing assets:', assetIds);
+
+      // Publish each asset first
+      for (const assetId of assetIds) {
+        const publishAssetResponse = await fetch(hygraphUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${authToken}`
+          },
+          body: JSON.stringify({
+            query: publishAssetsMutation,
+            variables: {
+              where: {
+                id: assetId
+              }
+            }
+          })
+        });
+        const assetResult = await publishAssetResponse.json();
+        console.log(`Published asset ${assetId}:`, assetResult);
+      }
+
+      // Then publish the draft
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -1311,7 +1374,9 @@ function AdminPanel() {
 
       setEditModalOpen(false);
       setSelectedDrafts([]);
-      fetchDrafts();
+      
+      // Add refresh after saving
+      await fetchDrafts();
       
     } catch (error) {
       console.error('Error updating draft:', error);
@@ -1506,24 +1571,36 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Get the selected drafts and their assets
-      const selectedDraftsData = drafts.filter(draft => selectedDrafts.includes(draft.id));
-      
-      // Collect all asset IDs from selected drafts
-      const assetIds = [];
-      selectedDraftsData.forEach(draft => {
-        if (draft.image?.id) {
-          assetIds.push(draft.image.id);
+      // Query to get ALL draft assets
+      const getDraftAssetsQuery = `
+        query GetDraftAssets {
+          assets(stage: DRAFT) {
+            id
+          }
         }
-        if (draft.images) {
-          assetIds.push(...draft.images.map(img => img.id));
-        }
+      `;
+
+      // Fetch all draft assets
+      const assetsResponse = await fetch(hygraphUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          query: getDraftAssetsQuery
+        })
       });
 
-      console.log('Assets to publish:', assetIds);
+      const assetsResult = await assetsResponse.json();
+      console.log('All draft assets:', assetsResult);
 
-      // Publish each asset
-      for (const assetId of assetIds) {
+      // Get all draft asset IDs
+      const draftAssetIds = assetsResult.data?.assets?.map(asset => asset.id) || [];
+      console.log('Draft asset IDs to publish:', draftAssetIds);
+
+      // Publish all draft assets
+      for (const assetId of draftAssetIds) {
         const publishResponse = await fetch(hygraphUrl, {
           method: 'POST',
           headers: {
@@ -1582,6 +1659,15 @@ function AdminPanel() {
           throw new Error(`Failed to publish project ${draftId}: ${publishResult.errors[0].message}`);
         }
       }
+
+      setSnackbar({
+        open: true,
+        message: 'Selected drafts published successfully!',
+        severity: 'success'
+      });
+
+      setSelectedDrafts([]);
+      fetchDrafts(); // Refresh the data
     } catch (error) {
       console.error('Error publishing drafts:', error);
       setSnackbar({
