@@ -1571,57 +1571,93 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // Query to get ALL draft assets
-      const getDraftAssetsQuery = `
-        query GetDraftAssets {
-          assets(stage: DRAFT) {
+      // Query to get complete project data including all assets
+      const getProjectsQuery = `
+        query GetProjectsWithAssets($ids: [ID!]) {
+          projects(where: { id_in: $ids }) {
             id
+            title
+            image {
+              id
+              stage
+            }
+            images {
+              id
+              stage
+            }
           }
         }
       `;
 
-      // Fetch all draft assets
-      const assetsResponse = await fetch(hygraphUrl, {
+      // First get all project data
+      const projectsResponse = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({
-          query: getDraftAssetsQuery
+          query: getProjectsQuery,
+          variables: {
+            ids: selectedDrafts
+          }
         })
       });
 
-      const assetsResult = await assetsResponse.json();
-      console.log('All draft assets:', assetsResult);
+      const projectsResult = await projectsResponse.json();
+      console.log('Projects with assets:', projectsResult);
 
-      // Get all draft asset IDs
-      const draftAssetIds = assetsResult.data?.assets?.map(asset => asset.id) || [];
-      console.log('Draft asset IDs to publish:', draftAssetIds);
+      // Collect all asset IDs (both feature images and additional images)
+      const assetIds = new Set();
+      projectsResult.data?.projects?.forEach(project => {
+        if (project.image?.id) {
+          assetIds.add(project.image.id);
+          console.log(`Added feature image ${project.image.id} (stage: ${project.image.stage})`);
+        }
+        if (project.images) {
+          project.images.forEach(img => {
+            assetIds.add(img.id);
+            console.log(`Added additional image ${img.id} (stage: ${img.stage})`);
+          });
+        }
+      });
 
-      // Publish all draft assets
-      for (const assetId of draftAssetIds) {
-        const publishResponse = await fetch(hygraphUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${authToken}`
-          },
-          body: JSON.stringify({
-            query: publishAssetsMutation,
-            variables: {
-              where: {
-                id: assetId
+      console.log('All asset IDs to publish:', Array.from(assetIds));
+
+      // Publish all assets first
+      for (const assetId of assetIds) {
+        try {
+          const publishAssetResponse = await fetch(hygraphUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({
+              query: `
+                mutation PublishAsset($where: AssetWhereUniqueInput!) {
+                  publishAsset(where: $where, to: PUBLISHED) {
+                    id
+                    stage
+                  }
+                }
+              `,
+              variables: {
+                where: {
+                  id: assetId
+                }
               }
-            }
-          })
-        });
+            })
+          });
 
-        const publishResult = await publishResponse.json();
-        console.log('Asset publish result:', assetId, publishResult);
+          const assetResult = await publishAssetResponse.json();
+          console.log(`Published asset ${assetId}:`, assetResult);
+        } catch (error) {
+          console.error(`Error publishing asset ${assetId}:`, error);
+        }
       }
 
-      // Then publish the selected drafts
+      // Then publish the drafts
       for (const draftId of selectedDrafts) {
         const publishResponse = await fetch(hygraphUrl, {
           method: 'POST',
@@ -1632,11 +1668,7 @@ function AdminPanel() {
           body: JSON.stringify({
             query: `
               mutation PublishProject($where: ProjectWhereUniqueInput!) {
-                publishProject(
-                  where: $where, 
-                  to: PUBLISHED,
-                  locales: [en, vn]
-                ) {
+                publishProject(where: $where, to: PUBLISHED, locales: [en, vn]) {
                   id
                   title
                   date
@@ -1658,6 +1690,7 @@ function AdminPanel() {
         if (publishResult.errors) {
           throw new Error(`Failed to publish project ${draftId}: ${publishResult.errors[0].message}`);
         }
+        console.log(`Published project ${draftId}:`, publishResult);
       }
 
       setSnackbar({
