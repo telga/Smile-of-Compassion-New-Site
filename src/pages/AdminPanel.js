@@ -699,6 +699,9 @@ function AdminPanel() {
       editorVn.commands.setContent('');
       setPreviews({ image: null, images: [] });
 
+      // Add this line right before the end of the try block
+      await fetchDrafts();
+
     } catch (error) {
       console.error('Error creating post:', error);
       setSnackbar({
