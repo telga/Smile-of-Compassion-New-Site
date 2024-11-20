@@ -127,6 +127,8 @@ const updateMutation = `
     $imageDisconnect: Boolean
     $imagesConnect: [AssetConnectInput!]
     $imagesDisconnect: [AssetWhereUniqueInput!]
+    $slugEn: String
+    $slugVn: String
   ) {
     updateProject(
       where: { id: $id }
@@ -134,6 +136,7 @@ const updateMutation = `
         title: $titleEn
         description: $descriptionEn
         date: $date
+        slug: $slugEn
         image: { 
           connect: $imageConnect
           disconnect: $imageDisconnect
@@ -148,10 +151,12 @@ const updateMutation = `
             create: {
               title: $titleVn
               description: $descriptionVn
+              slug: $slugVn
             }
             update: {
               title: $titleVn
               description: $descriptionVn
+              slug: $slugVn
             }
           }
         }
@@ -159,6 +164,7 @@ const updateMutation = `
     ) {
       id
       title
+      slug
       description {
         raw
       }
@@ -174,6 +180,7 @@ const updateMutation = `
       localizations {
         locale
         title
+        slug
         description {
           raw
         }
@@ -243,7 +250,6 @@ const createAssetInHygraph = async (file, hygraphUrl, authToken) => {
   return result.data.createAsset;
 };
 
-// Keep the original createMutation simple
 const createMutation = `
   mutation CreateProject(
     $titleEn: String!
@@ -251,18 +257,22 @@ const createMutation = `
     $descriptionEn: RichTextAST!
     $descriptionVn: RichTextAST!
     $date: Date!
+    $slugEn: String
+    $slugVn: String
   ) {
     createProject(
       data: {
         title: $titleEn
         description: $descriptionEn
         date: $date
+        slug: $slugEn
         localizations: {
           create: {
             locale: vn
             data: {
               title: $titleVn
               description: $descriptionVn
+              slug: $slugVn
             }
           }
         }
@@ -270,9 +280,11 @@ const createMutation = `
     ) {
       id
       title
+      slug
       date
       localizations {
         locale
+        slug
       }
     }
   }
@@ -651,7 +663,10 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
-      // 1. First create the project without assets
+      // Generate slugs if not provided
+      const finalSlugEn = formData.slugEn || generateSlug(formData.titleEn);
+      const finalSlugVn = formData.slugVn || generateSlug(formData.titleVn);
+
       const createResponse = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -665,7 +680,9 @@ function AdminPanel() {
             titleVn: formData.titleVn,
             descriptionEn: transformToSlateAST(editorEn.getJSON()),
             descriptionVn: transformToSlateAST(editorVn.getJSON()),
-            date: formData.date.toISOString().split('T')[0]
+            date: formData.date.toISOString().split('T')[0],
+            slugEn: finalSlugEn,
+            slugVn: finalSlugVn
           }
         })
       });
@@ -775,10 +792,6 @@ function AdminPanel() {
       // Add this line right before the end of the try block
       await fetchDrafts();
 
-      // In handleSubmit, before making the API call:
-      const finalSlugEn = formData.slugEn || generateSlug(formData.titleEn);
-      const finalSlugVn = formData.slugVn || generateSlug(formData.titleVn);
-
       // After successful creation, save the slugs:
       saveSlugToStorage(projectId, finalSlugEn, finalSlugVn);
 
@@ -873,6 +886,7 @@ function AdminPanel() {
           drafts: projects(stage: DRAFT) {
             id
             title
+            slug
             description {
               raw
             }
@@ -890,6 +904,7 @@ function AdminPanel() {
             localizations {
               locale
               title
+              slug
               description {
                 raw
               }
@@ -898,6 +913,7 @@ function AdminPanel() {
           published: projects(stage: PUBLISHED) {
             id
             title
+            slug
             description {
               raw
             }
@@ -915,6 +931,7 @@ function AdminPanel() {
             localizations {
               locale
               title
+              slug
               description {
                 raw
               }
@@ -1071,9 +1088,6 @@ function AdminPanel() {
   };
 
   const handleEditDraft = (draft, source) => {
-    // Get the stored slugs for this draft
-    const storedSlugs = slugs[draft.id] || {};
-    
     setEditingDraft({
       id: draft.id,
       titleEn: draft.title,
@@ -1085,8 +1099,8 @@ function AdminPanel() {
       images: draft.images || [],
       removedImages: [],
       newImages: [],
-      slugEn: storedSlugs.en || '',  // Add stored English slug
-      slugVn: storedSlugs.vn || ''   // Add stored Vietnamese slug
+      slugEn: draft.slug || '',
+      slugVn: draft.localizations?.[0]?.slug || ''
     });
     setEditSource(source);
 
@@ -1350,6 +1364,10 @@ function AdminPanel() {
         }
       }
 
+      // Generate slugs if not provided
+      const finalSlugEn = editingDraft.slugEn || generateSlug(editingDraft.titleEn);
+      const finalSlugVn = editingDraft.slugVn || generateSlug(editingDraft.titleVn);
+
       // Prepare update variables
       const variables = {
         id: editingDraft.id,
@@ -1358,6 +1376,8 @@ function AdminPanel() {
         descriptionEn: transformToSlateAST(editEditorEn.getJSON()),
         descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
         date: editingDraft.date.toISOString().split('T')[0],
+        slugEn: finalSlugEn,
+        slugVn: finalSlugVn,
       };
 
       // Handle feature image connection/disconnection
@@ -1420,10 +1440,6 @@ function AdminPanel() {
       // Add refresh after saving
       await fetchDrafts();
       
-      // In handleUpdateDraft, before making the API call:
-      const finalSlugEn = editingDraft.slugEn || generateSlug(editingDraft.titleEn);
-      const finalSlugVn = editingDraft.slugVn || generateSlug(editingDraft.titleVn);
-
       // After successful update, save the slugs:
       saveSlugToStorage(editingDraft.id, finalSlugEn, finalSlugVn);
 
