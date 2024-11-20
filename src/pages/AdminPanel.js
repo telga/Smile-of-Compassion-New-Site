@@ -31,6 +31,27 @@ const transformToSlateAST = (editorContent) => {
     };
   }
 
+  const transformNode = (node) => {
+    // Handle text nodes with emojis
+    if (node.type === 'text') {
+      return {
+        text: node.text || '',
+        ...(node.marks?.reduce((acc, mark) => ({
+          ...acc,
+          [mark.type]: true
+        }), {}) || {})
+      };
+    }
+
+    // Handle paragraphs and other block nodes
+    const children = node.content?.map(transformNode) || [{ text: '' }];
+
+    return {
+      type: node.type,
+      children
+    };
+  };
+
   const transformedContent = editorContent.content.map(node => {
     if (node.type === 'heading') {
       let headingType;
@@ -50,13 +71,7 @@ const transformToSlateAST = (editorContent) => {
       
       return {
         type: headingType,
-        children: [{
-          text: node.content?.[0]?.text || '',
-          ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
-            ...acc,
-            [mark.type]: true
-          }), {}) || {})
-        }]
+        children: node.content?.map(transformNode) || [{ text: '' }]
       };
     }
 
@@ -67,13 +82,7 @@ const transformToSlateAST = (editorContent) => {
           type: 'list-item',
           children: [{
             type: 'list-item-child',
-            children: [{
-              text: listItem.content?.[0]?.content?.[0]?.text || '',
-              ...(listItem.content?.[0]?.content?.[0]?.marks?.reduce((acc, mark) => ({
-                ...acc,
-                [mark.type]: true
-              }), {}) || {})
-            }]
+            children: listItem.content?.[0]?.content?.map(transformNode) || [{ text: '' }]
           }]
         }))
       };
@@ -86,13 +95,7 @@ const transformToSlateAST = (editorContent) => {
           type: 'list-item',
           children: [{
             type: 'list-item-child',
-            children: [{
-              text: listItem.content?.[0]?.content?.[0]?.text || '',
-              ...(listItem.content?.[0]?.content?.[0]?.marks?.reduce((acc, mark) => ({
-                ...acc,
-                [mark.type]: true
-              }), {}) || {})
-            }]
+            children: listItem.content?.[0]?.content?.map(transformNode) || [{ text: '' }]
           }]
         }))
       };
@@ -101,13 +104,7 @@ const transformToSlateAST = (editorContent) => {
     // Default paragraph case
     return {
       type: 'paragraph',
-      children: [{
-        text: node.content?.[0]?.text || '',
-        ...(node.content?.[0]?.marks?.reduce((acc, mark) => ({
-          ...acc,
-          [mark.type]: true
-        }), {}) || {})
-      }]
+      children: node.content?.map(transformNode) || [{ text: '' }]
     };
   });
 
@@ -1496,7 +1493,6 @@ function AdminPanel() {
 
   const publishSelectedDrafts = async () => {
     try {
-
       await fetchAndPubDraftAssets();
 
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
@@ -1518,7 +1514,8 @@ function AdminPanel() {
             }
           }
         }
-      `;
+      }
+    `;
 
       // First get all project data
       const projectsResponse = await fetch(hygraphUrl, {
@@ -1625,6 +1622,7 @@ function AdminPanel() {
 
       setSelectedDrafts([]);
       fetchDrafts(); // Refresh the data
+
     } catch (error) {
       console.error('Error publishing drafts:', error);
       setSnackbar({
