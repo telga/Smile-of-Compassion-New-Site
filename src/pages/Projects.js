@@ -145,6 +145,12 @@ function Projects() {
       .replace(/-+/g, '-'); // Remove consecutive hyphens
   };
 
+  // Add near the top of the component
+  const [slugs] = useState(() => {
+    const savedSlugs = localStorage.getItem('projectSlugs');
+    return savedSlugs ? JSON.parse(savedSlugs) : {};
+  });
+
   return (
     <Box sx={{ paddingTop: '80px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
       <Container maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
@@ -173,7 +179,11 @@ function Projects() {
               <Grid container justifyContent="center">
                 <Grid item xs={12} sm={10} md={8}>
                   <motion.div variants={itemVariants}>
-                    <Link to={`/projects/${createUrlSlug(projectsByYear[mostRecentYear][0].title)}`} style={{ textDecoration: 'none' }}>
+                    <Link 
+                      to={`/projects/${slugs[projectsByYear[mostRecentYear][0].id]?.[language] || 
+                        createUrlSlug(projectsByYear[mostRecentYear][0].title)}`} 
+                      style={{ textDecoration: 'none' }}
+                    >
                       <Card sx={{ 
                         display: 'flex', 
                         flexDirection: 'column', 
@@ -362,7 +372,10 @@ function Projects() {
                     <Grid container spacing={3}>
                       {sortProjectsByDate(projectsByYear[openModal]).map((project) => (
                         <Grid item xs={12} sm={6} md={4} key={project.id}>
-                          <Link to={`/projects/${createUrlSlug(project.title)}`} style={{ textDecoration: 'none' }}>
+                          <Link 
+                            to={`/projects/${slugs[project.id]?.[language] || createUrlSlug(project.title)}`} 
+                            style={{ textDecoration: 'none' }}
+                          >
                             <Card sx={{ 
                               height: '100%',
                               display: 'flex',

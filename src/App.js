@@ -107,8 +107,8 @@ function AppContent() {
           <Route path="/projects/:slug" element={<ProjectDetail />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/donate" element={<Donate />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />
       </motion.div>
@@ -138,5 +138,16 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// Add this helper function
+const getProjectBySlug = (slug) => {
+  const savedSlugs = localStorage.getItem('projectSlugs');
+  if (!savedSlugs) return null;
+  
+  const slugsObj = JSON.parse(savedSlugs);
+  return Object.entries(slugsObj).find(([_, slugPair]) => 
+    slugPair.en === slug || slugPair.vn === slug
+  );
+};
 
 export default App;

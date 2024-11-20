@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Typography, Container, Box, Button } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -22,16 +22,27 @@ function ProjectDetail() {
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
   const location = useLocation();
+  const [slugs] = useState(() => {
+    const savedSlugs = localStorage.getItem('projectSlugs');
+    return savedSlugs ? JSON.parse(savedSlugs) : {};
+  });
 
   // Fetch project data when component mounts or language changes
   React.useEffect(() => {
     async function fetchProject() {
       try {
-        // First fetch all projects to find the one matching our slug
+        // First fetch all projects
         const allProjects = await hygraphClient.request(GET_PROJECTS, { language: 'en' });
-        const projectMatch = allProjects.projects.find(p => 
-          createUrlSlug(p.title) === slug
-        );
+        
+        // Find project by matching stored slug
+        const projectMatch = allProjects.projects.find(p => {
+          const storedSlug = Object.entries(slugs).find(([id, slugPair]) => 
+            slugPair[language] === slug || slugPair.en === slug || slugPair.vn === slug
+          );
+          
+          if (storedSlug) return p.id === storedSlug[0];
+          return false; // Only use stored slugs
+        });
 
         if (!projectMatch) {
           console.error('Project not found');
@@ -56,16 +67,7 @@ function ProjectDetail() {
       }
     }
     fetchProject();
-  }, [slug, language, navigate]);
-
-  // Add the createUrlSlug helper function
-  const createUrlSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  };
+  }, [slug, language, navigate, slugs]);
 
   // Handler for back button click
   const handleBackClick = () => {

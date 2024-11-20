@@ -502,6 +502,37 @@ function AdminPanel() {
   const [completedCrop, setCompletedCrop] = useState(null);
   const imgRef = useRef(null);
 
+  // Add this near your other state declarations
+  const [slugs, setSlugs] = useState(() => {
+    const savedSlugs = localStorage.getItem('projectSlugs');
+    return savedSlugs ? JSON.parse(savedSlugs) : {};
+  });
+
+  // Add these helper functions
+  const generateSlug = (title) => {
+    if (!title) return '';
+    return title
+      .toLowerCase()
+      .replace(/đ/g, 'd')  // Handle Vietnamese characters
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Remove consecutive hyphens
+      .trim() // Remove whitespace from both ends
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  const saveSlugToStorage = (projectId, slugEn, slugVn) => {
+    const newSlugs = {
+      ...slugs,
+      [projectId]: {
+        en: slugEn,
+        vn: slugVn
+      }
+    };
+    localStorage.setItem('projectSlugs', JSON.stringify(newSlugs));
+    setSlugs(newSlugs);
+  };
+
   // Initialize tab after authentication
   useEffect(() => {
     if (user) {  // Only run this after user is authenticated
@@ -567,7 +598,27 @@ function AdminPanel() {
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    if (field === 'titleEn') {
+      // Generate slug from English title if slug hasn't been manually edited
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        slugEn: prev.slugEn === generateSlug(prev.titleEn) ? generateSlug(value) : prev.slugEn
+      }));
+    } else if (field === 'titleVn') {
+      // Generate slug from Vietnamese title if slug hasn't been manually edited
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        slugVn: prev.slugVn === generateSlug(prev.titleVn) ? generateSlug(value) : prev.slugVn
+      }));
+    } else {
+      // Handle all other fields normally
+      setFormData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
   };
 
   const handleFileChange = (event, field) => {
@@ -723,6 +774,13 @@ function AdminPanel() {
 
       // Add this line right before the end of the try block
       await fetchDrafts();
+
+      // In handleSubmit, before making the API call:
+      const finalSlugEn = formData.slugEn || generateSlug(formData.titleEn);
+      const finalSlugVn = formData.slugVn || generateSlug(formData.titleVn);
+
+      // After successful creation, save the slugs:
+      saveSlugToStorage(projectId, finalSlugEn, finalSlugVn);
 
     } catch (error) {
       console.error('Error creating post:', error);
@@ -1013,6 +1071,8 @@ function AdminPanel() {
   };
 
   const handleEditDraft = (draft, source) => {
+    // Get the stored slugs for this draft
+    const storedSlugs = slugs[draft.id] || {};
     
     setEditingDraft({
       id: draft.id,
@@ -1024,7 +1084,9 @@ function AdminPanel() {
       image: draft.image,
       images: draft.images || [],
       removedImages: [],
-      newImages: []
+      newImages: [],
+      slugEn: storedSlugs.en || '',  // Add stored English slug
+      slugVn: storedSlugs.vn || ''   // Add stored Vietnamese slug
     });
     setEditSource(source);
 
@@ -1358,6 +1420,13 @@ function AdminPanel() {
       // Add refresh after saving
       await fetchDrafts();
       
+      // In handleUpdateDraft, before making the API call:
+      const finalSlugEn = editingDraft.slugEn || generateSlug(editingDraft.titleEn);
+      const finalSlugVn = editingDraft.slugVn || generateSlug(editingDraft.titleVn);
+
+      // After successful update, save the slugs:
+      saveSlugToStorage(editingDraft.id, finalSlugEn, finalSlugVn);
+
     } catch (error) {
       console.error('Error updating draft:', error);
       setSnackbar({
@@ -2251,6 +2320,44 @@ function AdminPanel() {
                         />
                       </Stack>
 
+                      {/* URL Slug Fields */}
+                      <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+                        <TextField
+                          fullWidth
+                          label="URL Slug (English)"
+                          value={formData.slugEn || ''}
+                          onChange={(e) => handleInputChange('slugEn', e.target.value)}
+                          helperText="Leave empty to auto-generate from title"
+                          InputProps={{
+                            startAdornment: (
+                              <Typography 
+                                color="text.secondary" 
+                                sx={{ whiteSpace: 'nowrap' }}
+                              >
+                                /projects/
+                              </Typography>
+                            ),
+                          }}
+                        />
+                        <TextField
+                          fullWidth
+                          label="URL Slug (Vietnamese)"
+                          value={formData.slugVn || ''}
+                          onChange={(e) => handleInputChange('slugVn', e.target.value)}
+                          helperText="Leave empty to auto-generate from title"
+                          InputProps={{
+                            startAdornment: (
+                              <Typography 
+                                color="text.secondary" 
+                                sx={{ whiteSpace: 'nowrap' }}
+                              >
+                                /projects/
+                              </Typography>
+                            ),
+                          }}
+                        />
+                      </Stack>
+
                       {/* Description Fields */}
                       <Stack spacing={2}>
                         <Typography variant="subtitle1">Description (English)</Typography>
@@ -2913,6 +3020,48 @@ function AdminPanel() {
                 label="Title (Vietnamese)"
                 value={editingDraft?.titleVn || ''}
                 onChange={(e) => setEditingDraft(prev => ({ ...prev, titleVn: e.target.value }))}
+              />
+            </Stack>
+
+            {/* URL Slug Fields */}
+            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+              <TextField
+                fullWidth
+                label="URL Slug (English)"
+                value={editingDraft?.slugEn || ''}
+                onChange={(e) => setEditingDraft(prev => ({ 
+                  ...prev, 
+                  slugEn: e.target.value 
+                }))}
+                InputProps={{
+                  startAdornment: (
+                    <Typography 
+                      color="text.secondary" 
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      /projects/
+                    </Typography>
+                  ),
+                }}
+              />
+              <TextField
+                fullWidth
+                label="URL Slug (Vietnamese)"
+                value={editingDraft?.slugVn || ''}
+                onChange={(e) => setEditingDraft(prev => ({ 
+                  ...prev, 
+                  slugVn: e.target.value 
+                }))}
+                InputProps={{
+                  startAdornment: (
+                    <Typography 
+                      color="text.secondary" 
+                      sx={{ whiteSpace: 'nowrap' }}
+                    >
+                      /projects/
+                    </Typography>
+                  ),
+                }}
               />
             </Stack>
 
