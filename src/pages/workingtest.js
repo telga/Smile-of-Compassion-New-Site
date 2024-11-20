@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { auth } from '../firebase/config';
@@ -20,8 +20,6 @@ import {
   FormatListNumbered 
 } from '@mui/icons-material';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import ReactCrop from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -445,20 +443,7 @@ function AdminPanel() {
   const [drafts, setDrafts] = useState([]);
   const [selectedDrafts, setSelectedDrafts] = useState([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingDraft, setEditingDraft] = useState({
-    id: null,
-    titleEn: '',
-    titleVn: '',
-    date: null,
-    descriptionEn: '',
-    descriptionVn: '',
-    image: null,
-    images: [],
-    removedImages: [],
-    newImages: [],
-    newImage: null,  // Add this field
-    removedImage: false  // Add this field if not already present
-  });
+  const [editingDraft, setEditingDraft] = useState(null);
   const [publishedPosts, setPublishedPosts] = useState([]);
   const [selectedPublished, setSelectedPublished] = useState([]);
   const [editSource, setEditSource] = useState('drafts');
@@ -492,15 +477,6 @@ function AdminPanel() {
     },
   });
   const [refreshKey] = useState(0);
-  const [cropModalOpen, setCropModalOpen] = useState(false);
-  const [tempImage, setTempImage] = useState(null);
-  const [crop, setCrop] = useState({
-    unit: '%',
-    width: 100,
-    aspect: 16 / 9 // This matches the aspect ratio of your project cards
-  });
-  const [completedCrop, setCompletedCrop] = useState(null);
-  const imgRef = useRef(null);
 
   // Initialize tab after authentication
   useEffect(() => {
@@ -574,8 +550,11 @@ function AdminPanel() {
     if (field === 'image') {
       const file = event.target.files[0];
       if (file) {
-        setTempImage(URL.createObjectURL(file));
-        setCropModalOpen(true);
+        setFormData(prev => ({ ...prev, image: file }));
+        setPreviews(prev => ({ 
+          ...prev, 
+          image: URL.createObjectURL(file)
+        }));
       }
     } else if (field === 'images') {
       const files = Array.from(event.target.files);
@@ -590,10 +569,9 @@ function AdminPanel() {
   useEffect(() => {
     return () => {
       if (previews.image) URL.revokeObjectURL(previews.image);
-      if (tempImage) URL.revokeObjectURL(tempImage);
       previews.images.forEach(url => URL.revokeObjectURL(url));
     };
-  }, [previews, tempImage]);
+  }, [previews]);
 
   const handleSubmit = async (shouldPublish = false) => {
     try {
@@ -1203,7 +1181,6 @@ function AdminPanel() {
         removedAssetIds.push(...additionalRemovedIds);
       }
 
-      // Delete removed assets if any
       if (removedAssetIds.length > 0) {
         const deleteResponse = await fetch(hygraphUrl, {
           method: 'POST',
@@ -1227,50 +1204,24 @@ function AdminPanel() {
       let newFeaturedImage = null;
       let newAdditionalImages = [];
 
-      // When uploading new feature image
+      // Upload new featured image if exists
       if (editingDraft.newImage) {
         try {
           const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
           await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
-          
-          // Publish the asset
-          await fetch(hygraphUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authToken}`
-            },
-            body: JSON.stringify({
-              query: publishAssetsMutation,
-              variables: {
-                where: { id: asset.id }
-              }
-            })
-          });
-
-          newFeaturedImage = asset.id;
+          newFeaturedImage = { id: asset.id };
         } catch (error) {
           console.error('Failed to upload featured image:', error);
-          throw error;
         }
       }
 
-      // When uploading new additional images
+      // Upload new additional images if they exist
       if (editingDraft.newImages?.length > 0) {
         for (const image of editingDraft.newImages) {
           try {
             const asset = await createAssetInHygraph(image, hygraphUrl, authToken);
             await uploadFileToS3(image, asset.upload.requestPostData);
-            newAdditionalImages.push({ where: { id: asset.id } });
-            
-            // Add the new image to editingDraft.images with the correct structure
-            setEditingDraft(prev => ({
-              ...prev,
-              images: [...(prev.images || []), {
-                id: asset.id,
-                url: URL.createObjectURL(image)
-              }]
-            }));
+            newAdditionalImages.push({ id: asset.id });
           } catch (error) {
             console.error('Failed to upload additional image:', error);
           }
@@ -1286,21 +1237,31 @@ function AdminPanel() {
         descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
         date: editingDraft.date.toISOString().split('T')[0],
         imageDisconnect: editingDraft.removedImage === true,
+        imageConnect: newFeaturedImage ? { id: newFeaturedImage.id } : 
+                       (editingDraft.removedImage ? null : 
+                       (editingDraft.image ? { id: editingDraft.image.id } : null))
       };
 
-      // Handle image connections
-      if (newFeaturedImage) {
-        variables.imageConnect = { id: newFeaturedImage };
+      // Handle additional images connections and disconnections
+      const existingImageIds = (editingDraft.images || [])
+        .filter(img => !editingDraft.removedImages?.some(removed => removed.id === img.id))
+        .map(img => ({ where: { id: img.id } }))
+        .filter(connection => connection.where.id); // Ensure we have valid IDs
+
+      const newImageConnections = newAdditionalImages
+        .map(img => ({ where: { id: img.id } }))
+        .filter(connection => connection.where.id); // Ensure we have valid IDs
+
+      // Only add imagesConnect if we have valid connections to make
+      if (existingImageIds.length > 0 || newImageConnections.length > 0) {
+        variables.imagesConnect = [...existingImageIds, ...newImageConnections];
       }
 
-      // Handle additional images
+      // Handle disconnections for removed images
       if (editingDraft.removedImages?.length > 0) {
-        // Map to just the IDs for disconnection
-        variables.imagesDisconnect = editingDraft.removedImages.map(img => ({ id: img.id }));
-      }
-
-      if (newAdditionalImages.length > 0) {
-        variables.imagesConnect = newAdditionalImages;
+        variables.imagesDisconnect = editingDraft.removedImages
+          .filter(img => img.id) // Ensure we have valid IDs
+          .map(img => ({ id: img.id }));
       }
 
       // Update the project
@@ -1317,6 +1278,7 @@ function AdminPanel() {
       });
 
       const result = await response.json();
+
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
@@ -1555,7 +1517,8 @@ function AdminPanel() {
             }
           }
         }
-      `;
+      }
+    `;
 
       // First get all project data
       const projectsResponse = await fetch(hygraphUrl, {
@@ -1850,88 +1813,6 @@ function AdminPanel() {
         message: `Error publishing draft assets: ${error.message}`,
         severity: 'error'
       });
-    }
-  };
-
-  // Add this function to handle the cropping process
-  const getCroppedImg = async (image, crop) => {
-    const canvas = document.createElement('canvas');
-    const scaleX = image.naturalWidth / image.width;
-    const scaleY = image.naturalHeight / image.height;
-    canvas.width = crop.width;
-    canvas.height = crop.height;
-    const ctx = canvas.getContext('2d');
-
-    ctx.drawImage(
-      image,
-      crop.x * scaleX,
-      crop.y * scaleY,
-      crop.width * scaleX,
-      crop.height * scaleY,
-      0,
-      0,
-      crop.width,
-      crop.height
-    );
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          blob.name = 'cropped.jpg';
-          resolve(blob);
-        }
-      }, 'image/jpeg', 1);
-    });
-  };
-
-  // Add this function to handle crop completion
-  const handleCropComplete = async () => {
-    if (imgRef.current && completedCrop?.width && completedCrop?.height) {
-      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop);
-      
-      // Create a better file name
-      const fileName = editingDraft.id ? 
-        `feature_image_${editingDraft.id}.jpg` : 
-        `feature_image_new.jpg`;
-
-      // Convert blob to file with the new name
-      const croppedFile = new File([croppedImageBlob], fileName, { type: 'image/jpeg' });
-      
-      if (editingDraft.id) {
-        // Edit mode
-        setEditingDraft(prev => ({
-          ...prev,
-          newImage: croppedFile,
-          removedImage: true // Mark to remove old image
-        }));
-      } else {
-        // New post mode
-        setFormData(prev => ({ ...prev, image: croppedFile }));
-        setPreviews(prev => ({ 
-          ...prev, 
-          image: URL.createObjectURL(croppedFile)
-        }));
-      }
-      
-      setCropModalOpen(false);
-      setTempImage(null);
-    }
-  };
-
-  // Update the handleEditFileChange function
-  const handleEditFileChange = (event, field) => {
-    if (field === 'image') {
-      const file = event.target.files[0];
-      if (file) {
-        setTempImage(URL.createObjectURL(file));
-        setCropModalOpen(true);
-      }
-    } else if (field === 'images') {
-      const files = Array.from(event.target.files);
-      setEditingDraft(prev => ({
-        ...prev,
-        newImages: [...(prev.newImages || []), ...files] // Ensure prev.newImages exists
-      }));
     }
   };
 
@@ -2657,17 +2538,7 @@ function AdminPanel() {
                                 type="file"
                                 accept="image/*"
                                 multiple
-                                onChange={(e) => {
-                                  const files = Array.from(e.target.files);
-                                  setEditingDraft(prev => ({ 
-                                    ...prev, 
-                                    images: [...(prev.images || []), ...files.map(file => ({
-                                      url: URL.createObjectURL(file),
-                                      file
-                                    }))],
-                                    newImages: [...(prev.newImages || []), ...files]
-                                  }));
-                                }}
+                                onChange={(e) => handleFileChange(e, 'images')}
                                 style={{ display: 'none' }}
                               />
                             </Button>
@@ -2880,7 +2751,7 @@ function AdminPanel() {
       <Dialog
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Edit Draft</DialogTitle>
@@ -3117,14 +2988,16 @@ function AdminPanel() {
 
             {/* Image Fields */}
             <Stack spacing={3}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>Featured Image</Typography>
+              <Box>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Featured Image
+                </Typography>
                 <Button
                   component="label"
                   variant="outlined"
                   sx={{
                     width: '100%',
-                    height: editingDraft.newImage || (editingDraft.image && !editingDraft.removedImage) ? 'auto' : '120px',
+                    height: editingDraft?.image ? 'auto' : '120px',
                     border: '2px dashed rgba(0,0,0,0.12)',
                     borderRadius: 2,
                     display: 'flex',
@@ -3132,7 +3005,7 @@ function AdminPanel() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: 1,
-                    padding: editingDraft.newImage || (editingDraft.image && !editingDraft.removedImage) ? '0' : '20px',
+                    padding: editingDraft?.image ? '0' : '20px',
                     position: 'relative',
                     overflow: 'hidden',
                     '&:hover': {
@@ -3144,10 +3017,10 @@ function AdminPanel() {
                     }
                   }}
                 >
-                  {editingDraft.newImage ? (
+                  {editingDraft?.image ? (
                     <>
                       <img 
-                        src={URL.createObjectURL(editingDraft.newImage)}
+                        src={editingDraft.image.url || editingDraft.image} // Add .url check
                         alt="Preview" 
                         style={{ 
                           width: '100%',
@@ -3172,47 +3045,34 @@ function AdminPanel() {
                         }}
                       >
                         <IconButton
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.preventDefault();
-                            setEditingDraft(prev => ({ ...prev, newImage: null }));
-                          }}
-                          sx={{ color: 'white' }}
-                        >
-                          <CloseIcon />
-                        </IconButton>
-                      </Box>
-                    </>
-                  ) : editingDraft.image && !editingDraft.removedImage ? (
-                    <>
-                      <img 
-                        src={editingDraft.image.url}
-                        alt="Preview" 
-                        style={{ 
-                          width: '100%',
-                          height: 'auto',
-                          display: 'block'
-                        }} 
-                      />
-                      <Box
-                        className="remove-overlay"
-                        sx={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          backgroundColor: 'rgba(0,0,0,0.5)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          opacity: 0,
-                          transition: 'opacity 0.2s ease-in-out',
-                        }}
-                      >
-                        <IconButton
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setEditingDraft(prev => ({ ...prev, removedImage: true }));
+                            const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
+                            const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
+
+                            // Delete the asset from Hygraph if it has an ID
+                            if (editingDraft.image?.id) {
+                              try {
+                                const response = await fetch(hygraphUrl, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                  },
+                                  body: JSON.stringify({
+                                    query: deleteAssetMutation,
+                                    variables: {
+                                      id: editingDraft.image.id
+                                    }
+                                  })
+                                });
+                                const result = await response.json();
+                              } catch (error) {
+                                console.error('Error deleting asset:', error);
+                              }
+                            }
+
+                            setEditingDraft(prev => ({ ...prev, image: null, removedImage: true }));
                           }}
                           sx={{ color: 'white' }}
                         >
@@ -3237,7 +3097,16 @@ function AdminPanel() {
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => handleEditFileChange(e, 'image')}
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setEditingDraft(prev => ({ 
+                          ...prev, 
+                          image: URL.createObjectURL(file), // Add this to show preview
+                          newImage: file
+                        }));
+                      }
+                    }}
                     style={{ display: 'none' }}
                   />
                 </Button>
@@ -3274,7 +3143,7 @@ function AdminPanel() {
                           }}
                         >
                           <img
-                            src={image.url || URL.createObjectURL(image)} // Handle both URL strings and File objects
+                            src={image.url || image} // Add .url check
                             alt={`Preview ${index + 1}`}
                             style={{
                               position: 'absolute',
@@ -3378,12 +3247,13 @@ function AdminPanel() {
                       multiple
                       onChange={(e) => {
                         const files = Array.from(e.target.files);
+                        const newImageUrls = files.map(file => ({
+                          url: URL.createObjectURL(file),
+                          file
+                        }));
                         setEditingDraft(prev => ({ 
                           ...prev, 
-                          images: [...(prev.images || []), ...files.map(file => ({
-                            url: URL.createObjectURL(file),
-                            file
-                          }))],
+                          images: [...(prev.images || []), ...newImageUrls],
                           newImages: [...(prev.newImages || []), ...files]
                         }));
                       }}
@@ -3424,53 +3294,6 @@ function AdminPanel() {
               Update Published
             </Button>
           )}
-        </DialogActions>
-      </Dialog>
-      <Dialog
-        open={cropModalOpen}
-        onClose={() => {
-          setCropModalOpen(false);
-          setTempImage(null);
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Crop Featured Image</DialogTitle>
-        <DialogContent>
-          <Box sx={{ width: '100%', mt: 2 }}>
-            {tempImage && (
-              <ReactCrop
-                crop={crop}
-                onChange={(c) => setCrop(c)}
-                onComplete={(c) => setCompletedCrop(c)}
-                aspect={16/9}
-              >
-                <img
-                  ref={imgRef}
-                  src={tempImage}
-                  style={{ maxWidth: '100%' }}
-                  alt="Crop preview"
-                />
-              </ReactCrop>
-            )}
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button 
-            onClick={() => {
-              setCropModalOpen(false);
-              setTempImage(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleCropComplete}
-            variant="contained"
-            color="primary"
-          >
-            Apply Crop
-          </Button>
         </DialogActions>
       </Dialog>
     </Box>
