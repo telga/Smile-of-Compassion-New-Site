@@ -20,6 +20,15 @@ const colorPalette = {
   text: '#333333', // Dark gray text
 };
 
+// Add this helper function near the top of the Home component
+const createUrlSlug = (title) => {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/-+/g, '-');         // Remove consecutive hyphens
+};
+
 // Home component: Renders the landing page of the website
 function Home() {
   // State to store recent projects
@@ -173,7 +182,7 @@ function Home() {
                 <motion.div variants={itemVariants}>
                   <Card 
                     component={Link}
-                    to={`/projects/${project.id}`}
+                    to={`/projects/${createUrlSlug(project.localizations?.[0]?.title || project.title)}`}
                     sx={{ 
                       display: 'flex', 
                       flexDirection: isMobile ? 'row' : 'column',
