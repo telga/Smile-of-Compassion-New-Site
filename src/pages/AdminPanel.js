@@ -345,7 +345,7 @@ const publishAssetsMutation = `
 
 // Add this mutation to delete assets
 const deleteAssetsMutation = `
-  mutation DeleteAssets($where: AssetWhereInput!) {
+  mutation DeleteAssets($where: AssetManyWhereInput!) {
     deleteManyAssets(where: $where) {
       count
     }
@@ -1231,10 +1231,11 @@ function AdminPanel() {
       if (editingDraft.newImage) {
         try {
           const asset = await createAssetInHygraph(editingDraft.newImage, hygraphUrl, authToken);
+          
           await uploadFileToS3(editingDraft.newImage, asset.upload.requestPostData);
           
           // Publish the asset
-          await fetch(hygraphUrl, {
+          const publishResponse = await fetch(hygraphUrl, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1249,8 +1250,18 @@ function AdminPanel() {
           });
 
           newFeaturedImage = asset.id;
+          
+          // Update editingDraft to clear removedImage flag and set new image
+          setEditingDraft(prev => ({
+            ...prev,
+            removedImage: false,  // Clear the removedImage flag
+            image: {             // Set the new image info
+              id: asset.id,
+              url: URL.createObjectURL(editingDraft.newImage)
+            }
+          }));
         } catch (error) {
-          console.error('Failed to upload featured image:', error);
+          console.error('Failed to upload feature image:', error);
           throw error;
         }
       }
@@ -1285,17 +1296,19 @@ function AdminPanel() {
         descriptionEn: transformToSlateAST(editEditorEn.getJSON()),
         descriptionVn: transformToSlateAST(editEditorVn.getJSON()),
         date: editingDraft.date.toISOString().split('T')[0],
-        imageDisconnect: editingDraft.removedImage === true,
       };
 
-      // Handle image connections
+      // Handle feature image connection/disconnection
+      if (editingDraft.removedImage === true && !newFeaturedImage) {
+        variables.imageDisconnect = true;
+      }
+
       if (newFeaturedImage) {
         variables.imageConnect = { id: newFeaturedImage };
       }
 
-      // Handle additional images
+      // Handle additional images connection/disconnection
       if (editingDraft.removedImages?.length > 0) {
-        // Map to just the IDs for disconnection
         variables.imagesDisconnect = editingDraft.removedImages.map(img => ({ id: img.id }));
       }
 
@@ -1303,7 +1316,7 @@ function AdminPanel() {
         variables.imagesConnect = newAdditionalImages;
       }
 
-      // Update the project
+      // Log the full response for debugging
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
@@ -1317,6 +1330,7 @@ function AdminPanel() {
       });
 
       const result = await response.json();
+
       if (result.errors) {
         throw new Error(result.errors[0].message);
       }
