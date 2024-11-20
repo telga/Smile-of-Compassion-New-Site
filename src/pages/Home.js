@@ -20,15 +20,6 @@ const colorPalette = {
   text: '#333333', // Dark gray text
 };
 
-// Add this helper function near the top of the Home component
-const createUrlSlug = (title) => {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-    .replace(/\s+/g, '-')         // Replace spaces with hyphens
-    .replace(/-+/g, '-');         // Remove consecutive hyphens
-};
-
 // Home component: Renders the landing page of the website
 function Home() {
   // State to store recent projects
@@ -39,11 +30,21 @@ function Home() {
   const isMobile = useMediaQuery('(max-width:600px)'); // Adjusted from 400px to 600px
   const { t } = useTranslation();
 
-  // Add this near your other state declarations
-  const [slugs] = useState(() => {
-    const savedSlugs = localStorage.getItem('projectSlugs');
-    return savedSlugs ? JSON.parse(savedSlugs) : {};
-  });
+  // Add the getProjectSlug helper inside the component
+  const getProjectSlug = (project) => {
+    if (language === 'en') {
+      return project.slug;
+    }
+    return project.localizations?.[0]?.slug || project.slug;
+  };
+
+  // Add this helper function inside the Home component
+  const getProjectDescription = (project) => {
+    if (language === 'en') {
+      return project.description?.text || '';
+    }
+    return project.localizations?.[0]?.description?.text || project.description?.text || '';
+  };
 
   // Effect to fetch recent projects when language changes
   useEffect(() => {
@@ -188,7 +189,7 @@ function Home() {
                 <motion.div variants={itemVariants}>
                   <Card 
                     component={Link}
-                    to={`/projects/${slugs[project.id]?.[language] || createUrlSlug(project.title)}`}
+                    to={`/projects/${getProjectSlug(project)}`}
                     sx={{ 
                       display: 'flex', 
                       flexDirection: isMobile ? 'row' : 'column',
@@ -268,7 +269,7 @@ function Home() {
                                 fontSize: '0.95rem',
                               }}
                             >
-                              {project.localizations?.[0]?.description || project.description}
+                              {getProjectDescription(project)}
                             </Typography>
                             <Box 
                               sx={{ 

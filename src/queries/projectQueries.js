@@ -7,6 +7,7 @@ export const GET_PROJECTS = gql`
       id
       title
       date
+      slug
       image {
         url
         localizations(locales: [en]) {
@@ -15,7 +16,12 @@ export const GET_PROJECTS = gql`
         }
       }
       localizations(locales: [$language]) {
+        locale
         title
+        slug
+        description {
+          raw
+        }
       }
     }
   }
@@ -23,13 +29,14 @@ export const GET_PROJECTS = gql`
 
 export const GET_PROJECT = gql`
   query GetProject($id: ID!, $language: Locale!) {
-    project(where: { id: $id }, locales: [$language]) {
+    project(where: { id: $id }) {
       id
       title
       description {
         raw
       }
       date
+      slug
       image {
         url
         width
@@ -39,6 +46,14 @@ export const GET_PROJECT = gql`
         url
         width
         height
+      }
+      localizations(locales: [$language]) {
+        locale
+        title
+        slug
+        description {
+          raw
+        }
       }
     }
   }

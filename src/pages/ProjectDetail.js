@@ -22,40 +22,58 @@ function ProjectDetail() {
   const [project, setProject] = React.useState(null);
   const { t } = useTranslation();
   const location = useLocation();
-  const [slugs] = useState(() => {
-    const savedSlugs = localStorage.getItem('projectSlugs');
-    return savedSlugs ? JSON.parse(savedSlugs) : {};
-  });
 
-  // Add this effect to handle URL updates when language changes
+  // Update the language change effect
   useEffect(() => {
     if (project) {
-      const storedSlug = Object.entries(slugs).find(([id, _]) => id === project.id);
-      if (storedSlug && storedSlug[1][language]) {
-        // Only update URL if we're not already on the correct language slug
-        if (slug !== storedSlug[1][language]) {
-          navigate(`/projects/${storedSlug[1][language]}`, { replace: true });
-        }
+      const newSlug = language === 'en' ? 
+        project.slug : 
+        (project.localizations?.[0]?.slug || project.slug);
+      
+      if (newSlug && slug !== newSlug) {
+        navigate(`/projects/${newSlug}`, { 
+          replace: true,
+          state: { fromLanguageChange: true }
+        });
       }
     }
-  }, [language, project, slugs, navigate, slug]);
+  }, [language, project, navigate, slug]);
 
-  // Fetch project data when component mounts or language changes
+  // Update the fetchProject function to properly handle both locales
   React.useEffect(() => {
     async function fetchProject() {
       try {
-        // First fetch all projects
-        const allProjects = await hygraphClient.request(GET_PROJECTS, { language: 'en' });
+        // First get all projects with both English and Vietnamese data
+        const enProjects = await hygraphClient.request(GET_PROJECTS, { language: 'en' });
+        const vnProjects = await hygraphClient.request(GET_PROJECTS, { language: 'vn' });
         
-        // Find project by matching stored slug
-        const projectMatch = allProjects.projects.find(p => {
-          const storedSlug = Object.entries(slugs).find(([id, slugPair]) => 
-            slugPair[language] === slug || slugPair.en === slug || slugPair.vn === slug
+        // Find the project that matches the current slug
+        let projectMatch = null;
+        
+        if (language === 'en') {
+          // For English, first try to find by English slug
+          projectMatch = enProjects.projects.find(p => p.slug === slug);
+          
+          // If not found, check if it's a Vietnamese slug and find matching English project
+          if (!projectMatch) {
+            const vnProject = vnProjects.projects.find(p => 
+              p.localizations?.[0]?.slug === slug
+            );
+            if (vnProject) {
+              projectMatch = enProjects.projects.find(p => p.id === vnProject.id);
+            }
+          }
+        } else {
+          // For Vietnamese, first try to find by Vietnamese slug
+          projectMatch = vnProjects.projects.find(p => 
+            p.localizations?.[0]?.slug === slug
           );
           
-          if (storedSlug) return p.id === storedSlug[0];
-          return false; // Only use stored slugs
-        });
+          // If not found, try finding by English slug as fallback
+          if (!projectMatch) {
+            projectMatch = enProjects.projects.find(p => p.slug === slug);
+          }
+        }
 
         if (!projectMatch) {
           console.error('Project not found');
@@ -63,24 +81,45 @@ function ProjectDetail() {
           return;
         }
 
-        // Now fetch the specific project details using the ID
-        const enData = await hygraphClient.request(GET_PROJECT, { id: projectMatch.id, language: 'en' });
-        const currentLangData = await hygraphClient.request(GET_PROJECT, { id: projectMatch.id, language });
-        
+        // Fetch the full project details in both languages
+        const [enData, vnData] = await Promise.all([
+          hygraphClient.request(GET_PROJECT, { 
+            id: projectMatch.id, 
+            language: 'en' 
+          }),
+          hygraphClient.request(GET_PROJECT, { 
+            id: projectMatch.id, 
+            language: 'vn' 
+          })
+        ]);
+
+        // Merge the data based on current language
         const mergedProject = {
           ...enData.project,
-          ...currentLangData.project,
-          images: enData.project.images,
-          image: enData.project.image
+          title: language === 'en' ? 
+            enData.project.title : 
+            (vnData.project.localizations?.[0]?.title || enData.project.title),
+          description: language === 'en' ? 
+            enData.project.description : 
+            (vnData.project.localizations?.[0]?.description || enData.project.description),
+          slug: language === 'en' ? 
+            enData.project.slug : 
+            (vnData.project.localizations?.[0]?.slug || enData.project.slug),
+          image: enData.project.image,
+          images: enData.project.images || [],
+          localizations: vnData.project.localizations
         };
-        
+
         setProject(mergedProject);
       } catch (error) {
         console.error('Error fetching project:', error);
       }
     }
-    fetchProject();
-  }, [slug, language, navigate, slugs]);
+    
+    if (slug) {
+      fetchProject();
+    }
+  }, [slug, language, navigate]);
 
   // Handler for back button click
   const handleBackClick = () => {

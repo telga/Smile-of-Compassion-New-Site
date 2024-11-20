@@ -136,20 +136,20 @@ function Projects() {
     return project.title;
   };
 
-  // Add this helper function near the top of the Projects component
-  const createUrlSlug = (title) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
-      .replace(/\s+/g, '-') // Replace spaces with hyphens
-      .replace(/-+/g, '-'); // Remove consecutive hyphens
+  // Update the Link components to use Hygraph slugs
+  const getProjectSlug = (project) => {
+    if (language === 'en') {
+      return project.slug;
+    }
+    return project.localizations?.[0]?.slug || project.slug;
   };
 
-  // Add near the top of the component
-  const [slugs] = useState(() => {
-    const savedSlugs = localStorage.getItem('projectSlugs');
-    return savedSlugs ? JSON.parse(savedSlugs) : {};
-  });
+  const getLocalizedDescription = (project) => {
+    if (language === 'en') {
+      return project.description?.raw || '';
+    }
+    return project.localizations?.[0]?.description?.raw || project.description?.raw || '';
+  };
 
   return (
     <Box sx={{ paddingTop: '80px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
@@ -180,8 +180,7 @@ function Projects() {
                 <Grid item xs={12} sm={10} md={8}>
                   <motion.div variants={itemVariants}>
                     <Link 
-                      to={`/projects/${slugs[projectsByYear[mostRecentYear][0].id]?.[language] || 
-                        createUrlSlug(projectsByYear[mostRecentYear][0].title)}`} 
+                      to={`/projects/${getProjectSlug(projectsByYear[mostRecentYear][0])}`} 
                       style={{ textDecoration: 'none' }}
                     >
                       <Card sx={{ 
@@ -373,7 +372,7 @@ function Projects() {
                       {sortProjectsByDate(projectsByYear[openModal]).map((project) => (
                         <Grid item xs={12} sm={6} md={4} key={project.id}>
                           <Link 
-                            to={`/projects/${slugs[project.id]?.[language] || createUrlSlug(project.title)}`} 
+                            to={`/projects/${getProjectSlug(project)}`} 
                             style={{ textDecoration: 'none' }}
                           >
                             <Card sx={{ 
