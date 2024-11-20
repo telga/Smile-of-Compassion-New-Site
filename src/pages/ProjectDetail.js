@@ -12,11 +12,11 @@ import 'slick-carousel/slick/slick-theme.css';
 import { RichText } from '@graphcms/rich-text-react-renderer';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { GET_PROJECT } from '../queries/projectQueries';
+import { GET_PROJECT, GET_PROJECTS } from '../queries/projectQueries';
 
 // ProjectDetail component: Renders detailed information about a specific project
 function ProjectDetail() {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { language } = useLanguage();
   const [project, setProject] = React.useState(null);
@@ -27,14 +27,27 @@ function ProjectDetail() {
   React.useEffect(() => {
     async function fetchProject() {
       try {
-        const enData = await hygraphClient.request(GET_PROJECT, { id, language: 'en' });
-        const currentLangData = await hygraphClient.request(GET_PROJECT, { id, language });
+        // First fetch all projects to find the one matching our slug
+        const allProjects = await hygraphClient.request(GET_PROJECTS, { language: 'en' });
+        const projectMatch = allProjects.projects.find(p => 
+          createUrlSlug(p.title) === slug
+        );
+
+        if (!projectMatch) {
+          console.error('Project not found');
+          navigate('/projects');
+          return;
+        }
+
+        // Now fetch the specific project details using the ID
+        const enData = await hygraphClient.request(GET_PROJECT, { id: projectMatch.id, language: 'en' });
+        const currentLangData = await hygraphClient.request(GET_PROJECT, { id: projectMatch.id, language });
         
         const mergedProject = {
           ...enData.project,
           ...currentLangData.project,
-          images: enData.project.images, // Always use English images
-          image: enData.project.image // Always use English single image
+          images: enData.project.images,
+          image: enData.project.image
         };
         
         setProject(mergedProject);
@@ -43,7 +56,16 @@ function ProjectDetail() {
       }
     }
     fetchProject();
-  }, [id, language]);
+  }, [slug, language, navigate]);
+
+  // Add the createUrlSlug helper function
+  const createUrlSlug = (title) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  };
 
   // Handler for back button click
   const handleBackClick = () => {
