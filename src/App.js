@@ -139,15 +139,4 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Add this helper function
-const getProjectBySlug = (slug) => {
-  const savedSlugs = localStorage.getItem('projectSlugs');
-  if (!savedSlugs) return null;
-  
-  const slugsObj = JSON.parse(savedSlugs);
-  return Object.entries(slugsObj).find(([_, slugPair]) => 
-    slugPair.en === slug || slugPair.vn === slug
-  );
-};
-
 export default App;

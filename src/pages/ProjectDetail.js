@@ -27,6 +27,19 @@ function ProjectDetail() {
     return savedSlugs ? JSON.parse(savedSlugs) : {};
   });
 
+  // Add this effect to handle URL updates when language changes
+  useEffect(() => {
+    if (project) {
+      const storedSlug = Object.entries(slugs).find(([id, _]) => id === project.id);
+      if (storedSlug && storedSlug[1][language]) {
+        // Only update URL if we're not already on the correct language slug
+        if (slug !== storedSlug[1][language]) {
+          navigate(`/projects/${storedSlug[1][language]}`, { replace: true });
+        }
+      }
+    }
+  }, [language, project, slugs, navigate, slug]);
+
   // Fetch project data when component mounts or language changes
   React.useEffect(() => {
     async function fetchProject() {

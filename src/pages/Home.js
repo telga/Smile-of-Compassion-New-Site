@@ -39,6 +39,12 @@ function Home() {
   const isMobile = useMediaQuery('(max-width:600px)'); // Adjusted from 400px to 600px
   const { t } = useTranslation();
 
+  // Add this near your other state declarations
+  const [slugs] = useState(() => {
+    const savedSlugs = localStorage.getItem('projectSlugs');
+    return savedSlugs ? JSON.parse(savedSlugs) : {};
+  });
+
   // Effect to fetch recent projects when language changes
   useEffect(() => {
     async function fetchRecentProjects() {
@@ -182,7 +188,7 @@ function Home() {
                 <motion.div variants={itemVariants}>
                   <Card 
                     component={Link}
-                    to={`/projects/${createUrlSlug(project.localizations?.[0]?.title || project.title)}`}
+                    to={`/projects/${slugs[project.id]?.[language] || createUrlSlug(project.title)}`}
                     sx={{ 
                       display: 'flex', 
                       flexDirection: isMobile ? 'row' : 'column',
