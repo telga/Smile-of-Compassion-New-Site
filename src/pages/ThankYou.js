@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Typography, Container, Box, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -7,120 +7,62 @@ import { useTranslation } from 'react-i18next';
 function ThankYou() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [isProcessed, setIsProcessed] = useState(false);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     const uploadToHygraph = async () => {
-      // Get donation data from localStorage
-      const donationData = JSON.parse(localStorage.getItem('donationData'));
+      if (isProcessingRef.current) return;
       
-      // Only proceed if we have donation data and haven't processed it yet
-      if (!donationData || isProcessed) {
-        return;
-      }
+      const donationData = JSON.parse(localStorage.getItem('donationData'));
+      if (!donationData) return;
 
       try {
+        isProcessingRef.current = true;
+
         const CREATE_DONATION = `
-          mutation CreateDonation(
-            $donationAmount: Int!
-            $firstName: String!
-            $lastName: String!
-            $email: String!
-            $fullAddress: String!
-          ) {
-            createDonation(data: {
-              donationAmount: $donationAmount
-              firstName: $firstName
-              lastName: $lastName
-              email: $email
-              fullAddress: $fullAddress
-            }) {
+          mutation {
+            createDonation(
+              data: {
+                donationAmount: ${parseInt(donationData.amount)}
+                firstName: "${donationData.first_name}"
+                lastName: "${donationData.last_name}"
+                email: "${donationData.email}"
+                fullAddress: "${donationData.address}, ${donationData.city}, ${donationData.state} ${donationData.zip}, ${donationData.country}"
+              }
+            ) {
               id
             }
           }
         `;
 
-        const PUBLISH_DONATION = `
-          mutation PublishDonation($id: ID!) {
-            publishDonation(where: { id: $id }) {
-              id
-            }
-          }
-        `;
+        const headers = {
+          'content-type': 'application/json',
+          'authorization': `Bearer ${process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN}`
+        };
 
-        // Prepare the full address - adding proper formatting and handling optional fields
-        const addressParts = [
-          donationData.address1,
-          donationData.city,
-          donationData.state,
-          donationData.zip,
-          donationData.country
-        ].filter(Boolean); // This removes any empty/undefined values
-        
-        const fullAddress = addressParts.join(', ');
-
-        // First create the donation
         const response = await fetch(process.env.REACT_APP_DONATION_HYGRAPH_API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN
-          },
+          headers: headers,
           body: JSON.stringify({
-            query: CREATE_DONATION,
-            variables: {
-              donationAmount: parseInt(donationData.amount),
-              firstName: donationData.first_name,
-              lastName: donationData.last_name,
-              email: donationData.email,
-              fullAddress: fullAddress
-            }
+            query: CREATE_DONATION
           })
         });
 
         const result = await response.json();
-        console.log('Create response:', result);
-
+        
         if (result.errors) {
-          console.error('Create errors:', result.errors);
           throw new Error(result.errors[0].message);
         }
 
-        // Then publish it
-        const donationId = result.data.createDonation.id;
-        const publishResponse = await fetch(process.env.REACT_APP_DONATION_HYGRAPH_API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN
-          },
-          body: JSON.stringify({
-            query: PUBLISH_DONATION,
-            variables: {
-              id: donationId
-            }
-          })
-        });
-
-        const publishResult = await publishResponse.json();
-        console.log('Publish response:', publishResult);
-
-        if (publishResult.errors) {
-          console.error('Publish errors:', publishResult.errors);
-          throw new Error(publishResult.errors[0].message);
-        }
-
-        // Clear the stored data
         localStorage.removeItem('donationData');
-        setIsProcessed(true);
 
       } catch (error) {
-        console.error('Error uploading to Hygraph:', error);
+        console.error('Detailed error:', error);
       }
     };
 
     uploadToHygraph();
-  }, [isProcessed]);
+  }, []);
 
   return (
     <motion.div

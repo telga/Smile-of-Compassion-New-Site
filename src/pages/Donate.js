@@ -100,11 +100,11 @@ function Donate() {
     const value = event.target.value;
     if (!isNaN(value) && value.trim() !== '') {
       const numValue = parseFloat(value);
-      if (numValue < 10) {
+      if (numValue < 0) {
         setAmountError(true);
         setFormData(prev => ({
           ...prev,
-          amount: '10.00'
+          amount: '0.00'
         }));
       } else {
         setAmountError(false);
@@ -769,7 +769,7 @@ function Donate() {
                   value={formData.amount}
                   onChange={handleFormChange}
                   onBlur={handleAmountBlur}
-                  min="10"
+                  min="0"
                   step="0.01"
                   style={{
                     width: '100%',
@@ -788,7 +788,7 @@ function Donate() {
                     mt: 0.5
                   }}
                 >
-                  {t('donate.minimumAmount', { amount: '10.00' })}
+                  {t('donate.minimumAmount', { amount: '0.00' })}
                 </Typography>
               )}
             </Box>
