@@ -39,8 +39,12 @@ function DonationsTable() {
     const exportData = data.donations.map(({ id, ...rest }) => rest);
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
+    
+    // Get current date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0];
+    
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Donations');
-    XLSX.writeFile(workbook, 'donations_data.xlsx');
+    XLSX.writeFile(workbook, `donations_data_${today}.xlsx`);
   };
 
   if (loading) return <Spin size="large" />;
