@@ -60,7 +60,8 @@
     "state": "Tỉnh/Thành phố",
     "country": "Quốc gia", 
     "postalCode": "Mã bưu điện",
-    "processPayment": "Tiếp tục đến Thông tin Thanh toán"
+    "processPayment": "Tiếp tục đến Thông tin Thanh toán",
+    "minimumAmount": "Chúng tôi xin lỗi nhưng số tiền quyên góp tối thiểu là $10.00 USD."
     },
     "contact": {
       "title": "Liên hệ với chúng tôi",

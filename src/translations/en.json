@@ -60,7 +60,8 @@
     "state": "State",
     "country": "Country",
     "postalCode": "Zip Code",
-    "processPayment": "Continue to Payment Information"
+    "processPayment": "Continue to Payment Information",
+    "minimumAmount": "We are sorry but the minimum donation amount is $10.00 USD."
   },
   "contact": {
     "title": "Contact Us",

@@ -92,15 +92,27 @@ function Donate() {
     setIsPaymentModalOpen(false);
   };
   
+  // Add new state for amount error
+  const [amountError, setAmountError] = useState(false);
+
   // Update the handleAmountBlur function
   const handleAmountBlur = (event) => {
     const value = event.target.value;
     if (!isNaN(value) && value.trim() !== '') {
-      const formattedValue = parseFloat(value).toFixed(2);
-      setFormData(prev => ({
-        ...prev,
-        amount: formattedValue
-      }));
+      const numValue = parseFloat(value);
+      if (numValue < 10) {
+        setAmountError(true);
+        setFormData(prev => ({
+          ...prev,
+          amount: '10.00'
+        }));
+      } else {
+        setAmountError(false);
+        setFormData(prev => ({
+          ...prev,
+          amount: numValue.toFixed(2)
+        }));
+      }
     }
   };
 
@@ -113,19 +125,21 @@ function Donate() {
     }));
   };
 
-  // Update handleFormSubmit
+  // Update handleFormSubmit to include amount validation
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
+    // Check if amount is valid
+    const amount = parseFloat(formData.amount);
+    if (amount < 10) {
+      setAmountError(true);
+      return;
+    }
+    
     try {
-      // Store form data in localStorage before redirecting
       localStorage.setItem('donationData', JSON.stringify(formData));
-      
-      // Update the form's url_finish
       const form = e.target;
       form.url_finish.value = `${window.location.origin}/thank-you`;
-      
-      // Submit form to payment gateway
       form.submit();
     } catch (error) {
       console.error('Error processing donation:', error);
@@ -741,7 +755,6 @@ function Donate() {
             action="https://secure.cocardgateway.com/cart/cart.php" 
             method="POST"
             onSubmit={handleFormSubmit}
-            target="_blank"
           >
             {/* Amount Field */}
             <Box sx={{ mb: 3 }}>
@@ -756,15 +769,28 @@ function Donate() {
                   value={formData.amount}
                   onChange={handleFormChange}
                   onBlur={handleAmountBlur}
+                  min="10"
+                  step="0.01"
                   style={{
                     width: '100%',
                     padding: '8px',
-                    border: '1px solid #ddd',
+                    border: `1px solid ${amountError ? '#d32f2f' : '#ddd'}`,
                     borderRadius: '4px'
                   }}
                   required
                 />
               </Box>
+              {amountError && (
+                <Typography 
+                  sx={{ 
+                    color: '#d32f2f', 
+                    fontSize: '0.75rem',
+                    mt: 0.5
+                  }}
+                >
+                  {t('donate.minimumAmount', { amount: '10.00' })}
+                </Typography>
+              )}
             </Box>
 
             {/* Personal Information Section */}
