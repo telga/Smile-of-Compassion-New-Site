@@ -71,7 +71,7 @@ export const SEARCH_PROJECTS = gql`
 
 export const GET_ALL_DONATIONS = gql`
   query GetAllDonations {
-    donationAmounts {
+    donations(stage: DRAFT) {
       id
       donationAmount
       firstName
