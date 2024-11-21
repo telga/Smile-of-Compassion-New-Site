@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMediaQuery, Dialog, DialogContent, IconButton } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
@@ -9,6 +9,9 @@ import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
+  // Add version tracking
+  const FORM_VERSION = '112124';  // Update this when making significant changes
+  
   // Update state to default to new credit card option
   const [paymentMethod, setPaymentMethod] = useState(0);
   // Hook to use translation functionality
@@ -32,6 +35,16 @@ function Donate() {
     country: 'US',
     zip: ''            // Changed from postalCode
   });
+
+  useEffect(() => {
+    // Check if stored form version matches current version
+    const storedVersion = localStorage.getItem('donationFormVersion');
+    if (storedVersion !== FORM_VERSION) {
+      // Clear related storage if versions don't match
+      localStorage.removeItem('donationData');
+      localStorage.setItem('donationFormVersion', FORM_VERSION);
+    }
+  }, []);
 
   // Update color palette
   const colorPalette = {
@@ -106,7 +119,7 @@ function Donate() {
         setAmountError(true);
         setFormData(prev => ({
           ...prev,
-          amount: minDonationAmount
+          amount: minDonationAmount.toFixed(2)
         }));
       } else {
         setAmountError(false);
@@ -127,19 +140,27 @@ function Donate() {
     }));
   };
 
-  // Update handleFormSubmit to include amount validation
+  // Update handleFormSubmit to enforce minimum amount
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
     // Check if amount is valid
     const amount = parseFloat(formData.amount);
-    if (amount < 10) {
+    if (isNaN(amount) || amount < minDonationAmount) {
       setAmountError(true);
+      setFormData(prev => ({
+        ...prev,
+        amount: minDonationAmount.toFixed(2)
+      }));
       return;
     }
     
     try {
-      localStorage.setItem('donationData', JSON.stringify(formData));
+      // Store with version
+      localStorage.setItem('donationData', JSON.stringify({
+        ...formData,
+        formVersion: FORM_VERSION
+      }));
       const form = e.target;
       form.url_finish.value = `${window.location.origin}/thank-you`;
       form.submit();
