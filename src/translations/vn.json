@@ -61,7 +61,8 @@
     "country": "Quốc gia", 
     "postalCode": "Mã bưu điện",
     "processPayment": "Tiếp tục đến Thông tin Thanh toán",
-    "minimumAmount": "Chúng tôi xin lỗi nhưng số tiền quyên góp tối thiểu là $10.00 USD."
+    "minimumAmount": "Chúng tôi xin lỗi nhưng số tiền quyên góp tối thiểu là $10.00 USD.",
+    "amountNote": "$10 là số tiền quyên góp trực tuyến tối thiểu. Tất cả các khoản quyên góp đều được khấu trừ thuế."
     },
     "contact": {
       "title": "Liên hệ với chúng tôi",

@@ -18,6 +18,8 @@ function Donate() {
   // Add new state for modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  const minDonationAmount = 0;
+
   // Update initial state to match merchant field names
   const [formData, setFormData] = useState({
     amount: '',
@@ -100,11 +102,11 @@ function Donate() {
     const value = event.target.value;
     if (!isNaN(value) && value.trim() !== '') {
       const numValue = parseFloat(value);
-      if (numValue < 0) {
+      if (numValue < minDonationAmount) {
         setAmountError(true);
         setFormData(prev => ({
           ...prev,
-          amount: '0.00'
+          amount: minDonationAmount
         }));
       } else {
         setAmountError(false);
@@ -780,17 +782,15 @@ function Donate() {
                   required
                 />
               </Box>
-              {amountError && (
-                <Typography 
-                  sx={{ 
-                    color: '#d32f2f', 
-                    fontSize: '0.75rem',
-                    mt: 0.5
-                  }}
-                >
-                  {t('donate.minimumAmount', { amount: '0.00' })}
-                </Typography>
-              )}
+              <Typography 
+                sx={{ 
+                  color: '#666', 
+                  fontSize: '0.75rem',
+                  mt: 0.5
+                }}
+              >
+                {t('donate.amountNote')}
+              </Typography>
             </Box>
 
             {/* Personal Information Section */}

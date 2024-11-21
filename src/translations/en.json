@@ -61,7 +61,8 @@
     "country": "Country",
     "postalCode": "Zip Code",
     "processPayment": "Continue to Payment Information",
-    "minimumAmount": "We are sorry but the minimum donation amount is $10.00 USD."
+    "minimumAmount": "We are sorry but the minimum donation amount is $10.00 USD.",
+    "amountNote": "$10 is the minimum online donation amount. All donations are tax deductable."
   },
   "contact": {
     "title": "Contact Us",
