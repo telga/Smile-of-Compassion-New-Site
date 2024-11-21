@@ -40,15 +40,31 @@ function ThankYou() {
           }
         `;
 
-        // Prepare the full address
-        const fullAddress = `${donationData.address1}, ${donationData.city}, ${donationData.state} ${donationData.zip}, ${donationData.country}`;
+        const PUBLISH_DONATION = `
+          mutation PublishDonation($id: ID!) {
+            publishDonation(where: { id: $id }) {
+              id
+            }
+          }
+        `;
 
-        // Send to Hygraph
+        // Prepare the full address - adding proper formatting and handling optional fields
+        const addressParts = [
+          donationData.address1,
+          donationData.city,
+          donationData.state,
+          donationData.zip,
+          donationData.country
+        ].filter(Boolean); // This removes any empty/undefined values
+        
+        const fullAddress = addressParts.join(', ');
+
+        // First create the donation
         const response = await fetch(process.env.REACT_APP_DONATION_HYGRAPH_API_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN}`
+            'Authorization': process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN
           },
           body: JSON.stringify({
             query: CREATE_DONATION,
@@ -63,7 +79,36 @@ function ThankYou() {
         });
 
         const result = await response.json();
-        if (result.errors) throw new Error(result.errors[0].message);
+        console.log('Create response:', result);
+
+        if (result.errors) {
+          console.error('Create errors:', result.errors);
+          throw new Error(result.errors[0].message);
+        }
+
+        // Then publish it
+        const donationId = result.data.createDonation.id;
+        const publishResponse = await fetch(process.env.REACT_APP_DONATION_HYGRAPH_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': process.env.REACT_APP_DONATION_HYGRAPH_AUTH_TOKEN
+          },
+          body: JSON.stringify({
+            query: PUBLISH_DONATION,
+            variables: {
+              id: donationId
+            }
+          })
+        });
+
+        const publishResult = await publishResponse.json();
+        console.log('Publish response:', publishResult);
+
+        if (publishResult.errors) {
+          console.error('Publish errors:', publishResult.errors);
+          throw new Error(publishResult.errors[0].message);
+        }
 
         // Clear the stored data
         localStorage.removeItem('donationData');

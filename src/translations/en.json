@@ -38,7 +38,7 @@
   },
   "donate": {
     "title": "Donate",
-    "description": "Your support helps us continue our mission. Choose an amount to donate or enter a custom amount.",
+    "description": "Your support helps us continue our mission.",
     "donateWithCard": "Donate with Credit Card",
     "scanCreditCardQR": "Scan or Click Button Below to Donate with Credit Card",
     "scanZelleQR": "Scan or Click Button Below to Donate with Zelle",

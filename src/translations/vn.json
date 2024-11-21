@@ -38,7 +38,7 @@
     },
     "donate": {
     "title": "Hỗ Trợ",
-    "description": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh của mình. Chọn một số tiền để quyên góp hoặc nhập số tiền tùy chỉnh.",
+    "description": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh của mình.",
     "donateWithCard": "Hỗ trợ với Thẻ Tín Dụng",
     "scanCreditCardQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với Thẻ Tín Dụng",
     "scanZelleQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với Zelle",
