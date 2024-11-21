@@ -16,6 +16,7 @@ import i18n from './i18n';
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from "@apollo/client/link/error";
+import ThankYou from './pages/ThankYou';
 
 // Create Apollo Client using the environment variable
 const httpLink = createHttpLink({
@@ -108,6 +109,7 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/thank-you" element={<ThankYou />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Footer />

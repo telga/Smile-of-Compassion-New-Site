@@ -113,25 +113,22 @@ function Donate() {
     }));
   };
 
-  // Add this handler for form submission
+  // Update handleFormSubmit
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    // Here you would send the formData to your backend
     try {
-      // Example API call - implement this endpoint on your backend
-      await fetch('/api/donation-details', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
+      // Store form data in localStorage before redirecting
+      localStorage.setItem('donationData', JSON.stringify(formData));
       
-      // Then submit the form to payment gateway
-      e.target.submit();
+      // Update the form's url_finish
+      const form = e.target;
+      form.url_finish.value = `${window.location.origin}/thank-you`;
+      
+      // Submit form to payment gateway
+      form.submit();
     } catch (error) {
-      console.error('Error saving donation details:', error);
+      console.error('Error processing donation:', error);
     }
   };
 
@@ -999,7 +996,7 @@ function Donate() {
             <input type="hidden" name="action" value="process_variable" />
             <input type="hidden" name="order_description" value="Donate" />
             <input type="hidden" name="language" value="en" />
-            <input type="hidden" name="url_finish" value="https://smileofcompassion.com/" />
+            <input type="hidden" name="url_finish" value="https://smileofcompassion.com/thank-you" />
             <input type="hidden" name="customer_receipt" value="true" />
             <input type="hidden" name="hash" value="action|order_description|3468df6dd032b06f730e38d3cb4b934d" />
 

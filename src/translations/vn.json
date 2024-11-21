@@ -75,6 +75,12 @@
       "contactUs": "Liên hệ",
       "email": "Email",
       "socials": "Mạng xã hội"
+    },
+    "thankYou": {
+      "title": "Cảm ơn",
+      "message": "Sự hỗ trợ của bạn đã được xử lý thành công. Cảm ơn bạn đã hỗ trợ!",
+      "error": "Lỗi",
+      "backToHome": "Quay lại Trang Chủ"
     }
   }
   

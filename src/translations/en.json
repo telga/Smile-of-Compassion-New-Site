@@ -75,5 +75,11 @@
     "contactUs": "Contact Us",
     "email": "Email",
     "socials": "Socials"
+  },
+  "thankYou": {
+    "title": "Thank You",
+    "message": "Your donation has been processed successfully. Thank you for your support!",
+    "backToHome": "Back to Home",
+    "error": "Error"
   }
 }
