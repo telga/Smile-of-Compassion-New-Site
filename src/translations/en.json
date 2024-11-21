@@ -47,7 +47,20 @@
     "scanPayPalQR": "Scan or Click Button Below to Donate with PayPal",
     "interacETransferInfo": "Interac e-Transfer Information",
     "email": "Email",
-    "message": "Message"
+    "message": "Message",
+    "securePayment": "Donation",
+    "amount": "Amount To Donate (USD)",
+    "personalInformation": "Personal Information",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "invalidEmail": "Invalid email address",
+    "billingInformation": "Billing Information",
+    "address": "Address",
+    "city": "City",
+    "state": "State",
+    "country": "Country",
+    "postalCode": "Zip Code",
+    "processPayment": "Continue to Payment Information"
   },
   "contact": {
     "title": "Contact Us",

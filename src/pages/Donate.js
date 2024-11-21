@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMediaQuery, Dialog, DialogContent, IconButton, CircularProgress } from '@mui/material';
+import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMediaQuery, Dialog, DialogContent, IconButton } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'react-qr-code';
 import CloseIcon from '@mui/icons-material/Close';
+import PersonIcon from '@mui/icons-material/Person';
+import LocationOnIcon from '@mui/icons-material/LocationOn';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
@@ -15,8 +17,19 @@ function Donate() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // Add new state for modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  // Add state for iframe loading
-  const [isIframeLoading, setIsIframeLoading] = useState(true);
+
+  // Update initial state to match merchant field names
+  const [formData, setFormData] = useState({
+    amount: '',
+    first_name: '',    // Changed from firstName
+    last_name: '',     // Changed from lastName
+    email: '',
+    address1: '',      // Changed from addressLine1
+    city: '',
+    state: '',
+    country: 'US',
+    zip: ''            // Changed from postalCode
+  });
 
   // Update color palette
   const colorPalette = {
@@ -78,10 +91,255 @@ function Donate() {
   const handleCloseModal = () => {
     setIsPaymentModalOpen(false);
   };
+  
+  // Update the handleAmountBlur function
+  const handleAmountBlur = (event) => {
+    const value = event.target.value;
+    if (!isNaN(value) && value.trim() !== '') {
+      const formattedValue = parseFloat(value).toFixed(2);
+      setFormData(prev => ({
+        ...prev,
+        amount: formattedValue
+      }));
+    }
+  };
 
-  // Add handler for iframe load
-  const handleIframeLoad = () => {
-    setIsIframeLoading(false);
+  // Update the handler to work with the new field names
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Add this handler for form submission
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Here you would send the formData to your backend
+    try {
+      // Example API call - implement this endpoint on your backend
+      await fetch('/api/donation-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      // Then submit the form to payment gateway
+      e.target.submit();
+    } catch (error) {
+      console.error('Error saving donation details:', error);
+    }
+  };
+
+  // Add this array at the top of your component, outside the function
+  const countries = [
+    { code: '', name: 'Select a country' },
+    { code: 'AF', name: 'Afghanistan' },
+    { code: 'AL', name: 'Albania' },
+    { code: 'DZ', name: 'Algeria' },
+    { code: 'AD', name: 'Andorra' },
+    { code: 'AO', name: 'Angola' },
+    { code: 'AG', name: 'Antigua and Barbuda' },
+    { code: 'AR', name: 'Argentina' },
+    { code: 'AM', name: 'Armenia' },
+    { code: 'AU', name: 'Australia' },
+    { code: 'AT', name: 'Austria' },
+    { code: 'AZ', name: 'Azerbaijan' },
+    { code: 'BS', name: 'Bahamas' },
+    { code: 'BH', name: 'Bahrain' },
+    { code: 'BD', name: 'Bangladesh' },
+    { code: 'BB', name: 'Barbados' },
+    { code: 'BY', name: 'Belarus' },
+    { code: 'BE', name: 'Belgium' },
+    { code: 'BZ', name: 'Belize' },
+    { code: 'BJ', name: 'Benin' },
+    { code: 'BT', name: 'Bhutan' },
+    { code: 'BO', name: 'Bolivia' },
+    { code: 'BA', name: 'Bosnia and Herzegovina' },
+    { code: 'BW', name: 'Botswana' },
+    { code: 'BR', name: 'Brazil' },
+    { code: 'BN', name: 'Brunei' },
+    { code: 'BG', name: 'Bulgaria' },
+    { code: 'BF', name: 'Burkina Faso' },
+    { code: 'BI', name: 'Burundi' },
+    { code: 'KH', name: 'Cambodia' },
+    { code: 'CM', name: 'Cameroon' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'CV', name: 'Cape Verde' },
+    { code: 'CF', name: 'Central African Republic' },
+    { code: 'TD', name: 'Chad' },
+    { code: 'CL', name: 'Chile' },
+    { code: 'CN', name: 'China' },
+    { code: 'CO', name: 'Colombia' },
+    { code: 'KM', name: 'Comoros' },
+    { code: 'CG', name: 'Congo' },
+    { code: 'CR', name: 'Costa Rica' },
+    { code: 'HR', name: 'Croatia' },
+    { code: 'CU', name: 'Cuba' },
+    { code: 'CY', name: 'Cyprus' },
+    { code: 'CZ', name: 'Czech Republic' },
+    { code: 'DK', name: 'Denmark' },
+    { code: 'DJ', name: 'Djibouti' },
+    { code: 'DM', name: 'Dominica' },
+    { code: 'DO', name: 'Dominican Republic' },
+    { code: 'EC', name: 'Ecuador' },
+    { code: 'EG', name: 'Egypt' },
+    { code: 'SV', name: 'El Salvador' },
+    { code: 'GQ', name: 'Equatorial Guinea' },
+    { code: 'ER', name: 'Eritrea' },
+    { code: 'EE', name: 'Estonia' },
+    { code: 'ET', name: 'Ethiopia' },
+    { code: 'FJ', name: 'Fiji' },
+    { code: 'FI', name: 'Finland' },
+    { code: 'FR', name: 'France' },
+    { code: 'GA', name: 'Gabon' },
+    { code: 'GM', name: 'Gambia' },
+    { code: 'GE', name: 'Georgia' },
+    { code: 'DE', name: 'Germany' },
+    { code: 'GH', name: 'Ghana' },
+    { code: 'GR', name: 'Greece' },
+    { code: 'GD', name: 'Grenada' },
+    { code: 'GT', name: 'Guatemala' },
+    { code: 'GN', name: 'Guinea' },
+    { code: 'GW', name: 'Guinea-Bissau' },
+    { code: 'GY', name: 'Guyana' },
+    { code: 'HT', name: 'Haiti' },
+    { code: 'HN', name: 'Honduras' },
+    { code: 'HU', name: 'Hungary' },
+    { code: 'IS', name: 'Iceland' },
+    { code: 'IN', name: 'India' },
+    { code: 'ID', name: 'Indonesia' },
+    { code: 'IR', name: 'Iran' },
+    { code: 'IQ', name: 'Iraq' },
+    { code: 'IE', name: 'Ireland' },
+    { code: 'IL', name: 'Israel' },
+    { code: 'IT', name: 'Italy' },
+    { code: 'JM', name: 'Jamaica' },
+    { code: 'JP', name: 'Japan' },
+    { code: 'JO', name: 'Jordan' },
+    { code: 'KZ', name: 'Kazakhstan' },
+    { code: 'KE', name: 'Kenya' },
+    { code: 'KI', name: 'Kiribati' },
+    { code: 'KP', name: 'North Korea' },
+    { code: 'KR', name: 'South Korea' },
+    { code: 'KW', name: 'Kuwait' },
+    { code: 'KG', name: 'Kyrgyzstan' },
+    { code: 'LA', name: 'Laos' },
+    { code: 'LV', name: 'Latvia' },
+    { code: 'LB', name: 'Lebanon' },
+    { code: 'LS', name: 'Lesotho' },
+    { code: 'LR', name: 'Liberia' },
+    { code: 'LY', name: 'Libya' },
+    { code: 'LI', name: 'Liechtenstein' },
+    { code: 'LT', name: 'Lithuania' },
+    { code: 'LU', name: 'Luxembourg' },
+    { code: 'MK', name: 'North Macedonia' },
+    { code: 'MG', name: 'Madagascar' },
+    { code: 'MW', name: 'Malawi' },
+    { code: 'MY', name: 'Malaysia' },
+    { code: 'MV', name: 'Maldives' },
+    { code: 'ML', name: 'Mali' },
+    { code: 'MT', name: 'Malta' },
+    { code: 'MH', name: 'Marshall Islands' },
+    { code: 'MR', name: 'Mauritania' },
+    { code: 'MU', name: 'Mauritius' },
+    { code: 'MX', name: 'Mexico' },
+    { code: 'FM', name: 'Micronesia' },
+    { code: 'MD', name: 'Moldova' },
+    { code: 'MC', name: 'Monaco' },
+    { code: 'MN', name: 'Mongolia' },
+    { code: 'ME', name: 'Montenegro' },
+    { code: 'MA', name: 'Morocco' },
+    { code: 'MZ', name: 'Mozambique' },
+    { code: 'MM', name: 'Myanmar' },
+    { code: 'NA', name: 'Namibia' },
+    { code: 'NR', name: 'Nauru' },
+    { code: 'NP', name: 'Nepal' },
+    { code: 'NL', name: 'Netherlands' },
+    { code: 'NZ', name: 'New Zealand' },
+    { code: 'NI', name: 'Nicaragua' },
+    { code: 'NE', name: 'Niger' },
+    { code: 'NG', name: 'Nigeria' },
+    { code: 'NO', name: 'Norway' },
+    { code: 'OM', name: 'Oman' },
+    { code: 'PK', name: 'Pakistan' },
+    { code: 'PW', name: 'Palau' },
+    { code: 'PA', name: 'Panama' },
+    { code: 'PG', name: 'Papua New Guinea' },
+    { code: 'PY', name: 'Paraguay' },
+    { code: 'PE', name: 'Peru' },
+    { code: 'PH', name: 'Philippines' },
+    { code: 'PL', name: 'Poland' },
+    { code: 'PT', name: 'Portugal' },
+    { code: 'QA', name: 'Qatar' },
+    { code: 'RO', name: 'Romania' },
+    { code: 'RU', name: 'Russia' },
+    { code: 'RW', name: 'Rwanda' },
+    { code: 'KN', name: 'Saint Kitts and Nevis' },
+    { code: 'LC', name: 'Saint Lucia' },
+    { code: 'VC', name: 'Saint Vincent and the Grenadines' },
+    { code: 'WS', name: 'Samoa' },
+    { code: 'SM', name: 'San Marino' },
+    { code: 'ST', name: 'Sao Tome and Principe' },
+    { code: 'SA', name: 'Saudi Arabia' },
+    { code: 'SN', name: 'Senegal' },
+    { code: 'RS', name: 'Serbia' },
+    { code: 'SC', name: 'Seychelles' },
+    { code: 'SL', name: 'Sierra Leone' },
+    { code: 'SG', name: 'Singapore' },
+    { code: 'SK', name: 'Slovakia' },
+    { code: 'SI', name: 'Slovenia' },
+    { code: 'SB', name: 'Solomon Islands' },
+    { code: 'SO', name: 'Somalia' },
+    { code: 'ZA', name: 'South Africa' },
+    { code: 'SS', name: 'South Sudan' },
+    { code: 'ES', name: 'Spain' },
+    { code: 'LK', name: 'Sri Lanka' },
+    { code: 'SD', name: 'Sudan' },
+    { code: 'SR', name: 'Suriname' },
+    { code: 'SE', name: 'Sweden' },
+    { code: 'CH', name: 'Switzerland' },
+    { code: 'SY', name: 'Syria' },
+    { code: 'TW', name: 'Taiwan' },
+    { code: 'TJ', name: 'Tajikistan' },
+    { code: 'TZ', name: 'Tanzania' },
+    { code: 'TH', name: 'Thailand' },
+    { code: 'TL', name: 'Timor-Leste' },
+    { code: 'TG', name: 'Togo' },
+    { code: 'TO', name: 'Tonga' },
+    { code: 'TT', name: 'Trinidad and Tobago' },
+    { code: 'TN', name: 'Tunisia' },
+    { code: 'TR', name: 'Turkey' },
+    { code: 'TM', name: 'Turkmenistan' },
+    { code: 'TV', name: 'Tuvalu' },
+    { code: 'UG', name: 'Uganda' },
+    { code: 'UA', name: 'Ukraine' },
+    { code: 'AE', name: 'United Arab Emirates' },
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'US', name: 'United States' },
+    { code: 'UY', name: 'Uruguay' },
+    { code: 'UZ', name: 'Uzbekistan' },
+    { code: 'VU', name: 'Vanuatu' },
+    { code: 'VA', name: 'Vatican City' },
+    { code: 'VE', name: 'Venezuela' },
+    { code: 'VN', name: 'Vietnam' },
+    { code: 'YE', name: 'Yemen' },
+    { code: 'ZM', name: 'Zambia' },
+    { code: 'ZW', name: 'Zimbabwe' },
+  ].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Add this state for email validation
+  const [emailError, setEmailError] = useState(false);
+
+  // Add this email validation function
+  const handleEmailBlur = (e) => {
+    const email = e.target.value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    setEmailError(!emailRegex.test(email));
   };
 
   return (
@@ -211,35 +469,30 @@ function Donate() {
                           fgColor="#000000"
                         /> 
                       </Box>
-                      <form onSubmit={handleOpenModal} style={{ width: '100%' }}>
-                        <Button
-                          type="submit"
-                          variant="contained"
-                          size="large"
-                          fullWidth
-                          sx={{ 
-                            py: 2, 
-                            borderRadius: '8px',
-                            backgroundColor: colorPalette.accent2,
+                      <Button
+                        onClick={handleOpenModal}
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        sx={{ 
+                          py: 2, 
+                          borderRadius: '8px',
+                          backgroundColor: colorPalette.accent2,
+                          color: '#FFFFFF !important',
+                          transition: 'all 0.3s ease',
+                          fontSize: '1.1rem',
+                          fontWeight: 500, 
+                          textTransform: 'none',
+                          '&:hover': {
+                            backgroundColor: colorPalette.primary,
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                             color: '#FFFFFF !important',
-                            transition: 'all 0.3s ease',
-                            fontSize: '1.1rem',
-                            fontWeight: 500, 
-                            textTransform: 'none',
-                            '&:hover': {
-                              backgroundColor: colorPalette.primary,
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              color: '#FFFFFF !important',
-                            },
-                            '&:visited': {
-                              color: '#FFFFFF !important',
-                            }
-                          }}
-                        >
-                          {t('donate.donateWithCard')}
-                        </Button>
-                      </form>
+                          }
+                        }}
+                      >
+                        {t('donate.donateWithCard')}
+                      </Button>
                     </Box>
                   )}
                   
@@ -447,63 +700,328 @@ function Donate() {
       <Dialog
         open={isPaymentModalOpen}
         onClose={handleCloseModal}
-        maxWidth="md"
-        fullWidth
+        maxWidth={false}
         sx={{
           '& .MuiDialog-paper': {
+            width: '450px',
+            margin: '16px',
             borderRadius: '12px',
             overflow: 'hidden',
-            margin: { xs: '16px', sm: '32px' },
-            width: { xs: 'calc(100% - 32px)', sm: '600px' },
-            maxHeight: { xs: 'calc(100% - 32px)', sm: '90vh' },
           }
         }}
       >
-        <IconButton
-          onClick={handleCloseModal}
-          sx={{
-            position: 'absolute',
-            right: 8,
-            top: 8,
-            color: 'grey.500',
-            zIndex: 1,
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent 
-          sx={{ 
-            p: 0, 
-            height: { xs: '500px', sm: '600px' },
-            position: 'relative',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            bgcolor: colorPalette.lightBg,
-            overflow: 'hidden',
-          }}
-        >
-          {isIframeLoading && (
-            <CircularProgress 
-              sx={{ 
-                color: colorPalette.accent2,
-                position: 'absolute',
-                zIndex: 1,
-              }} 
-            />
-          )}
-          <iframe
-            src="https://secure.cocardgateway.com/cart/cart.php?key_id=14439476&action=process_variable&order_description=Donate&language=en&url_finish=https://smileofcompassion.com/&customer_receipt=true&hash=action|order_description|3468df6dd032b06f730e38d3cb4b934d"
-            style={{
-              width: '100%',
-              height: '100%',
-              border: 'none',
-              opacity: isIframeLoading ? 0 : 1,
-              transition: 'opacity 0.3s',
+        {/* Header */}
+        <Box sx={{ 
+          bgcolor: '#1e4c6b',
+          p: 2,
+          textAlign: 'center',
+          position: 'relative'
+        }}>
+          <Typography variant="h6" sx={{ 
+            color: '#fff',
+            fontSize: '1rem',
+            fontWeight: 500
+          }}>
+            {t('donate.securePayment')}
+          </Typography>
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#fff',
+              padding: '4px'
             }}
-            title="Payment Form"
-            onLoad={handleIframeLoad}
-          />
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+
+        <DialogContent sx={{ p: '24px' }}>
+          <form 
+            action="https://secure.cocardgateway.com/cart/cart.php" 
+            method="POST"
+            onSubmit={handleFormSubmit}
+            target="_blank"
+          >
+            {/* Amount Field */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ mb: 1, fontSize: '0.875rem' }}>
+                {t('donate.amount')} <span style={{ color: 'red' }}>*</span>
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Typography sx={{ mr: 1, fontSize: '0.875rem' }}>$</Typography>
+                <input
+                  type="number"
+                  name="amount"
+                  value={formData.amount}
+                  onChange={handleFormChange}
+                  onBlur={handleAmountBlur}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px'
+                  }}
+                  required
+                />
+              </Box>
+            </Box>
+
+            {/* Personal Information Section */}
+            <Box sx={{ mb: 3 }}>
+              <Typography sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 2,
+                fontSize: '0.9rem',
+                color: '#000'
+              }}>
+                <PersonIcon sx={{ fontSize: '1.1rem' }} />
+                {t('donate.personalInformation')}
+              </Typography>
+
+              {/* Name Fields */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  mb: 1
+                }}>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.firstName')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.lastName')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={formData.last_name}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    required
+                  />
+                </Box>
+              </Box>
+
+              {/* Email Field */}
+              <Box sx={{ mb: 2, width: '100%' }}>
+                <Typography sx={{ mb: 1, fontSize: '0.875rem' }}>
+                  Email <span style={{ color: 'red' }}>*</span>
+                </Typography>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  onBlur={handleEmailBlur}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: `1px solid ${emailError ? '#d32f2f' : '#ddd'}`,
+                    borderRadius: '4px',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                  required
+                />
+                {emailError && (
+                  <Typography 
+                    sx={{ 
+                      color: '#d32f2f', 
+                      fontSize: '0.75rem',
+                      mt: 0.5,
+                      position: 'absolute' // Make error message not affect layout
+                    }}
+                  >
+                    {t('donate.invalidEmail')}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+
+            {/* Billing Information Section */}
+            <Box>
+              <Typography sx={{ 
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 2,
+                fontSize: '0.9rem',
+                color: '#000'
+              }}>
+                <LocationOnIcon sx={{ fontSize: '1.1rem' }} />
+                {t('donate.billingInformation')}
+              </Typography>
+
+              {/* Address Field */}
+              <Box sx={{ mb: 2, width: '100%' }}>
+                <Typography sx={{ mb: 1, fontSize: '0.875rem' }}>
+                  {t('donate.address')} <span style={{ color: 'red' }}>*</span>
+                </Typography>
+                <input
+                  type="text"
+                  name="address1"
+                  value={formData.address1}
+                  onChange={handleFormChange}
+                  style={{
+                    width: '100%',
+                    padding: '8px',
+                    border: '1px solid #ddd',
+                    borderRadius: '4px',
+                    boxSizing: 'border-box',
+                  }}
+                  required
+                />
+              </Box>
+
+              {/* City and State */}
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  mb: 1
+                }}>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.city')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.state')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    required
+                  />
+                  <input
+                    type="text"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    required
+                  />
+                </Box>
+              </Box>
+
+              {/* Country and Postal Code */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between',
+                  mb: 1
+                }}>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.country')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                  <Typography sx={{ fontSize: '0.875rem' }}>
+                    {t('donate.postalCode')} <span style={{ color: 'red' }}>*</span>
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: '8px' }}>
+                  <select
+                    name="country"
+                    value={formData.country}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      backgroundColor: '#fff'
+                    }}
+                    required
+                  >
+                    {countries.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    name="zip"
+                    value={formData.zip}
+                    onChange={handleFormChange}
+                    style={{
+                      width: '100%',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px'
+                    }}
+                    required
+                  />
+                </Box>
+              </Box>
+            </Box>
+
+            {/* Hidden Fields */}
+            <input type="hidden" name="key_id" value="14439476" />
+            <input type="hidden" name="action" value="process_variable" />
+            <input type="hidden" name="order_description" value="Donate" />
+            <input type="hidden" name="language" value="en" />
+            <input type="hidden" name="url_finish" value="https://smileofcompassion.com/" />
+            <input type="hidden" name="customer_receipt" value="true" />
+            <input type="hidden" name="hash" value="action|order_description|3468df6dd032b06f730e38d3cb4b934d" />
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
+              sx={{ 
+                bgcolor: '#1e4c6b',
+                color: '#fff',
+                py: 1.5,
+                textTransform: 'none',
+                borderRadius: '4px',
+                '&:hover': {
+                  bgcolor: '#163a54'
+                }
+              }}
+            >
+              {t('donate.processPayment')}
+            </Button>
+          </form>
         </DialogContent>
       </Dialog>
     </motion.div>

@@ -47,7 +47,20 @@
     "scanPayPalQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với PayPal",
     "interacETransferInfo": "Thông tin chuyển khoản Interac",
     "email": "Email",
-    "message": "Tin nhắn"
+    "message": "Tin nhắn",
+    "securePayment": "Quyên góp",
+    "amount": "Số tiền quyên góp (USD)",
+    "personalInformation": "Thông tin cá nhân",
+    "firstName": "Tên",
+    "lastName": "Họ",
+    "invalidEmail": "Địa chỉ email không hợp lệ",
+    "billingInformation": "Thông tin thanh toán",
+    "address": "Địa chỉ",
+    "city": "Thành phố",
+    "state": "Tỉnh/Thành phố",
+    "country": "Quốc gia", 
+    "postalCode": "Mã bưu điện",
+    "processPayment": "Tiếp tục đến Thông tin Thanh toán"
     },
     "contact": {
       "title": "Liên hệ với chúng tôi",
