@@ -22,6 +22,7 @@ import {
 import RefreshIcon from '@mui/icons-material/Refresh';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import DonationsDataTable from '../components/DonationsDataTable';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -2189,6 +2190,15 @@ function AdminPanel() {
     );
   }
 
+  const items = [
+    // ... existing tabs ...
+    {
+      key: 'donations',
+      label: 'Donations Data',
+      children: <DonationsDataTable />
+    }
+  ];
+
   return (
     <Box 
       sx={{ 
@@ -2282,6 +2292,7 @@ function AdminPanel() {
             >
               <Tab label="Manual Posting" />
               <Tab label="Facebook Posting" />
+              <Tab label="Donations Data" />
             </Tabs>
 
             <Box sx={{ p: { xs: 3, md: 6 } }}>
@@ -2994,6 +3005,12 @@ function AdminPanel() {
                 <Box>
                   <Typography variant="h6" sx={{ mb: 3 }}>Facebook Posting</Typography>
                   {/* Facebook posting content will go here */}
+                </Box>
+              )}
+              {activeTab === 2 && (
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 3 }}>Donations Data</Typography>
+                  <DonationsDataTable />
                 </Box>
               )}
             </Box>
