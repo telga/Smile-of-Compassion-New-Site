@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMediaQuery } from '@mui/material';
+import { Typography, Container, Box, Button, Tabs, Tab, Paper, useTheme, useMediaQuery, Dialog, DialogContent, IconButton, CircularProgress } from '@mui/material';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'react-qr-code';
+import CloseIcon from '@mui/icons-material/Close';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
@@ -12,6 +13,10 @@ function Donate() {
   const { t } = useTranslation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // Add new state for modal
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  // Add state for iframe loading
+  const [isIframeLoading, setIsIframeLoading] = useState(true);
 
   // Update color palette
   const colorPalette = {
@@ -62,6 +67,21 @@ function Donate() {
   const itemVariants = {
     hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0 }
+  };
+
+  // Add handlers for modal
+  const handleOpenModal = (e) => {
+    e.preventDefault();
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsPaymentModalOpen(false);
+  };
+
+  // Add handler for iframe load
+  const handleIframeLoad = () => {
+    setIsIframeLoading(false);
   };
 
   return (
@@ -164,7 +184,7 @@ function Donate() {
                       display: 'flex', 
                       flexDirection: 'column', 
                       alignItems: 'center',
-                      mb: 3  // Add margin bottom for spacing between QR and button
+                      mb: 3
                     }}>
                       <Typography 
                         variant="body1" 
@@ -191,18 +211,7 @@ function Donate() {
                           fgColor="#000000"
                         /> 
                       </Box>
-                      <form 
-                        action="https://secure.cocardgateway.com/cart/cart.php" 
-                        method="POST"
-                        style={{ width: '100%' }}
-                      >
-                        <input type="hidden" name="key_id" value="14439476" />
-                        <input type="hidden" name="action" value="process_variable" />
-                        <input type="hidden" name="order_description" value="Donate" />
-                        <input type="hidden" name="language" value="en" />
-                        <input type="hidden" name="url_finish" value="https://smileofcompassion.com/" />
-                        <input type="hidden" name="customer_receipt" value="true" />
-                        <input type="hidden" name="hash" value="action|order_description|3468df6dd032b06f730e38d3cb4b934d" />
+                      <form onSubmit={handleOpenModal} style={{ width: '100%' }}>
                         <Button
                           type="submit"
                           variant="contained"
@@ -433,6 +442,70 @@ function Donate() {
           </Paper>
         </Container>
       </Box>
+
+      {/* Credit Card Modal */}
+      <Dialog
+        open={isPaymentModalOpen}
+        onClose={handleCloseModal}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: '12px',
+            overflow: 'hidden',
+            margin: { xs: '16px', sm: '32px' },
+            width: { xs: 'calc(100% - 32px)', sm: '600px' },
+            maxHeight: { xs: 'calc(100% - 32px)', sm: '90vh' },
+          }
+        }}
+      >
+        <IconButton
+          onClick={handleCloseModal}
+          sx={{
+            position: 'absolute',
+            right: 8,
+            top: 8,
+            color: 'grey.500',
+            zIndex: 1,
+          }}
+        >
+          <CloseIcon />
+        </IconButton>
+        <DialogContent 
+          sx={{ 
+            p: 0, 
+            height: { xs: '500px', sm: '600px' },
+            position: 'relative',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            bgcolor: colorPalette.lightBg,
+            overflow: 'hidden',
+          }}
+        >
+          {isIframeLoading && (
+            <CircularProgress 
+              sx={{ 
+                color: colorPalette.accent2,
+                position: 'absolute',
+                zIndex: 1,
+              }} 
+            />
+          )}
+          <iframe
+            src="https://secure.cocardgateway.com/cart/cart.php?key_id=14439476&action=process_variable&order_description=Donate&language=en&url_finish=https://smileofcompassion.com/&customer_receipt=true&hash=action|order_description|3468df6dd032b06f730e38d3cb4b934d"
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              opacity: isIframeLoading ? 0 : 1,
+              transition: 'opacity 0.3s',
+            }}
+            title="Payment Form"
+            onLoad={handleIframeLoad}
+          />
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
