@@ -23,11 +23,11 @@ function ThankYou() {
           mutation {
             createDonation(
               data: {
-                donationAmount: ${parseInt(donationData.amount)}
+                donationAmount: ${parseFloat(donationData.amount)}
                 firstName: "${donationData.first_name}"
                 lastName: "${donationData.last_name}"
                 email: "${donationData.email}"
-                fullAddress: "${donationData.address}, ${donationData.city}, ${donationData.state} ${donationData.zip}, ${donationData.country}"
+                fullAddress: "${donationData.address1}, ${donationData.city}, ${donationData.state} ${donationData.zip}, ${donationData.country}"
               }
             ) {
               id
