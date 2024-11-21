@@ -39,8 +39,12 @@
     "donate": {
     "title": "Hỗ Trợ",
     "description": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh của mình. Chọn một số tiền để quyên góp hoặc nhập số tiền tùy chỉnh.",
-    "scanZelleQR": "Quét để hỗ trợ với Zelle",
+    "donateWithCard": "Hỗ trợ với Thẻ Tín Dụng",
+    "scanCreditCardQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với Thẻ Tín Dụng",
+    "scanZelleQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với Zelle",
+    "donateWithZelle": "Hỗ trợ với Zelle",
     "donateWithPayPal": "Hỗ trợ với PayPal",
+    "scanPayPalQR": "Quét hoặc nhấn nút bên dưới để hỗ trợ với PayPal",
     "interacETransferInfo": "Thông tin chuyển khoản Interac",
     "email": "Email",
     "message": "Tin nhắn"

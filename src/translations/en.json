@@ -39,8 +39,12 @@
   "donate": {
     "title": "Donate",
     "description": "Your support helps us continue our mission. Choose an amount to donate or enter a custom amount.",
-    "scanZelleQR": "Scan to Donate with Zelle",
+    "donateWithCard": "Donate with Credit Card",
+    "scanCreditCardQR": "Scan or Click Button Below to Donate with Credit Card",
+    "scanZelleQR": "Scan or Click Button Below to Donate with Zelle",
+    "donateWithZelle": "Donate with Zelle",
     "donateWithPayPal": "Donate with PayPal",
+    "scanPayPalQR": "Scan or Click Button Below to Donate with PayPal",
     "interacETransferInfo": "Interac e-Transfer Information",
     "email": "Email",
     "message": "Message"

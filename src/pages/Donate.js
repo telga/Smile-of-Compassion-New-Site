@@ -6,7 +6,7 @@ import QRCode from 'react-qr-code';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
-  // State to track the selected payment method
+  // Update state to default to new credit card option
   const [paymentMethod, setPaymentMethod] = useState(0);
   // Hook to use translation functionality
   const { t } = useTranslation();
@@ -123,18 +123,31 @@ function Donate() {
                       fontSize: '1rem',
                       '&.Mui-selected': {
                         color: colorPalette.accent2,
+                      },
+                      [theme.breakpoints.down('sm')]: {
+                        fontSize: '0.75rem',  // Smaller font on mobile
+                        minWidth: 'auto',    // Allow tabs to be narrower
+                        padding: '12px 8px', // Reduce padding
+                        textTransform: 'none',
                       }
                     },
                     '& .MuiTabs-indicator': {
                       backgroundColor: colorPalette.primary,
                       height: 3,
                       borderRadius: 3
+                    },
+                    // Make the tab bar scrollable on very small screens if needed
+                    '& .MuiTabs-scroller': {
+                      [theme.breakpoints.down('sm')]: {
+                        overflowX: 'auto !important',
+                      }
                     }
                   }}
                 >
-                  <Tab label="PayPal" />
-                  <Tab label="Zelle" />
-                  <Tab label="Interac" />
+                  <Tab label="Credit Card" sx={{ minWidth: { xs: '80px', sm: 'auto' } }} />
+                  <Tab label="PayPal" sx={{ minWidth: { xs: '80px', sm: 'auto' } }} />
+                  <Tab label="Zelle" sx={{ minWidth: { xs: '80px', sm: 'auto' } }} />
+                  <Tab label="Interac" sx={{ minWidth: { xs: '80px', sm: 'auto' } }} />
                 </Tabs>
               </motion.div>
               
@@ -147,39 +160,146 @@ function Donate() {
                   transition={{ duration: 0.2 }}
                 >
                   {paymentMethod === 0 && (
-                    <Button
-                      variant="contained"
-                      size="large"
-                      fullWidth
-                      href="https://paypal.me/smileofcompassion"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ 
-                        py: 2, 
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      mb: 3  // Add margin bottom for spacing between QR and button
+                    }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          mb: 3, 
+                          fontSize: '1.1rem',
+                          color: colorPalette.text,
+                          textAlign: 'center'
+                        }}
+                      > 
+                        {t('donate.scanCreditCardQR')}
+                      </Typography>
+                      <Box sx={{ 
+                        p: 3, 
+                        backgroundColor: colorPalette.background,
                         borderRadius: '8px',
-                        backgroundColor: colorPalette.accent2,
-                        color: '#FFFFFF !important',
-                        transition: 'all 0.3s ease',
-                        fontSize: '1.1rem',
-                        fontWeight: 500, 
-                        textDecoration: 'none',
-                        textTransform: 'none',
-                        '&:hover': {
-                          backgroundColor: colorPalette.primary,
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                          color: '#FFFFFF !important',
-                        },
-                        '&:visited': {
-                          color: '#FFFFFF !important',
-                        }
-                      }}
-                    >
-                      {t('donate.donateWithPayPal')}
-                    </Button>
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        mb: 3
+                      }}>
+                        <QRCode 
+                          value="https://quickclick.com/r/dt6615zswqakmzeetw85bk71c9zkvi" 
+                          size={isMobile ? 200 : 220}
+                          bgColor={colorPalette.background}
+                          fgColor="#000000"
+                        /> 
+                      </Box>
+                      <form 
+                        action="https://secure.cocardgateway.com/cart/cart.php" 
+                        method="POST"
+                        style={{ width: '100%' }}
+                      >
+                        <input type="hidden" name="key_id" value="14439476" />
+                        <input type="hidden" name="action" value="process_variable" />
+                        <input type="hidden" name="order_description" value="Donate" />
+                        <input type="hidden" name="language" value="en" />
+                        <input type="hidden" name="url_finish" value="https://smileofcompassion.com/" />
+                        <input type="hidden" name="customer_receipt" value="true" />
+                        <input type="hidden" name="hash" value="action|order_description|3468df6dd032b06f730e38d3cb4b934d" />
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          size="large"
+                          fullWidth
+                          sx={{ 
+                            py: 2, 
+                            borderRadius: '8px',
+                            backgroundColor: colorPalette.accent2,
+                            color: '#FFFFFF !important',
+                            transition: 'all 0.3s ease',
+                            fontSize: '1.1rem',
+                            fontWeight: 500, 
+                            textTransform: 'none',
+                            '&:hover': {
+                              backgroundColor: colorPalette.primary,
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                              color: '#FFFFFF !important',
+                            },
+                            '&:visited': {
+                              color: '#FFFFFF !important',
+                            }
+                          }}
+                        >
+                          {t('donate.donateWithCard')}
+                        </Button>
+                      </form>
+                    </Box>
                   )}
                   
                   {paymentMethod === 1 && (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center',
+                      mb: 3
+                    }}>
+                      <Typography 
+                        variant="body1" 
+                        sx={{ 
+                          mb: 3, 
+                          fontSize: '1.1rem',
+                          color: colorPalette.text,
+                          textAlign: 'center'
+                        }}
+                      > 
+                        {t('donate.scanPayPalQR')}
+                      </Typography>
+                      <Box sx={{ 
+                        p: 3, 
+                        backgroundColor: colorPalette.background,
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        mb: 3
+                      }}>
+                        <QRCode 
+                          value="https://paypal.me/smileofcompassion" 
+                          size={isMobile ? 200 : 220}
+                          bgColor={colorPalette.background}
+                          fgColor="#000000"
+                        /> 
+                      </Box>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        href="https://paypal.me/smileofcompassion"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ 
+                          py: 2, 
+                          borderRadius: '8px',
+                          backgroundColor: colorPalette.accent2,
+                          color: '#FFFFFF !important',
+                          transition: 'all 0.3s ease',
+                          fontSize: '1.1rem',
+                          fontWeight: 500, 
+                          textDecoration: 'none',
+                          textTransform: 'none',
+                          '&:hover': {
+                            backgroundColor: colorPalette.primary,
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            color: '#FFFFFF !important',
+                          },
+                          '&:visited': {
+                            color: '#FFFFFF !important',
+                          }
+                        }}
+                      >
+                        {t('donate.donateWithPayPal')}
+                      </Button>
+                    </Box>
+                  )}
+                  
+                  {paymentMethod === 2 && (
                     <Box sx={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
@@ -201,6 +321,7 @@ function Donate() {
                         backgroundColor: colorPalette.background,
                         borderRadius: '8px',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        mb: 3
                       }}>
                         <QRCode 
                           value={getZelleQRValue()} 
@@ -209,10 +330,39 @@ function Donate() {
                           fgColor="#000000"
                         /> 
                       </Box>
+                      <Button
+                        variant="contained"
+                        size="large"
+                        fullWidth
+                        href={getZelleQRValue()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{ 
+                          py: 2, 
+                          borderRadius: '8px',
+                          backgroundColor: colorPalette.accent2,
+                          color: '#FFFFFF !important',
+                          transition: 'all 0.3s ease',
+                          fontSize: '1.1rem',
+                          fontWeight: 500, 
+                          textTransform: 'none',
+                          '&:hover': {
+                            backgroundColor: colorPalette.primary,
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                            color: '#FFFFFF !important',
+                          },
+                          '&:visited': {
+                            color: '#FFFFFF !important',
+                          }
+                        }}
+                      >
+                        {t('donate.donateWithZelle')}
+                      </Button>
                     </Box>
                   )}
                   
-                  {paymentMethod === 2 && (
+                  {paymentMethod === 3 && (
                     <Box sx={{ 
                       display: 'flex', 
                       flexDirection: 'column', 
