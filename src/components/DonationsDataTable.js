@@ -28,7 +28,12 @@ function DonationsTable() {
   });
 
   const columns = [
-    { title: 'Donation Amount', dataIndex: 'donationAmount', key: 'donationAmount' },
+    { 
+      title: 'Donation Amount', 
+      dataIndex: 'donationAmount', 
+      key: 'donationAmount',
+      render: (amount) => amount.toFixed(2)
+    },
     { title: 'First Name', dataIndex: 'firstName', key: 'firstName' },
     { title: 'Last Name', dataIndex: 'lastName', key: 'lastName' },
     { title: 'Email', dataIndex: 'email', key: 'email' },
@@ -68,7 +73,7 @@ function DonationsTable() {
       </div>
       <Table 
         columns={columns} 
-        dataSource={data.donations}
+        dataSource={[...data.donations].reverse()}
         rowKey="id"
         scroll={{ x: true }}
       />
