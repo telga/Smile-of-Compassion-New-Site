@@ -21,7 +21,7 @@ function Donate() {
   // Add new state for modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const minDonationAmount = 0;
+  const minDonationAmount = 10;
 
   // Update initial state to match merchant field names
   const [formData, setFormData] = useState({
@@ -792,7 +792,7 @@ function Donate() {
                   value={formData.amount}
                   onChange={handleFormChange}
                   onBlur={handleAmountBlur}
-                  min="0"
+                  min="10"
                   step="0.01"
                   style={{
                     width: '100%',
