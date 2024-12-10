@@ -30,4 +30,4 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 - [x] Donations. - To add Credit/Debit option
 - [x] Admin portal linked to Hygraph for an easier admin experience.
 - [ ] Facebook post import to hygraph on admin portal using Meta API.
-- [ ] AI translations using OPENAI-API for unfilled locale in admin panel.
+- [ ] AI translations using Gemini API for unfilled locale in admin panel.
