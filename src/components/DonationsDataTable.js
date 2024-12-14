@@ -1,9 +1,9 @@
 import React from 'react';
 import { useQuery, ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import { GET_ALL_DONATIONS } from '../queries/projectQueries';
-import { Table, Button, Spin, Alert } from 'antd';
+import { Table, Button, Spin, Alert, Switch } from 'antd';
 import * as XLSX from 'xlsx';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 
 // Create a separate Apollo Client for donations
 const donationsClient = new ApolloClient({
@@ -23,21 +23,48 @@ function DonationsDataTable() {
 }
 
 function DonationsTable() {
+  const [isBlurred, setIsBlurred] = React.useState(true);
+
   const { loading, error, data, refetch } = useQuery(GET_ALL_DONATIONS, {
     fetchPolicy: 'network-only' // This ensures fresh data on component mount
   });
 
   const columns = [
+    //add date column
     { 
       title: 'Donation Amount', 
       dataIndex: 'donationAmount', 
       key: 'donationAmount',
-      render: (amount) => amount.toFixed(2)
+      render: (amount) => (
+        <div className={isBlurred ? "blur-content" : ""}>
+          {amount.toFixed(2)}
+        </div>
+      )
     },
-    { title: 'First Name', dataIndex: 'firstName', key: 'firstName' },
-    { title: 'Last Name', dataIndex: 'lastName', key: 'lastName' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Full Address', dataIndex: 'fullAddress', key: 'fullAddress' },
+    { 
+      title: 'First Name', 
+      dataIndex: 'firstName', 
+      key: 'firstName',
+      render: (text) => <div className={isBlurred ? "blur-content" : ""}>{text}</div>
+    },
+    { 
+      title: 'Last Name', 
+      dataIndex: 'lastName', 
+      key: 'lastName',
+      render: (text) => <div className={isBlurred ? "blur-content" : ""}>{text}</div>
+    },
+    { 
+      title: 'Email', 
+      dataIndex: 'email', 
+      key: 'email',
+      render: (text) => <div className={isBlurred ? "blur-content" : ""}>{text}</div>
+    },
+    { 
+      title: 'Full Address', 
+      dataIndex: 'fullAddress', 
+      key: 'fullAddress',
+      render: (text) => <div className={isBlurred ? "blur-content" : ""}>{text}</div>
+    },
   ];
 
   const exportToDonationsExcel = () => {
@@ -57,7 +84,19 @@ function DonationsTable() {
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem' }}>
+      <style jsx>{`
+        .blur-content {
+          filter: blur(4px);
+          transition: filter 0.2s ease;
+        }
+        ${isBlurred ? `
+          tr:hover .blur-content {
+            filter: blur(0);
+          }
+        ` : ''}
+      `}</style>
+      
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', alignItems: 'center' }}>
         <Button 
           type="primary" 
           onClick={exportToDonationsExcel}
@@ -70,6 +109,14 @@ function DonationsTable() {
         >
           Refresh
         </Button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Switch 
+            checked={isBlurred}
+            onChange={setIsBlurred}
+            checkedChildren={<EyeInvisibleOutlined />}
+            unCheckedChildren={<EyeOutlined />}
+          />
+        </div>
       </div>
       <Table 
         columns={columns} 

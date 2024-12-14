@@ -414,6 +414,9 @@ const deleteAssetsForProjects = async (assetIds, hygraphUrl, authToken, drafts, 
         })
       });
       const result = await response.json();
+      if (result.errors) {
+        throw new Error(result.errors[0].message);
+      }
     }
   } catch (error) {
     console.error('Error in asset deletion process:', error);
@@ -1042,6 +1045,9 @@ function AdminPanel() {
           })
         });
         const assetResult = await publishAssetResponse.json();
+        if (assetResult.errors) {
+          throw new Error(assetResult.errors[0].message);
+        }
       }
 
       // Then publish the draft
@@ -1298,6 +1304,9 @@ function AdminPanel() {
           })
         });
         const deleteResult = await deleteResponse.json();
+        if (deleteResult.errors) {
+          throw new Error(deleteResult.errors[0].message);
+        }
       }
 
       // Handle new assets
@@ -1325,6 +1334,9 @@ function AdminPanel() {
               }
             })
           });
+          if (publishResponse.errors) {
+            throw new Error(publishResponse.errors[0].message);
+          }
 
           newFeaturedImage = asset.id;
           
@@ -1421,6 +1433,9 @@ function AdminPanel() {
       // Handle publishing if needed
       if (shouldPublish) {
         const publishResult = await publishDraft(editingDraft.id);
+        if (publishResult.errors) {
+          throw new Error(publishResult.errors[0].message);
+        }
         
         // Immediately refresh after successful publish
         const currentTab = window.location.hash || '#drafts';
@@ -1714,6 +1729,9 @@ function AdminPanel() {
           });
 
           const assetResult = await publishAssetResponse.json();
+          if (assetResult.errors) {
+            throw new Error(assetResult.errors[0].message);
+          }
         } catch (error) {
           console.error(`Error publishing asset ${assetId}:`, error);
         }
@@ -1932,6 +1950,9 @@ function AdminPanel() {
           });
 
           const publishResult = await publishResponse.json();
+          if (publishResult.errors) {
+            throw new Error(publishResult.errors[0].message);
+          }
         } catch (error) {
           console.error(`Error publishing asset ${assetId}:`, error);
         }
@@ -2191,13 +2212,15 @@ function AdminPanel() {
   }
 
   const items = [
-    // ... existing tabs ...
     {
       key: 'donations',
       label: 'Donations Data',
       children: <DonationsDataTable />
     }
   ];
+  if (items.errors) {
+    throw new Error(items.errors[0].message);
+  }
 
   return (
     <Box 
@@ -3503,7 +3526,13 @@ function AdminPanel() {
                                       }
                                     })
                                   });
+                                  if (response.errors) {
+                                    throw new Error(response.errors[0].message);
+                                  }
                                   const result = await response.json();
+                                  if (result.errors) {
+                                    throw new Error(result.errors[0].message);
+                                  }
                                 } catch (error) {
                                   console.error('Error deleting asset:', error);
                                 }
