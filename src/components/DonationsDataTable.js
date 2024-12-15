@@ -4,6 +4,7 @@ import { GET_ALL_DONATIONS } from '../queries/projectQueries';
 import { Table, Button, Spin, Alert, Switch } from 'antd';
 import * as XLSX from 'xlsx';
 import { ReloadOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
+//import { render } from '@testing-library/react';
 
 // Create a separate Apollo Client for donations
 const donationsClient = new ApolloClient({
@@ -31,6 +32,12 @@ function DonationsTable() {
 
   const columns = [
     //add date column
+    {
+      title: 'Donation Date',
+      dataIndex: 'donationDate',
+      key: 'donationDate',
+      render: (text) => <div className={isBlurred ? "blur-content" : ""}>{text}</div>
+    },
     { 
       title: 'Donation Amount', 
       dataIndex: 'donationAmount', 
@@ -84,17 +91,19 @@ function DonationsTable() {
 
   return (
     <div>
-      <style jsx>{`
-        .blur-content {
-          filter: blur(4px);
-          transition: filter 0.2s ease;
-        }
-        ${isBlurred ? `
-          tr:hover .blur-content {
-            filter: blur(0);
+      <style>
+        {`
+          .blur-content {
+            filter: blur(4px);
+            transition: filter 0.2s ease;
           }
-        ` : ''}
-      `}</style>
+          ${isBlurred ? `
+            tr:hover .blur-content {
+              filter: blur(0);
+            }
+          ` : ''}
+        `}
+      </style>
       
       <div style={{ display: 'flex', gap: '10px', marginBottom: '1rem', alignItems: 'center' }}>
         <Button 

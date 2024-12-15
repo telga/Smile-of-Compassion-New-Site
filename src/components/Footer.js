@@ -72,7 +72,7 @@ function Footer() {
             {new Date().getFullYear()}
             {'. Developed by '}
             <Link color="inherit" href="https://brianguyen.works">
-              Gaki Development
+              Brian Nguyen
             </Link>
             {'.'}
           </Typography>

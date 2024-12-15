@@ -73,6 +73,7 @@ export const GET_ALL_DONATIONS = gql`
   query GetAllDonations {
     donations(stage: DRAFT) {
       id
+      donationDate
       donationAmount
       firstName
       lastName
