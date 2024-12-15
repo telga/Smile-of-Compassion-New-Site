@@ -23,6 +23,7 @@ function ThankYou() {
           mutation {
             createDonation(
               data: {
+                donationDate: "${new Date().toISOString()}"
                 donationAmount: ${parseFloat(donationData.amount)}
                 firstName: "${donationData.first_name}"
                 lastName: "${donationData.last_name}"
