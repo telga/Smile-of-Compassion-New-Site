@@ -131,6 +131,16 @@ function Contact() {
                 >
                   +1 (714) 515-9872
                 </Typography>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    color: colorPalette.primary,
+                    fontWeight: 600,
+                    fontFamily: '"Poppins", sans-serif',
+                  }}
+                >
+                  92-2665477
+                </Typography>
               </Box>
             </motion.div>
 
