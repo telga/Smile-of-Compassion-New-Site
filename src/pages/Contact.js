@@ -139,7 +139,7 @@ function Contact() {
                     fontFamily: '"Poppins", sans-serif',
                   }}
                 >
-                  92-2665477
+                  EIN: 92-2665477
                 </Typography>
               </Box>
             </motion.div>
