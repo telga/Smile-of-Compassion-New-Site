@@ -29,6 +29,9 @@ function Footer() {
             <Typography variant="body2" color="text.secondary">
               Tel: +1 (714) 515-9872
             </Typography>
+            <Typography variant="body2" color="text.secondary">
+              EIN: 92-2665477
+            </Typography>
           </Box>
 
           {/* Social media links column */}
