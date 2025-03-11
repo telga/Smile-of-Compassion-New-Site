@@ -82,24 +82,6 @@ function About() {
                   <Typography variant="body1" sx={{ mb: 2, color: colorPalette.text }}>
                     {t('about.description')}
                   </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, color: colorPalette.text }}>
-                    {t('about.noAdminFees')}
-                  </Typography>
-                </Paper>
-              </motion.div>
-            </Grid>
-
-            <Grid item xs={12}>
-              <motion.div variants={itemVariants}>
-                <Paper elevation={3} sx={{ 
-                  p: 3, 
-                  backgroundColor: colorPalette.background,
-                  border: `1px solid ${colorPalette.lightBg}`,
-                  borderRadius: '12px',
-                  '&:hover': {
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  },
-                }}>
                   <Typography variant="h6" sx={{ 
                     mb: 2, 
                     fontWeight: 'bold',
@@ -126,6 +108,27 @@ function About() {
                       </ListItem>
                     ))}
                   </List>
+                  <Typography variant="body1" sx={{ mb: 2, color: colorPalette.text }}>
+                    {t('about.noAdminFees')}
+                  </Typography>
+                </Paper>
+              </motion.div>
+            </Grid>
+
+            <Grid item xs={12}>
+              <motion.div variants={itemVariants}>
+                <Paper elevation={3} sx={{ 
+                  p: 3, 
+                  backgroundColor: colorPalette.background,
+                  border: `1px solid ${colorPalette.lightBg}`,
+                  borderRadius: '12px',
+                  '&:hover': {
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  },
+                }}>
+                  <Typography variant="body1" sx={{ mb: 2, color: colorPalette.text }}>
+                  {t('about.taxDeduction')}
+                  </Typography>
                 </Paper>
               </motion.div>
             </Grid>
