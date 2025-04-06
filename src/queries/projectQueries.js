@@ -29,8 +29,8 @@ export const GET_PROJECTS = gql`
 `;
 
 export const GET_PROJECT = gql`
-  query GetProject($id: ID!, $language: Locale!) {
-    project(where: { id: $id }) {
+  query GetProject($id: ID!, $language: Locale!, $stage: Stage = PUBLISHED) {
+    project(where: { id: $id }, stage: $stage) {
       id
       title
       description {
@@ -38,6 +38,7 @@ export const GET_PROJECT = gql`
       }
       date
       slug
+      stage
       image {
         url
         width
@@ -61,11 +62,16 @@ export const GET_PROJECT = gql`
 `;
 
 export const SEARCH_PROJECTS = gql`
-  query SearchProjects($searchTerm: String!, $language: Locale!) {
-    projects(where: { title_contains: $searchTerm }, locales: [$language]) {
+  query SearchProjects($searchTerm: String!, $language: Locale!, $stage: Stage = PUBLISHED) {
+    projects(
+      where: { title_contains: $searchTerm }
+      locales: [$language]
+      stage: $stage
+    ) {
       id
       title
       date
+      stage
     }
   }
 `;
@@ -80,60 +86,6 @@ export const GET_ALL_DONATIONS = gql`
       lastName
       email
       fullAddress
-    }
-  }
-`;
-
-export const GET_DRAFTS = gql`
-  query GetDrafts($language: Locale!, $first: Int = 100) {
-    projects(
-      where: { stage: DRAFT }, 
-      orderBy: date_DESC,
-      first: $first
-    ) {
-      id
-      title
-      date
-      slug
-      stage
-      image {
-        url
-      }
-      localizations(locales: [$language]) {
-        locale
-        title
-        slug
-        description {
-          raw
-        }
-      }
-    }
-  }
-`;
-
-export const GET_PUBLISHED = gql`
-  query GetPublished($language: Locale!, $first: Int = 100) {
-    projects(
-      where: { stage: PUBLISHED }, 
-      orderBy: date_DESC,
-      first: $first
-    ) {
-      id
-      title
-      date
-      slug
-      stage
-      image {
-        url
-      }
-      localizations(locales: [$language]) {
-        locale
-        title
-        slug
-        description {
-          raw
-        }
-      }
     }
   }
 `;

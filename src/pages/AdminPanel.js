@@ -23,7 +23,8 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import DonationsDataTable from '../components/DonationsDataTable';
-import { GET_DRAFTS, GET_PUBLISHED } from '../queries/projectQueries';
+import { useQuery } from '@apollo/client';
+import { GET_PROJECTS } from '../queries/projectQueries';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -886,19 +887,72 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      const query = `
+        {
+          drafts: projects(stage: DRAFT) {
+            id
+            title
+            slug
+            description {
+              raw
+            }
+            date
+            image {
+              id
+              stage
+              url
+            }
+            images {
+              id
+              stage
+              url
+            }
+            localizations {
+              locale
+              title
+              slug
+              description {
+                raw
+              }
+            }
+          }
+          published: projects(stage: PUBLISHED) {
+            id
+            title
+            slug
+            description {
+              raw
+            }
+            date
+            image {
+              id
+              stage
+              url
+            }
+            images {
+              id
+              stage
+              url
+            }
+            localizations {
+              locale
+              title
+              slug
+              description {
+                raw
+              }
+            }
+          }
+        }
+      `;
+
       const response = await fetch(hygraphUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
         },
-        body: JSON.stringify({
-          query: GET_DRAFTS,
-          variables: { 
-            language: 'en',
-            first: 100 // Increase this number if you need more posts
-          }
-        })
+        body: JSON.stringify({ query })
       });
 
       const result = await response.json();
@@ -906,60 +960,30 @@ function AdminPanel() {
         throw new Error(result.errors[0].message);
       }
 
-      setDrafts(result.data.projects);
+      // Get all drafts and published posts
+      const allDrafts = result.data.drafts || [];
+      const publishedPosts = result.data.published || [];
+
+      // True drafts are those that exist in DRAFT but not in PUBLISHED
+      const trueDrafts = allDrafts.filter(draft => 
+        !publishedPosts.some(pub => pub.id === draft.id)
+      );
+
+      setDrafts(trueDrafts);
+      setPublishedPosts(publishedPosts);
+
     } catch (error) {
-      console.error('Error fetching drafts:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to fetch drafts',
+        message: `Failed to fetch posts: ${error.message}`,
         severity: 'error'
       });
     }
   };
 
-  const fetchPublishedPosts = async () => {
-    try {
-      const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
-      const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
-
-      const response = await fetch(hygraphUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({
-          query: GET_PUBLISHED,
-          variables: { 
-            language: 'en',
-            first: 100 // Increase this number if you need more posts
-          }
-        })
-      });
-
-      const result = await response.json();
-      if (result.errors) {
-        throw new Error(result.errors[0].message);
-      }
-
-      setPublishedPosts(result.data.projects);
-    } catch (error) {
-      console.error('Error fetching published posts:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch published posts',
-        severity: 'error'
-      });
-    }
-  };
-
-  // Add useEffect to fetch both drafts and published posts
   useEffect(() => {
-    if (user) {
-      fetchDrafts();
-      fetchPublishedPosts();
-    }
-  }, [user]);
+    fetchDrafts();
+  }, [refreshKey]);
 
   // Update the publishDraft function to also publish connected assets
   const publishDraft = async (draftId) => {
