@@ -2,12 +2,13 @@
 import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`
-  query GetProjects($language: Locale!) {
-    projects(orderBy: date_DESC) {
+  query GetProjects($language: Locale!, $stage: Stage = PUBLISHED) {
+    projects(orderBy: date_DESC, stage: $stage) {
       id
       title
       date
       slug
+      stage
       image {
         url
         localizations(locales: [en]) {
@@ -79,6 +80,60 @@ export const GET_ALL_DONATIONS = gql`
       lastName
       email
       fullAddress
+    }
+  }
+`;
+
+export const GET_DRAFTS = gql`
+  query GetDrafts($language: Locale!, $first: Int = 100) {
+    projects(
+      where: { stage: DRAFT }, 
+      orderBy: date_DESC,
+      first: $first
+    ) {
+      id
+      title
+      date
+      slug
+      stage
+      image {
+        url
+      }
+      localizations(locales: [$language]) {
+        locale
+        title
+        slug
+        description {
+          raw
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PUBLISHED = gql`
+  query GetPublished($language: Locale!, $first: Int = 100) {
+    projects(
+      where: { stage: PUBLISHED }, 
+      orderBy: date_DESC,
+      first: $first
+    ) {
+      id
+      title
+      date
+      slug
+      stage
+      image {
+        url
+      }
+      localizations(locales: [$language]) {
+        locale
+        title
+        slug
+        description {
+          raw
+        }
+      }
     }
   }
 `;
