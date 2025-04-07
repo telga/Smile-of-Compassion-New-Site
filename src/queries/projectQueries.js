@@ -2,8 +2,12 @@
 import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`
-  query GetProjects($language: Locale!) {
-    projects(orderBy: date_DESC, first: 100) {
+  query GetProjects($language: Locale!, $first: Int = 100, $skip: Int = 0) {
+    projects(
+      orderBy: date_DESC,
+      first: $first,
+      skip: $skip
+    ) {
       id
       title
       date
