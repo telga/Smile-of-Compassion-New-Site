@@ -347,7 +347,7 @@ const uploadFileToS3 = async (file, requestPostData) => {
   }
 };
 
-// Update this mutation to match the docs exactly
+// Add pagination to publishAssetsMutation
 const publishAssetsMutation = `
   mutation PublishAsset($where: AssetWhereUniqueInput!) {
     publishAsset(where: $where, to: PUBLISHED) {
@@ -356,16 +356,16 @@ const publishAssetsMutation = `
   }
 `;
 
-// Add this mutation to delete assets
+// Add pagination to deleteAssetsMutation
 const deleteAssetsMutation = `
-  mutation DeleteAssets($where: AssetManyWhereInput!) {
-    deleteManyAssets(where: $where) {
+  mutation DeleteAssets($where: AssetManyWhereInput!, $first: Int = 100, $skip: Int = 0) {
+    deleteManyAssets(where: $where, first: $first, skip: $skip) {
       count
     }
   }
 `;
 
-// Add this mutation near your other GraphQL queries
+// Add pagination to deleteAssetMutation
 const deleteAssetMutation = `
   mutation DeleteAsset($id: ID!) {
     deleteAsset(where: { id: $id }) {
@@ -885,9 +885,15 @@ function AdminPanel() {
       const hygraphUrl = process.env.REACT_APP_HYGRAPH_API_URL;
       const authToken = process.env.REACT_APP_HYGRAPH_AUTH_TOKEN;
 
+      // Add pagination to the query that fetches both drafts and published posts
       const query = `
-        {
-          drafts: projects(stage: DRAFT) {
+        query GetAllPosts($first: Int = 100, $skip: Int = 0) {
+          drafts: projects(
+            stage: DRAFT, 
+            first: $first, 
+            skip: $skip,
+            orderBy: date_DESC
+          ) {
             id
             title
             slug
@@ -897,12 +903,10 @@ function AdminPanel() {
             date
             image {
               id
-              stage
               url
             }
             images {
               id
-              stage
               url
             }
             localizations {
@@ -914,7 +918,12 @@ function AdminPanel() {
               }
             }
           }
-          published: projects(stage: PUBLISHED) {
+          published: projects(
+            stage: PUBLISHED, 
+            first: $first, 
+            skip: $skip,
+            orderBy: date_DESC
+          ) {
             id
             title
             slug
@@ -924,12 +933,10 @@ function AdminPanel() {
             date
             image {
               id
-              stage
               url
             }
             images {
               id
-              stage
               url
             }
             localizations {
