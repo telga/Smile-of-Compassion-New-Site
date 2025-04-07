@@ -55,6 +55,8 @@ const SearchModal = ({ open, onClose }) => {
     }
   }, [searchTerm, language, refetch]);
 
+
+  //handle click on result now on slugs instead of ids fetched from the initial fetch of all projects
   const handleProjectClick = (project) => {
     const projectSlug = language === 'en' ? 
       project.slug : 
