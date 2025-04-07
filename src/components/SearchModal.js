@@ -12,7 +12,28 @@ import {
 import { useNavigate } from 'react-router-dom';
 import CloseIcon from '@mui/icons-material/Close';
 import { useLanguage } from '../components/LanguageContext';
-import { SEARCH_PROJECTS } from '../queries/projectQueries';
+import { gql } from '@apollo/client';
+
+const SEARCH_PROJECTS = gql`
+  query SearchProjects($searchTerm: String!, $language: Locale!, $first: Int = 100, $skip: Int = 0) {
+    projects(
+      where: { title_contains: $searchTerm }, 
+      locales: [$language],
+      first: $first,
+      skip: $skip
+    ) {
+      id
+      title
+      date
+      slug
+      localizations(locales: [$language]) {
+        locale
+        title
+        slug
+      }
+    }
+  }
+`;
 
 const SearchModal = ({ open, onClose }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,8 +55,12 @@ const SearchModal = ({ open, onClose }) => {
     }
   }, [searchTerm, language, refetch]);
 
-  const handleProjectClick = (id) => {
-    navigate(`projects/${id}`);
+  const handleProjectClick = (project) => {
+    const projectSlug = language === 'en' ? 
+      project.slug : 
+      (project.localizations?.[0]?.slug || project.slug);
+      
+    navigate(`/projects/${projectSlug}`);
     onClose();
   };
 
@@ -103,7 +128,7 @@ const SearchModal = ({ open, onClose }) => {
                     '&:hover': { boxShadow: 3 },
                     mb: 2,
                   }}
-                  onClick={() => handleProjectClick(project.id)}
+                  onClick={() => handleProjectClick(project)}
                 >
                   <CardContent sx={{ p: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <Typography variant="subtitle1" component="h3" sx={{ fontWeight: 'bold', mb: 0.5, fontSize: '0.9rem' }}>
