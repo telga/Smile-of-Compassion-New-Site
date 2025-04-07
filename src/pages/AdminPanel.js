@@ -23,8 +23,6 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import DonationsDataTable from '../components/DonationsDataTable';
-import { useQuery } from '@apollo/client';
-import { GET_PROJECTS } from '../queries/projectQueries';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {

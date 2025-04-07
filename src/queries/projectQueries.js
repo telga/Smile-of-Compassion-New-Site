@@ -2,13 +2,12 @@
 import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`
-  query GetProjects($language: Locale!, $stage: Stage = PUBLISHED) {
-    projects(orderBy: date_DESC, stage: $stage) {
+  query GetProjects($language: Locale!) {
+    projects(orderBy: date_DESC) {
       id
       title
       date
       slug
-      stage
       image {
         url
         localizations(locales: [en]) {
@@ -29,8 +28,8 @@ export const GET_PROJECTS = gql`
 `;
 
 export const GET_PROJECT = gql`
-  query GetProject($id: ID!, $language: Locale!, $stage: Stage = PUBLISHED) {
-    project(where: { id: $id }, stage: $stage) {
+  query GetProject($id: ID!, $language: Locale!) {
+    project(where: { id: $id }) {
       id
       title
       description {
@@ -38,7 +37,6 @@ export const GET_PROJECT = gql`
       }
       date
       slug
-      stage
       image {
         url
         width
@@ -62,16 +60,11 @@ export const GET_PROJECT = gql`
 `;
 
 export const SEARCH_PROJECTS = gql`
-  query SearchProjects($searchTerm: String!, $language: Locale!, $stage: Stage = PUBLISHED) {
-    projects(
-      where: { title_contains: $searchTerm }
-      locales: [$language]
-      stage: $stage
-    ) {
+  query SearchProjects($searchTerm: String!, $language: Locale!) {
+    projects(where: { title_contains: $searchTerm }, locales: [$language]) {
       id
       title
       date
-      stage
     }
   }
 `;
