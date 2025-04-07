@@ -3,7 +3,7 @@ import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`
   query GetProjects($language: Locale!) {
-    projects(orderBy: date_DESC) {
+    projects(orderBy: date_DESC, first: 100) {
       id
       title
       date
