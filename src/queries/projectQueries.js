@@ -1,4 +1,9 @@
 //import { gql } from 'graphql-request';
+
+
+//convert mod queries to aws.
+
+//CALLUM TASK
 import { gql } from '@apollo/client';
 
 export const GET_PROJECTS = gql`

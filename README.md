@@ -19,7 +19,7 @@ New redesigned site for Smile of Compassion Projects using React and Hygraph as 
 
 
 
-**Current Task:** Facebook post import to hygraph on admin portal using Meta API.
+**Current Task:** Full stylization overhaul.
 
 - [x] Skeleton site.
 - [x] Logos and backgrounds.

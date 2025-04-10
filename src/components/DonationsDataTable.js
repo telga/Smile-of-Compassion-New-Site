@@ -36,6 +36,12 @@ function DonationsTable() {
     }
   });
 
+
+  //handle date range change through aws instead of hygraph. start to move all over to aws. 
+
+  //hygraph currently only supports 10/100 queries at a time while with aws we can do 1000/1000 queries at a time. 
+
+  //CALUM TASK
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
     if (!dates) {
