@@ -7,6 +7,7 @@
 import { gql } from '@apollo/client';
 
 //!!Add a query that allows a non-merchant text field to be sent to donationsdata scheme.
+//Could use old query and add the message field or make a new query to setup a fallback just in case of a failure in testing.
 
 export const GET_PROJECTS = gql`
   query GetProjects($language: Locale!, $first: Int = 100, $skip: Int = 0) {
