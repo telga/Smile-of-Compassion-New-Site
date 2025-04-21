@@ -27,6 +27,8 @@ function Donate() {
   //Save message data in local storage but then mutate hygraph after successful insert on the "thank you" page.
 
   // Update initial state to match merchant field names
+
+  //Update now by 25/04/25
   const [formData, setFormData] = useState({
     amount: '',
     first_name: '',    // Changed from firstName
