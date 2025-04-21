@@ -23,6 +23,9 @@ function Donate() {
 
   const minDonationAmount = 10;
 
+  //!!Setup a new field for message that does not send data to the merchant. Only keep for use in DonationsDataTable.
+  //Save message data in local storage but then mutate hygraph after successful insert on the "thank you" page.
+
   // Update initial state to match merchant field names
   const [formData, setFormData] = useState({
     amount: '',
