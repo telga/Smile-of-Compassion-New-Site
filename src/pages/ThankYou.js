@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+//add checker for sub then passthrough mutation to hygraph for message field from "cc" donation.
+
 function ThankYou() {
   const navigate = useNavigate();
   const { t } = useTranslation();

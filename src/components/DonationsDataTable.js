@@ -7,7 +7,8 @@ import { ReloadOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/i
 
 const { RangePicker } = DatePicker;
 
-// Create a separate Apollo Client for donations
+//ADDED MSG TAB
+
 const donationsClient = new ApolloClient({
   uri: process.env.REACT_APP_DONATION_HYGRAPH_API_URL,
   cache: new InMemoryCache(),
@@ -36,12 +37,6 @@ function DonationsTable() {
     }
   });
 
-
-  //handle date range change through aws instead of hygraph. start to move all over to aws. 
-
-  //hygraph currently only supports 10/100 queries at a time while with aws we can do 1000/1000 queries at a time. 
-
-  //CALUM TASK
   const handleDateRangeChange = (dates) => {
     setDateRange(dates);
     if (!dates) {
@@ -79,6 +74,12 @@ function DonationsTable() {
           {amount.toFixed(2)}
         </div>
       )
+    },
+    { //msg field no sort. set blur too? わかんないけど
+      title: 'Donation Message',
+      dataIndex: 'donationMsg',
+      key: 'donationMsg',
+      render: (text) => <div classname={isBlurred ? "blur-content" : ""}>{text}</div>
     },
     { 
       title: 'First Name', 
