@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { useQuery, ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import { GET_ALL_DONATIONS } from '../queries/projectQueries';
-import { Table, Button, Spin, Alert, Switch, DatePicker } from 'antd';
+import { Table, Button, Spin, Alert, Switch, DatePicker, ConfigProvider } from 'antd';
 import * as XLSX from 'xlsx';
 import { ReloadOutlined, EyeOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
+import { colors } from '../theme/tokens';
 
 const { RangePicker } = DatePicker;
 
@@ -131,7 +132,16 @@ function DonationsTable() {
   if (error) return <Alert type="error" message={error.message} />;
 
   return (
-    <div>
+    <ConfigProvider
+      theme={{
+        token: {
+          colorPrimary: colors.primary,
+          fontFamily: '"Noto Sans", "Be Vietnam Pro", sans-serif',
+          borderRadius: 10,
+        },
+      }}
+    >
+    <div style={{ overflowX: 'auto', width: '100%' }}>
       <style>
         {`
           .blur-content {
@@ -186,6 +196,7 @@ function DonationsTable() {
         scroll={{ x: true }}
       />
     </div>
+    </ConfigProvider>
   );
 }
 

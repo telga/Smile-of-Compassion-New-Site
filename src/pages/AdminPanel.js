@@ -23,6 +23,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import DonationsDataTable from '../components/DonationsDataTable';
+import { pagePalette, fonts } from '../theme/tokens';
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -816,15 +817,7 @@ function AdminPanel() {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  const colorPalette = {
-    primary: '#4CAF50',
-    secondary: '#2E7D32',
-    accent1: '#81C784',
-    accent2: '#173F5F',
-    background: '#FFFFFF',
-    text: '#1A1A1A',
-    lightBg: '#F5F8F5',
-  };
+  const colorPalette = { ...pagePalette };
 
   // Create editors for both languages
   const editorEn = useEditor({
@@ -2092,7 +2085,7 @@ function AdminPanel() {
                   sx={{ 
                     color: colorPalette.accent2,
                     fontWeight: 600,
-                    fontFamily: '"Poppins", sans-serif',
+                    fontFamily: fonts.heading,
                     mb: 1
                   }}
                 >
@@ -2102,7 +2095,7 @@ function AdminPanel() {
                   variant="body1" 
                   sx={{ 
                     color: 'text.secondary',
-                    fontFamily: '"Poppins", sans-serif',
+                    fontFamily: fonts.heading,
                   }}
                 >
                   Please sign in to continue
@@ -2269,7 +2262,7 @@ function AdminPanel() {
                 sx={{
                   color: colorPalette.accent2,
                   fontWeight: 600,
-                  fontFamily: '"Poppins", sans-serif'
+                  fontFamily: fonts.heading
                 }}
               >
                 Admin Panel
@@ -2294,6 +2287,9 @@ function AdminPanel() {
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
+              variant="scrollable"
+              allowScrollButtonsMobile
+              scrollButtons="auto"
               sx={{
                 backgroundColor: colorPalette.lightBg,
                 borderBottom: '1px solid rgba(0,0,0,0.06)',
@@ -2304,7 +2300,7 @@ function AdminPanel() {
                 },
                 '& .MuiTab-root': {
                   color: colorPalette.text,
-                  fontFamily: '"Poppins", sans-serif',
+                  fontFamily: fonts.heading,
                   fontWeight: 500,
                   fontSize: '0.95rem',
                   textTransform: 'none',
@@ -2331,6 +2327,9 @@ function AdminPanel() {
                   <Tabs
                     value={activeSubTab}
                     onChange={handleSubTabChange}
+                    variant="scrollable"
+                    allowScrollButtonsMobile
+                    scrollButtons="auto"
                     sx={{
                       mb: 4,
                       borderBottom: '1px solid rgba(0,0,0,0.1)',

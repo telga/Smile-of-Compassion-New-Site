@@ -20,6 +20,9 @@ export const GET_PROJECTS = gql`
       title
       date
       slug
+      description {
+        raw
+      }
       image {
         url
         localizations(locales: [en]) {

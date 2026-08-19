@@ -3,6 +3,7 @@ import { Typography, Container, Box, Button } from '@mui/material';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { colors, fonts, pillButtonSx } from '../theme/tokens';
 
 //add checker for sub then passthrough mutation to hygraph for message field from "cc" donation.
 
@@ -77,36 +78,40 @@ function ThankYou() {
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
-        bgcolor: '#F5F8F5',
-        pt: { xs: 8, sm: 12 }
+        bgcolor: colors.background,
+        pt: { xs: 12, sm: 14 }
       }}>
-        <Container maxWidth="sm">
+        <Container maxWidth="sm" sx={{ px: { xs: 2, md: 3 } }}>
           <Box sx={{
             textAlign: 'center',
-            p: 4,
-            bgcolor: 'white',
-            borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
+            p: { xs: 3, sm: 4 },
+            bgcolor: colors.surface,
+            borderRadius: '20px',
+            boxShadow: '0 8px 22px rgba(26, 26, 26, 0.06)'
           }}>
             <Typography variant="h4" component="h1" sx={{ 
               mb: 3,
-              color: '#173F5F',
-              fontWeight: 600
+              color: colors.primary,
+              fontFamily: fonts.heading,
+              fontWeight: 700
             }}>
               {t('thankYou.title')}
             </Typography>
             
-            <Typography variant="body1" sx={{ mb: 4 }}>
+            <Typography variant="body1" sx={{ mb: 4, fontFamily: fonts.body, color: colors.muted }}>
               {t('thankYou.message')}
             </Typography>
 
             <Button
               variant="contained"
               onClick={() => navigate('/')}
+              fullWidth={false}
               sx={{
-                bgcolor: '#4CAF50',
+                ...pillButtonSx,
+                bgcolor: colors.primary,
+                color: '#fff',
                 '&:hover': {
-                  bgcolor: '#2E7D32'
+                  bgcolor: colors.primaryDark
                 },
                 px: 4,
                 py: 1.5

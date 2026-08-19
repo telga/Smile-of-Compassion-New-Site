@@ -17,6 +17,9 @@ import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@ap
 import { setContext } from '@apollo/client/link/context';
 import { onError } from "@apollo/client/link/error";
 import ThankYou from './pages/ThankYou';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import appTheme from './theme/muiTheme';
 
 // Create Apollo Client using the environment variable
 const httpLink = createHttpLink({
@@ -60,9 +63,12 @@ function App() {
     <ApolloProvider client={client}>
       <LanguageProvider>
         <I18nextProvider i18n={i18n}>
-          <Router basename="/">
-            <AppContent />
-          </Router>
+          <ThemeProvider theme={appTheme}>
+            <CssBaseline />
+            <Router basename="/">
+              <AppContent />
+            </Router>
+          </ThemeProvider>
         </I18nextProvider>
       </LanguageProvider>
     </ApolloProvider>

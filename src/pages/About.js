@@ -4,17 +4,7 @@ import { motion } from 'framer-motion';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { useTranslation } from 'react-i18next';
-
-// Update the color palette
-const colorPalette = {
-  primary: '#4CAF50',      // Main green (lighter)
-  secondary: '#2E7D32',    // Medium green
-  accent1: '#81C784',      // Light green
-  accent2: '#173F5F',      // Navy blue
-  background: '#FFFFFF',   // White
-  text: '#1A1A1A',        // Near black for main text
-  lightBg: '#F5F8F5',     // Very light green for backgrounds
-};
+import { pagePalette as colorPalette, fonts } from '../theme/tokens';
 
 // About component: Renders the About page content
 function About() {
@@ -34,7 +24,7 @@ function About() {
   };
 
   return (
-    <Box sx={{ backgroundColor: colorPalette.background, minHeight: '100vh', paddingTop: '80px' }}>
+    <Box sx={{ backgroundColor: colorPalette.lightBg, minHeight: '100vh', paddingTop: '96px' }}>
       <Container maxWidth="md" sx={{ py: { xs: 4, md: 6 } }}>
         <motion.div variants={containerVariants} initial="hidden" animate="visible">
           <motion.div variants={itemVariants}>
@@ -46,7 +36,7 @@ function About() {
                 mb: 3, 
                 color: colorPalette.primary, 
                 fontWeight: 'bold',
-                fontFamily: '"Poppins", sans-serif',
+                fontFamily: fonts.heading,
               }}
             >
               {t('about.title')}
@@ -86,7 +76,7 @@ function About() {
                     mb: 2, 
                     fontWeight: 'bold',
                     color: colorPalette.primary,
-                    fontFamily: '"Poppins", sans-serif',
+                    fontFamily: fonts.heading,
                   }}>
                     {t('about.servicesTitle')}
                   </Typography>
@@ -141,7 +131,7 @@ function About() {
               mb: 3, 
               textAlign: 'center',
               color: colorPalette.secondary,
-              fontFamily: '"Poppins", sans-serif',
+                    fontFamily: fonts.heading,
             }}>
               {t('about.thankYou')}
             </Typography>

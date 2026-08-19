@@ -26,16 +26,23 @@
       "featuredProjects": "Các Dự Án Nổi Bật",
       "donateNow": "Hỗ Trợ",
       "makeSupport": "Hỗ Trợ VN",
-      "learnMore": "Tìm hiểu thêm"
+      "learnMore": "Tìm hiểu thêm",
+      "viewAllProjects": "Xem tất cả dự án",
+      "ctaHeading": "Cùng chúng tôi lan tỏa nụ cười",
+      "ctaText": "Sự hỗ trợ của bạn giúp chúng tôi tiếp tục sứ mệnh. 100% số tiền quyên góp được chuyển trực tiếp đến những người cần giúp đỡ."
     },
     "projects": {
-      "title": "Dự Án Theo Năm",
+      "title": "Dự Án Của Chúng Tôi",
+      "intro": "Những câu chuyện sẻ chia tại Việt Nam — xem theo năm hoặc bắt đầu từ dự án mới nhất.",
       "mostRecentProject": "Dự án Mới Nhất",
-      "allProjects": "Dự án Theo Năm",
-      "yearProjects": "Dự án Năm {{year}}"
+      "allProjects": "Tất cả dự án",
+      "allYears": "Tất cả các năm",
+      "yearProjects": "Dự án Năm {{year}}",
+      "yearCount": "{{count}} dự án"
     },
     "projectDetail": {
-      "backToProjects": "Quay lại Dự án"
+      "backToProjects": "Quay lại Dự án",
+      "loading": "Đang tải câu chuyện này…"
     },
     "donate": {
     "title": "Hỗ Trợ",

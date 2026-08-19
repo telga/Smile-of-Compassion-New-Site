@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { Typography, Container, Box, Button } from '@mui/material';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { Typography, Container, Box, Button, Chip, CircularProgress } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
@@ -13,8 +13,17 @@ import { RichText } from '@graphcms/rich-text-react-renderer';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { GET_PROJECT, GET_PROJECTS } from '../queries/projectQueries';
+import { colors, fonts, radii, shadows, pillButtonSx, donateButtonSx } from '../theme/tokens';
 
-// ProjectDetail component: Renders detailed information about a specific project
+function formatProjectDate(dateString) {
+  if (!dateString) return '';
+  const parsed = new Date(dateString);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  return dateString;
+}
+
 function ProjectDetail() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -23,15 +32,14 @@ function ProjectDetail() {
   const { t } = useTranslation();
   const location = useLocation();
 
-  // Update the language change effect
   useEffect(() => {
     if (project) {
-      const newSlug = language === 'en' ? 
-        project.slug : 
+      const newSlug = language === 'en' ?
+        project.slug :
         (project.localizations?.[0]?.slug || project.slug);
-      
+
       if (newSlug && slug !== newSlug) {
-        navigate(`/projects/${newSlug}`, { 
+        navigate(`/projects/${newSlug}`, {
           replace: true,
           state: { fromLanguageChange: true }
         });
@@ -39,24 +47,19 @@ function ProjectDetail() {
     }
   }, [language, project, navigate, slug]);
 
-  // Update the fetchProject function to properly handle both locales
   React.useEffect(() => {
     async function fetchProject() {
       try {
-        // First get all projects with both English and Vietnamese data
         const enProjects = await hygraphClient.request(GET_PROJECTS, { language: 'en' });
         const vnProjects = await hygraphClient.request(GET_PROJECTS, { language: 'vn' });
-        
-        // Find the project that matches the current slug
+
         let projectMatch = null;
-        
+
         if (language === 'en') {
-          // For English, first try to find by English slug
           projectMatch = enProjects.projects.find(p => p.slug === slug);
-          
-          // If not found, check if it's a Vietnamese slug and find matching English project
+
           if (!projectMatch) {
-            const vnProject = vnProjects.projects.find(p => 
+            const vnProject = vnProjects.projects.find(p =>
               p.localizations?.[0]?.slug === slug
             );
             if (vnProject) {
@@ -64,12 +67,10 @@ function ProjectDetail() {
             }
           }
         } else {
-          // For Vietnamese, first try to find by Vietnamese slug
-          projectMatch = vnProjects.projects.find(p => 
+          projectMatch = vnProjects.projects.find(p =>
             p.localizations?.[0]?.slug === slug
           );
-          
-          // If not found, try finding by English slug as fallback
+
           if (!projectMatch) {
             projectMatch = enProjects.projects.find(p => p.slug === slug);
           }
@@ -81,29 +82,27 @@ function ProjectDetail() {
           return;
         }
 
-        // Fetch the full project details in both languages
         const [enData, vnData] = await Promise.all([
-          hygraphClient.request(GET_PROJECT, { 
-            id: projectMatch.id, 
-            language: 'en' 
+          hygraphClient.request(GET_PROJECT, {
+            id: projectMatch.id,
+            language: 'en'
           }),
-          hygraphClient.request(GET_PROJECT, { 
-            id: projectMatch.id, 
-            language: 'vn' 
+          hygraphClient.request(GET_PROJECT, {
+            id: projectMatch.id,
+            language: 'vn'
           })
         ]);
 
-        // Merge the data based on current language
         const mergedProject = {
           ...enData.project,
-          title: language === 'en' ? 
-            enData.project.title : 
+          title: language === 'en' ?
+            enData.project.title :
             (vnData.project.localizations?.[0]?.title || enData.project.title),
-          description: language === 'en' ? 
-            enData.project.description : 
+          description: language === 'en' ?
+            enData.project.description :
             (vnData.project.localizations?.[0]?.description || enData.project.description),
-          slug: language === 'en' ? 
-            enData.project.slug : 
+          slug: language === 'en' ?
+            enData.project.slug :
             (vnData.project.localizations?.[0]?.slug || enData.project.slug),
           image: enData.project.image,
           images: enData.project.images || [],
@@ -115,18 +114,16 @@ function ProjectDetail() {
         console.error('Error fetching project:', error);
       }
     }
-    
+
     if (slug) {
       fetchProject();
     }
   }, [slug, language, navigate]);
 
-  // Handler for back button click
   const handleBackClick = () => {
     navigate('/projects');
   };
 
-  // Settings for the image slider
   const sliderSettings = {
     dots: true,
     infinite: true,
@@ -135,7 +132,7 @@ function ProjectDetail() {
     slidesToScroll: 1,
     prevArrow: <PrevArrow />,
     nextArrow: <NextArrow />,
-    adaptiveHeight: true,
+    adaptiveHeight: false,
   };
 
   useEffect(() => {
@@ -150,9 +147,10 @@ function ProjectDetail() {
       }
     }
   }, [location]);
+
   const getProjectImages = (project) => {
     let images = [];
-    
+
     if (project.images && project.images.en && Array.isArray(project.images.en) && project.images.en.length > 0) {
       images = project.images.en;
     } else if (project.images && Array.isArray(project.images) && project.images.length > 0) {
@@ -161,22 +159,61 @@ function ProjectDetail() {
       images = [project.image.en];
     } else if (project.image) {
       images = [project.image];
-    } else {
-      console.log('No images found');
     }
-    
+
     return images;
   };
 
   if (!project) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-        <Typography variant="h5">Loading...</Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          backgroundColor: colors.background,
+          gap: 2,
+          px: 2,
+        }}
+      >
+        <CircularProgress sx={{ color: colors.primary }} />
+        <Typography sx={{ fontFamily: fonts.body, color: colors.muted }}>
+          {t('projectDetail.loading')}
+        </Typography>
       </Box>
     );
   }
 
   const projectImages = getProjectImages(project);
+  const hasSlider = projectImages.length > 1;
+
+  const renderImage = (image, index) => (
+    <Box
+      key={index}
+      sx={{
+        height: { xs: 220, sm: 380, md: 460 },
+        width: '100%',
+        backgroundColor: colors.sage,
+        display: 'flex !important',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
+    >
+      <img
+        src={image.url}
+        alt={`${project.title} ${index + 1}`}
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center',
+        }}
+      />
+    </Box>
+  );
 
   return (
     <motion.div
@@ -185,135 +222,191 @@ function ProjectDetail() {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <Box sx={{ paddingTop: { xs: '60px', sm: '70px', md: '80px' } }}>
-        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 } }}>
-          <motion.div
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+      <Box sx={{
+        paddingTop: { xs: '120px', sm: '112px', md: '120px' },
+        backgroundColor: colors.background,
+        minHeight: '100vh',
+        pb: 8,
+        overflowX: 'hidden',
+      }}>
+        <Container maxWidth="md" sx={{ py: { xs: 1, sm: 3, md: 4 }, px: { xs: 2, sm: 3 } }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
+              justifyContent: 'space-between',
+              gap: 1.5,
+              mb: 2.5,
+              width: '100%',
+            }}
           >
-            <Button 
-              startIcon={<ArrowBackIcon />} 
-              onClick={handleBackClick} 
-              sx={{ 
-                mb: 2, 
-                color: '#333',
+            <Button
+              startIcon={<ArrowBackIcon />}
+              onClick={handleBackClick}
+              sx={{
+                color: colors.primary,
+                ...pillButtonSx,
+                px: 2,
+                minHeight: 40,
+                alignSelf: { xs: 'flex-start', sm: 'center' },
+                maxWidth: '100%',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)',
+                  backgroundColor: 'rgba(46, 125, 50, 0.08)',
                 },
               }}
             >
               {t('projectDetail.backToProjects')}
             </Button>
-          </motion.div>
-          
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <Typography 
-              variant="h3" 
-              component="h1" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 700, 
-                color: '#333',
-                fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
-                mb: { xs: 2, sm: 3, md: 4 }
-              }}
-            >
-              {project.title}
-            </Typography>
-          </motion.div>
-          
-          <Box sx={{ 
-            height: { xs: 250, sm: 350, md: 450 },
-            mb: { xs: 2, sm: 3, md: 4 },
-            '& .slick-slider, & .slick-list, & .slick-track': { 
-              height: '100%' 
-            },
-            '& .slick-slide': {
-              '& > div': {
-                height: '100%'
-              }
-            },
-            '& .slick-prev, & .slick-next': {
-              zIndex: 1,
-              '&:before': { display: 'none' },
-            },
-            '& .slick-prev': { left: { xs: 5, md: 10 } },
-            '& .slick-next': { right: { xs: 5, md: 10 } },
-            '& .slick-dots': {
-              bottom: 16,
-              '& li button:before': {
-                color: 'white',
-                opacity: 0.5,
-              },
-              '& li.slick-active button:before': {
-                opacity: 1,
-              },
-            },
-          }}>
-            {projectImages.length > 0 ? (
-              <Slider {...sliderSettings}>
-                {projectImages.map((image, index) => (
-                  <Box 
-                    key={index} 
-                    sx={{ 
-                      height: '100%',
-                      width: '100%',
-                      backgroundColor: '#000000',
-                      borderRadius: '12px',
-                      display: 'flex !important',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <img 
-                      src={image.url} 
-                      alt={`Project ${index + 1}`}
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        width: 'auto',
-                        height: 'auto',
-                        objectFit: 'contain',
-                        objectPosition: 'center',
-                      }}
-                    />
-                  </Box>
-                ))}
-              </Slider>
-            ) : (
-              <Typography>No images available for this project.</Typography>
+
+            {project.date && (
+              <Chip
+                label={formatProjectDate(project.date)}
+                sx={{
+                  backgroundColor: colors.sage,
+                  color: colors.primary,
+                  fontWeight: 700,
+                  fontFamily: fonts.heading,
+                  height: 36,
+                  alignSelf: { xs: 'flex-start', sm: 'center' },
+                  maxWidth: '100%',
+                }}
+              />
             )}
           </Box>
-          
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+
+          <Typography
+            variant="h3"
+            component="h1"
+            sx={{
+              fontWeight: 800,
+              fontFamily: fonts.heading,
+              color: colors.text,
+              fontSize: { xs: '1.4rem', sm: '2rem', md: '2.4rem' },
+              mb: { xs: 2.5, md: 4 },
+              lineHeight: 1.3,
+              overflowWrap: 'anywhere',
+              wordBreak: 'break-word',
+            }}
           >
-            {project.description && (
-              <Box sx={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.8)', 
-                borderRadius: '12px', 
-                p: { xs: 2, sm: 3, md: 4 },
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              }}>
-                <RichText
-                  content={project.description.raw}
-                  renderers={{
-                    h1: ({ children }) => <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: '#333', fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{children}</Typography>,
-                    h2: ({ children }) => <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: '#444', fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' } }}>{children}</Typography>,
-                    p: ({ children }) => <Typography variant="body1" paragraph sx={{ color: '#555', lineHeight: 1.7, fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } }}>{children}</Typography>,
-                    // Add more custom renderers as needed
-                  }}
-                />
-              </Box>
-            )}
-          </motion.div>
+            {project.title}
+          </Typography>
+
+          <Box
+            sx={{
+              mb: { xs: 5, md: 5 },
+              width: '100%',
+              overflow: 'hidden',
+              borderRadius: radii.bar,
+              backgroundColor: colors.sage,
+              '& .slick-slider': {
+                overflow: 'hidden',
+              },
+              '& .slick-list': {
+                overflow: 'hidden',
+                margin: 0,
+              },
+              '& .slick-track': {
+                display: 'flex',
+                alignItems: 'stretch',
+              },
+              '& .slick-slide > div': {
+                height: '100%',
+              },
+              '& .slick-prev, & .slick-next': {
+                zIndex: 2,
+                width: { xs: 32, md: 40 },
+                height: { xs: 32, md: 40 },
+                '&:before': { display: 'none' },
+              },
+              '& .slick-prev': { left: 8 },
+              '& .slick-next': { right: 8 },
+              '& .slick-dots': {
+                bottom: 10,
+                '& li': { mx: 0.25 },
+                '& li button:before': {
+                  color: colors.primary,
+                  opacity: 0.35,
+                  fontSize: '8px',
+                },
+                '& li.slick-active button:before': {
+                  opacity: 1,
+                },
+              },
+            }}
+          >
+            {projectImages.length > 0 ? (
+              hasSlider ? (
+                <Slider {...sliderSettings}>
+                  {projectImages.map((image, index) => renderImage(image, index))}
+                </Slider>
+              ) : (
+                renderImage(projectImages[0], 0)
+              )
+            ) : null}
+          </Box>
+
+          {project.description && (
+            <Box
+              sx={{
+                backgroundColor: colors.surface,
+                borderRadius: radii.bar,
+                p: { xs: 2.5, sm: 3.5, md: 4 },
+                boxShadow: shadows.card,
+                border: '1px solid rgba(46, 125, 50, 0.08)',
+                mb: 4,
+              }}
+            >
+              <RichText
+                content={project.description.raw}
+                renderers={{
+                  h1: ({ children }) => (
+                    <Typography variant="h4" sx={{ fontWeight: 700, mb: 2, color: colors.text, fontFamily: fonts.heading, fontSize: { xs: '1.5rem', sm: '1.75rem', md: '2rem' } }}>{children}</Typography>
+                  ),
+                  h2: ({ children }) => (
+                    <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: colors.text, fontFamily: fonts.heading, fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' } }}>{children}</Typography>
+                  ),
+                  p: ({ children }) => (
+                    <Typography variant="body1" paragraph sx={{ color: colors.muted, fontFamily: fonts.body, lineHeight: 1.75, fontSize: { xs: '0.95rem', sm: '1rem', md: '1.05rem' } }}>{children}</Typography>
+                  ),
+                }}
+              />
+            </Box>
+          )}
+
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 2,
+            }}
+          >
+            <Button
+              component={Link}
+              to="/donate"
+              variant="contained"
+              fullWidth
+              sx={donateButtonSx}
+            >
+              {t('home.donateNow')}
+            </Button>
+            <Button
+              onClick={handleBackClick}
+              variant="outlined"
+              fullWidth
+              sx={{
+                ...pillButtonSx,
+                borderColor: colors.primary,
+                color: colors.primary,
+                '&:hover': {
+                  borderColor: colors.primaryDark,
+                  backgroundColor: colors.sage,
+                },
+              }}
+            >
+              {t('projectDetail.backToProjects')}
+            </Button>
+          </Box>
         </Container>
       </Box>
     </motion.div>
@@ -324,32 +417,34 @@ const ArrowStyles = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: { xs: '30px', sm: '35px', md: '40px' },
-  height: { xs: '30px', sm: '35px', md: '40px' },
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  width: { xs: '34px', sm: '40px', md: '44px' },
+  height: { xs: '34px', sm: '40px', md: '44px' },
+  backgroundColor: colors.surface,
+  color: colors.primary,
   borderRadius: '50%',
   zIndex: 2,
+  boxShadow: shadows.card,
   transition: 'background-color 0.3s ease',
   '&:hover': {
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: colors.sage,
   },
 };
 
 const PrevArrow = ({ className, onClick }) => (
   <Box className={className} onClick={onClick} sx={ArrowStyles}>
-    <ArrowBackIosIcon 
-      sx={{ 
-        color: 'white', 
-        fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' },
-        ml: '8px', // Add margin-left to center the icon
-      }} 
+    <ArrowBackIosIcon
+      sx={{
+        color: colors.primary,
+        fontSize: { xs: '0.8rem', sm: '1rem', md: '1.1rem' },
+        ml: '8px',
+      }}
     />
   </Box>
 );
 
 const NextArrow = ({ className, onClick }) => (
   <Box className={className} onClick={onClick} sx={ArrowStyles}>
-    <ArrowForwardIosIcon sx={{ color: 'white', fontSize: { xs: '0.8rem', sm: '1rem', md: '1.2rem' } }} />
+    <ArrowForwardIosIcon sx={{ color: colors.primary, fontSize: { xs: '0.8rem', sm: '1rem', md: '1.1rem' } }} />
   </Box>
 );
 

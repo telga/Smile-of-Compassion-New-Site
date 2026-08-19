@@ -6,7 +6,10 @@
     "featuredProjects": "Featured Projects",
     "donateNow": "Donate",
     "makeSupport": "Testing EN Support",
-    "learnMore": "Learn More"
+    "learnMore": "Learn More",
+    "viewAllProjects": "View all projects",
+    "ctaHeading": "Help us keep smiling",
+    "ctaText": "Your support helps us continue our mission. 100% of donations go directly to people in need."
   },
   "about": {
     "title": "About Us",
@@ -29,13 +32,17 @@
     "taxDeduction": "Smile of Compassion Projects Association is registered as a 501(c)(3) non-profit charitable organization. Contributions to Smile of Compassion Projects Association are tax-deductible to the extent permitted by law. Our tax identification number is 92-2665477."
   },
   "projects": {
-    "title": "Projects by Year",
+    "title": "Our Projects",
+    "intro": "Stories of care across Vietnam — browse by year or start with our latest work.",
     "mostRecentProject": "Most Recent Project",
-    "allProjects": "Projects by Year",
-    "yearProjects": "{{year}} Projects"    
+    "allProjects": "All projects",
+    "allYears": "All years",
+    "yearProjects": "{{year}} Projects",
+    "yearCount": "{{count}} projects"
   },
   "projectDetail": {
-    "backToProjects": "Back to Projects"
+    "backToProjects": "Back to Projects",
+    "loading": "Loading this story…"
   },
   "donate": {
     "title": "Donate",

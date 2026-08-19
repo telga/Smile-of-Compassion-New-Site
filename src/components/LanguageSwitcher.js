@@ -1,42 +1,12 @@
 import React, { useState } from 'react';
 import { Button, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
-import { styled } from '@mui/system';
 import LanguageIcon from '@mui/icons-material/Language';
 import CheckIcon from '@mui/icons-material/Check';
-
-const StyledButton = styled(Button)(({ theme }) => ({
-  color: '#333333',
-  backgroundColor: 'transparent',
-  textTransform: 'none',
-  fontSize: '0.9rem',
-  fontWeight: 500,
-  padding: '6px 12px',
-  borderRadius: '20px',
-  '&:hover': {
-    backgroundColor: 'rgba(46, 125, 50, 0.08)',
-  },
-}));
-
-const StyledMenu = styled(Menu)(({ theme }) => ({
-  '& .MuiPaper-root': {
-    borderRadius: '12px',
-    marginTop: '8px',
-    minWidth: 180,
-    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.15)',
-  },
-}));
-
-const StyledMenuItem = styled(MenuItem)(({ theme }) => ({
-  padding: '10px 16px',
-  '&:hover': {
-    backgroundColor: 'rgba(46, 125, 50, 0.08)',
-  },
-}));
+import { colors, fonts, radii } from '../theme/tokens';
 
 const languages = [
   { code: 'en', label: 'English' },
   { code: 'vn', label: 'Vietnamese' },
-  // Add more languages as needed
 ];
 
 function LanguageSwitcher({ currentLanguage, onChangeLanguage, sx }) {
@@ -56,46 +26,73 @@ function LanguageSwitcher({ currentLanguage, onChangeLanguage, sx }) {
     handleClose();
   };
 
-  const currentLanguageLabel = languages.find(lang => lang.code === currentLanguage)?.label || 'Language';
+  const currentLanguageLabel = languages.find((lang) => lang.code === currentLanguage)?.label || 'Language';
 
   return (
     <>
-      <StyledButton
+      <Button
         onClick={handleClick}
-        startIcon={<LanguageIcon />}
-        endIcon={null}
-        sx={sx}
+        startIcon={<LanguageIcon sx={{ fontSize: '1.1rem !important' }} />}
+        sx={{
+          color: colors.text,
+          backgroundColor: 'transparent',
+          textTransform: 'none',
+          fontSize: '0.85rem',
+          fontWeight: 600,
+          fontFamily: fonts.heading,
+          padding: '6px 12px',
+          borderRadius: radii.pill,
+          minWidth: 0,
+          '&:hover': {
+            backgroundColor: 'rgba(46, 125, 50, 0.08)',
+          },
+          ...sx,
+        }}
       >
         {currentLanguageLabel}
-      </StyledButton>
-      <StyledMenu
+      </Button>
+      <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            borderRadius: '14px',
+            mt: 1,
+            minWidth: 180,
+            boxShadow: '0px 12px 28px rgba(20, 56, 26, 0.14)',
+            fontFamily: fonts.body,
+          },
         }}
       >
         {languages.map((language) => (
-          <StyledMenuItem
+          <MenuItem
             key={language.code}
             onClick={() => handleLanguageChange(language.code)}
             selected={currentLanguage === language.code}
+            sx={{
+              py: 1.1,
+              px: 2,
+              fontFamily: fonts.body,
+              '&.Mui-selected': {
+                backgroundColor: 'rgba(46, 125, 50, 0.1)',
+              },
+              '&:hover': {
+                backgroundColor: 'rgba(46, 125, 50, 0.08)',
+              },
+            }}
           >
             <ListItemText>{language.label}</ListItemText>
             {currentLanguage === language.code && (
-              <ListItemIcon sx={{ minWidth: 'auto', marginLeft: 1 }}>
+              <ListItemIcon sx={{ minWidth: 'auto', ml: 1, color: colors.primary }}>
                 <CheckIcon fontSize="small" />
               </ListItemIcon>
             )}
-          </StyledMenuItem>
+          </MenuItem>
         ))}
-      </StyledMenu>
+      </Menu>
     </>
   );
 }

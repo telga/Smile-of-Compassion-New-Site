@@ -6,6 +6,7 @@ import QRCode from 'react-qr-code';
 import CloseIcon from '@mui/icons-material/Close';
 import PersonIcon from '@mui/icons-material/Person';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import { pagePalette, fonts } from '../theme/tokens';
 
 // Donate component: Renders the donation page with multiple payment options
 function Donate() {
@@ -52,15 +53,7 @@ function Donate() {
   }, []);
 
   // Update color palette
-  const colorPalette = {
-    primary: '#4CAF50',      // Main green (lighter)
-    secondary: '#2E7D32',    // Medium green
-    accent1: '#81C784',      // Light green
-    accent2: '#173F5F',      // Navy blue
-    background: '#FFFFFF',   // White
-    text: '#1A1A1A',        // Near black for main text
-    lightBg: '#F5F8F5',     // Very light green for backgrounds
-  };
+  const colorPalette = { ...pagePalette };
 
   // Handler for changing the payment method
   const handlePaymentMethodChange = (event, newValue) => {
@@ -391,7 +384,7 @@ function Donate() {
       <Box sx={{ 
         backgroundColor: colorPalette.lightBg,
         minHeight: '100vh',
-        paddingTop: { xs: '80px', sm: '120px' }, 
+        paddingTop: { xs: '96px', sm: '112px' }, 
         paddingBottom: { xs: '80px', sm: '100px' },
       }}>
         <Container maxWidth="sm">
@@ -410,7 +403,7 @@ function Donate() {
                   textAlign: 'center', 
                   fontWeight: 600, 
                   color: colorPalette.accent2,
-                  fontFamily: '"Poppins", sans-serif',
+                  fontFamily: fonts.heading,
                 }}
               >
                 {t('donate.title')}
@@ -431,7 +424,9 @@ function Donate() {
                 <Tabs 
                   value={paymentMethod} 
                   onChange={handlePaymentMethodChange} 
-                  centered 
+                  centered={!isMobile}
+                  variant={isMobile ? 'scrollable' : 'standard'}
+                  allowScrollButtonsMobile
                   sx={{ 
                     mb: 4,
                     '& .MuiTab-root': {

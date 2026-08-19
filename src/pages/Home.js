@@ -1,36 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { Typography, Button, Box, Container, Card, CardContent, CardMedia, useMediaQuery, Grid } from '@mui/material';
+import { Typography, Button, Box, Container, Card, CardContent, CardMedia, useMediaQuery, Chip } from '@mui/material';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import Diversity3Icon from '@mui/icons-material/Diversity3';
 import hygraphClient from '../lib/hygraph';
 import { useLanguage } from '../components/LanguageContext';
 import { useTranslation } from 'react-i18next';
 import { getAssetPath } from '../assetUtils';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
 import { GET_PROJECTS } from '../queries/projectQueries';
+import { colors, fonts, radii, shadows, pillButtonSx, donateButtonSx } from '../theme/tokens';
 
-// Define the color palette based on the image
-const colorPalette = {
-  primary: '#2E7D32', // Green
-  secondary: '#1B5E20', // Darker green instead of blue
-  accent1: '#FFC107', // Yellow
-  accent2: '#FFD54F', // Lighter yellow
-  background: '#FFFFFF', // White
-  text: '#333333', // Dark gray text
+const activityIcons = [WaterDropIcon, LocalHospitalIcon, Diversity3Icon];
+
+function extractPlainText(raw, maxLength = 140) {
+  if (!raw) return '';
+  const texts = [];
+  const walk = (node) => {
+    if (!node) return;
+    if (typeof node.text === 'string' && node.text.trim()) {
+      texts.push(node.text);
+    }
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (Array.isArray(node.children)) {
+      node.children.forEach(walk);
+    }
+  };
+  walk(raw);
+  const joined = texts.join(' ').replace(/\s+/g, ' ').trim();
+  if (!joined) return '';
+  if (joined.length <= maxLength) return joined;
+  return `${joined.slice(0, maxLength).trim()}…`;
+}
+
+function formatProjectDate(dateString) {
+  if (!dateString) return '';
+  const parsed = new Date(dateString);
+  if (!Number.isNaN(parsed.getTime())) {
+    return parsed.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
+  }
+  if (dateString.includes('-')) {
+    return dateString.split('-')[0];
+  }
+  return dateString;
+}
+
+const cardHoverSx = {
+  transition: 'transform 0.28s ease, box-shadow 0.28s ease',
+  '&:hover': {
+    transform: 'translateY(-6px)',
+    boxShadow: shadows.hover,
+  },
 };
 
-// Home component: Renders the landing page of the website
 function Home() {
-  // State to store recent projects
   const [recentProjects, setRecentProjects] = useState([]);
-  // Get current language from context
   const { language } = useLanguage();
-  // Access theme and check for small screen
-  const isMobile = useMediaQuery('(max-width:600px)'); // Adjusted from 400px to 600px
+  const isMobile = useMediaQuery('(max-width:900px)');
   const { t } = useTranslation();
+  const services = t('about.services', { returnObjects: true });
+  const activityItems = Array.isArray(services) ? services.slice(0, 3) : [];
 
-  // Add the getProjectSlug helper inside the component
   const getProjectSlug = (project) => {
     if (language === 'en') {
       return project.slug;
@@ -38,20 +74,31 @@ function Home() {
     return project.localizations?.[0]?.slug || project.slug;
   };
 
-  // Add this helper function inside the Home component
-  const getProjectDescription = (project) => {
-    if (language === 'en') {
-      return project.description?.text || '';
+  const getProjectTitle = (project) => {
+    if (language !== 'en' && project.localizations?.[0]?.title) {
+      return project.localizations[0].title;
     }
-    return project.localizations?.[0]?.description?.text || project.description?.text || '';
+    return project.title;
   };
 
-  // Effect to fetch recent projects when language changes
+  const getProjectExcerpt = (project, maxLength) => {
+    const raw =
+      language === 'en'
+        ? project.description?.raw
+        : project.localizations?.[0]?.description?.raw || project.description?.raw;
+    return extractPlainText(raw, maxLength);
+  };
+
+  const getProjectImage = (project) =>
+    project.image?.localizations?.[0]?.url ||
+    project.image?.url ||
+    `https://source.unsplash.com/random?community,${project.id}`;
+
   useEffect(() => {
     async function fetchRecentProjects() {
       try {
-        const data = await hygraphClient.request(GET_PROJECTS, { language });
-        setRecentProjects(data.projects);
+        const data = await hygraphClient.request(GET_PROJECTS, { language, first: 5 });
+        setRecentProjects(data.projects || []);
       } catch (error) {
         console.error('Error fetching recent projects:', error);
       }
@@ -61,29 +108,145 @@ function Home() {
 
   const containerVariants = {
     hidden: { opacity: 0 },
-    visible: { 
+    visible: {
       opacity: 1,
-      transition: { 
-        staggerChildren: 0.1
-      }
-    }
+      transition: { staggerChildren: 0.1 },
+    },
   };
 
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
-    visible: { 
+    visible: {
       y: 0,
       opacity: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 100
-      }
-    }
+      transition: { type: 'spring', stiffness: 90 },
+    },
   };
 
+  const renderProjectCard = (project, variant) => {
+    const title = getProjectTitle(project);
+    const excerpt = getProjectExcerpt(project, variant === 'featured' ? 180 : 90);
+    const dateLabel = formatProjectDate(project.date);
+    const isHorizontal = variant === 'compact';
+    const isFeatured = variant === 'featured';
+
+    return (
+      <Card
+        component={Link}
+        to={`/projects/${getProjectSlug(project)}`}
+        sx={{
+          display: 'flex',
+          flexDirection: isHorizontal ? 'row' : 'column',
+          height: '100%',
+          minHeight: isFeatured ? { md: 520 } : undefined,
+          textDecoration: 'none',
+          borderRadius: isFeatured ? radii.bar : radii.card,
+          overflow: 'hidden',
+          border: '1px solid rgba(46, 125, 50, 0.08)',
+          backgroundColor: colors.surface,
+          boxShadow: shadows.card,
+          ...cardHoverSx,
+        }}
+      >
+        <CardMedia
+          component="img"
+          image={getProjectImage(project)}
+          alt={title}
+          sx={{
+            width: isHorizontal ? { xs: 120, sm: 150 } : '100%',
+            height: isHorizontal
+              ? { xs: 120, sm: 140 }
+              : isFeatured
+                ? { xs: 240, md: 'auto' }
+                : variant === 'landscape'
+                  ? { xs: 160, md: 180 }
+                  : { xs: 170, md: 160 },
+            minHeight: isFeatured ? { md: 280 } : undefined,
+            objectFit: 'cover',
+            flex: isFeatured && !isHorizontal ? { md: '1 1 58%' } : undefined,
+          }}
+        />
+        <CardContent
+          sx={{
+            p: isHorizontal ? 2 : isFeatured ? 3 : 2.25,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            flexGrow: 1,
+            justifyContent: 'space-between',
+          }}
+        >
+          <Box>
+            {dateLabel && (
+              <Typography
+                variant="caption"
+                sx={{
+                  color: colors.primary,
+                  fontWeight: 700,
+                  fontFamily: fonts.heading,
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {dateLabel}
+              </Typography>
+            )}
+            <Typography
+              component="h3"
+              sx={{
+                color: colors.text,
+                fontFamily: fonts.heading,
+                fontWeight: 700,
+                fontSize: isFeatured ? { xs: '1.25rem', md: '1.6rem' } : { xs: '1rem', md: '1.1rem' },
+                lineHeight: 1.3,
+                mt: 0.5,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {title}
+            </Typography>
+            {excerpt && !isHorizontal && (
+              <Typography
+                variant="body2"
+                sx={{
+                  color: colors.muted,
+                  fontFamily: fonts.body,
+                  mt: 1,
+                  lineHeight: 1.6,
+                  display: '-webkit-box',
+                  WebkitLineClamp: isFeatured ? 4 : 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {excerpt}
+              </Typography>
+            )}
+          </Box>
+          <Typography
+            sx={{
+              color: colors.primary,
+              fontFamily: fonts.heading,
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              mt: 1,
+            }}
+          >
+            {t('home.learnMore')} →
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const [featured, ...rest] = recentProjects;
+  const variantsByIndex = ['stacked', 'stacked', 'landscape', 'landscape'];
+
   return (
-    <Box sx={{ backgroundColor: colorPalette.background, minHeight: '100vh' }}>
-      {/* Hero section */}
+    <Box sx={{ backgroundColor: colors.background, minHeight: '100vh' }}>
       <Box
         component={motion.div}
         initial="hidden"
@@ -91,53 +254,89 @@ function Home() {
         variants={containerVariants}
         sx={{
           position: 'relative',
-          backgroundImage: `linear-gradient(to bottom, rgba(21, 101, 192, 0.7), rgba(46, 125, 50, 0.7)), url("${getAssetPath('/assets/group.jpg')}")`,
+          minHeight: { xs: '72vh', md: '82vh' },
+          display: 'flex',
+          alignItems: 'center',
+          overflow: 'hidden',
+          backgroundImage: `linear-gradient(90deg, rgba(20, 56, 26, 0.28) 0%, rgba(46, 125, 50, 0.18) 45%, rgba(255, 193, 7, 0.06) 100%), url("${getAssetPath('/assets/group.jpg')}")`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          minHeight: isMobile ? '50vh' : '70vh',
-          display: 'flex',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          paddingTop: isMobile ? '80px' : '0',
-          paddingBottom: '2rem',
         }}
       >
-        <Container maxWidth="lg">
-          <Box sx={{ maxWidth: isMobile ? '100%' : '50%', py: 4 }}>
+        <Container maxWidth="lg" sx={{ pt: { xs: 12, md: 14 }, pb: { xs: 7, md: 9 } }}>
+          <Box
+            sx={{
+              maxWidth: { xs: '100%', md: '640px' },
+              p: { xs: 2.5, md: 3.5 },
+              borderRadius: radii.bar,
+              backgroundColor: 'rgba(255, 252, 245, 0.62)',
+              backdropFilter: 'blur(18px)',
+              WebkitBackdropFilter: 'blur(18px)',
+              border: '1px solid rgba(255, 255, 255, 0.7)',
+              boxShadow: shadows.card,
+            }}
+          >
             <motion.div variants={itemVariants}>
-              <Typography variant="h3" component="h1" sx={{ color: 'white', fontWeight: 'bold', mb: 2, fontSize: isMobile ? '1.75rem' : '2.5rem' }}>
-                {t('home.mission')}
+              <Chip
+                icon={<FavoriteBorderIcon sx={{ color: `${colors.primary} !important` }} />}
+                label={t('home.mission')}
+                sx={{
+                  mb: 2,
+                  backgroundColor: colors.sage,
+                  color: colors.primary,
+                  fontWeight: 700,
+                  fontFamily: fonts.heading,
+                  '& .MuiChip-icon': { color: colors.primary },
+                }}
+              />
+            </motion.div>
+            <motion.div variants={itemVariants}>
+              <Typography
+                variant="h3"
+                component="h1"
+                sx={{
+                  color: colors.text,
+                  fontFamily: fonts.heading,
+                  fontWeight: 800,
+                  mb: 2,
+                  fontSize: { xs: '1.85rem', sm: '2.35rem', md: '2.9rem' },
+                  lineHeight: 1.15,
+                }}
+              >
+                {t('about.subtitle')}
               </Typography>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <Typography variant="body1" sx={{ color: 'white', mb: 3, fontSize: isMobile ? '0.9rem' : '1rem' }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  color: colors.muted,
+                  fontFamily: fonts.body,
+                  mb: 4,
+                  fontSize: { xs: '1rem', md: '1.1rem' },
+                  lineHeight: 1.7,
+                  maxWidth: 560,
+                }}
+              >
                 {t('home.missionText')}
               </Typography>
             </motion.div>
             <motion.div variants={itemVariants}>
-              <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Button
                   component={Link}
                   to="/projects"
                   variant="contained"
-                  size={isMobile ? "medium" : "small"}
                   fullWidth={isMobile}
-                  sx={{ 
-                    backgroundColor: '#FFFFFF',
-                    color: colorPalette.primary,
-                    '&:hover': { 
-                      backgroundColor: '#F0F0F0',
+                  sx={{
+                    ...pillButtonSx,
+                    backgroundColor: colors.primary,
+                    color: '#fff !important',
+                    '&:hover': {
+                      backgroundColor: colors.primaryDark,
+                      color: '#fff !important',
                       transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
                     },
-                    borderRadius: '20px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.3s ease',
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1, sm: 1.25 },
-                    fontSize: 'clamp(0.8rem, 1.2vw, 1rem)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   }}
                 >
                   {t('home.projectsButton')}
@@ -146,25 +345,14 @@ function Home() {
                   component={Link}
                   to="/donate"
                   variant="contained"
-                  size={isMobile ? "medium" : "small"}
                   fullWidth={isMobile}
                   sx={{
-                    backgroundColor: colorPalette.accent2,
-                    color: colorPalette.text,
-                    '&:hover': { 
-                      backgroundColor: '#FFD54F',
-                      transform: 'translateY(-2px)',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                    ...donateButtonSx,
+                    color: `${colors.text} !important`,
+                    '&:hover': {
+                      ...donateButtonSx['&:hover'],
+                      color: `${colors.text} !important`,
                     },
-                    borderRadius: '20px',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.3s ease',
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1, sm: 1.25 },
-                    fontSize: 'clamp(0.8rem, 1.2vw, 1rem)',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                   }}
                 >
                   {t('home.donateNow')}
@@ -174,138 +362,206 @@ function Home() {
           </Box>
         </Container>
       </Box>
-      
-      {/* Featured projects section */}
-      <Container maxWidth="lg" sx={{ mt: 8, mb: 8 }}>
-        <motion.div variants={containerVariants} initial="hidden" animate="visible">
-          <motion.div variants={itemVariants}>
-            <Typography variant="h4" component="h2" gutterBottom sx={{ mb: 4, textAlign: 'center', color: colorPalette.primary, fontWeight: 'bold' }}>
-              {t('home.featuredProjects')}
-            </Typography>
-          </motion.div>
-          <Grid container spacing={isMobile ? 2 : 4}>
-            {recentProjects.map((project, index) => (
-              <Grid item xs={12} sm={6} md={4} key={project.id}>
-                <motion.div variants={itemVariants}>
-                  <Card 
-                    component={Link}
-                    to={`/projects/${getProjectSlug(project)}`}
-                    sx={{ 
-                      display: 'flex', 
-                      flexDirection: isMobile ? 'row' : 'column',
-                      height: isMobile ? 140 : 380,
-                      textDecoration: 'none',
-                      transition: 'all 0.3s ease',
-                      '&:hover': { 
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 12px 20px rgba(0,0,0,0.15)',
-                      },
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      border: '1px solid rgba(0,0,0,0.08)',
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      image={
-                        project.image?.localizations?.[0]?.url || 
-                        project.image?.url || 
-                        `https://source.unsplash.com/random?${project.id}&lang=en`
-                      }
-                      alt={project.localizations?.[0]?.title || project.title}
+
+      <Box sx={{ backgroundColor: colors.background, py: { xs: 5, md: 7 } }}>
+        <Container maxWidth="lg">
+          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }}>
+            <motion.div variants={itemVariants}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: { xs: 'flex-start', md: 'center' },
+                  gap: 2,
+                  p: { xs: 2.5, md: 3 },
+                  mb: 3,
+                  borderRadius: radii.bar,
+                  backgroundColor: colors.sage,
+                }}
+              >
+                <VolunteerActivismIcon sx={{ color: colors.primary, fontSize: 36, mt: { xs: 0.3, md: 0 } }} />
+                <Typography sx={{ color: colors.text, fontFamily: fonts.body, lineHeight: 1.7, fontSize: { xs: '0.95rem', md: '1.05rem' } }}>
+                  {t('about.noAdminFees')}
+                </Typography>
+              </Box>
+            </motion.div>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              }}
+            >
+              {activityItems.map((item, index) => {
+                const Icon = activityIcons[index] || FavoriteBorderIcon;
+                return (
+                  <motion.div key={item} variants={itemVariants}>
+                    <Box
                       sx={{
-                        width: isMobile ? 140 : '100%',
-                        height: isMobile ? 140 : 220,
-                        objectFit: 'cover',
-                        borderBottom: isMobile ? 'none' : '1px solid rgba(0,0,0,0.08)',
-                      }}
-                    />
-                    <Box sx={{ 
-                      display: 'flex', 
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      flexGrow: 1,
-                      backgroundColor: '#ffffff',
-                    }}>
-                      <CardContent sx={{ 
-                        p: isMobile ? 2 : 3,
                         height: '100%',
-                        overflow: 'hidden',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1,
-                      }}>
-                        <Typography 
-                          variant={isMobile ? "body1" : "h6"} 
-                          component="div" 
-                          sx={{
-                            color: colorPalette.text,
-                            fontWeight: 700,
-                            fontFamily: '"Poppins", sans-serif',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            lineHeight: 1.3,
-                            mb: isMobile ? 0.5 : 1,
-                            fontSize: isMobile ? '1rem' : '1.25rem',
-                          }}
-                        >
-                          {project.localizations?.[0]?.title || project.title}
-                        </Typography>
-                        {!isMobile && (
-                          <>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                color: 'rgba(0,0,0,0.6)',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 3,
-                                WebkitBoxOrient: 'vertical',
-                                lineHeight: 1.6,
-                                fontSize: '0.95rem',
-                              }}
-                            >
-                              {getProjectDescription(project)}
-                            </Typography>
-                            <Box 
-                              sx={{ 
-                                mt: 'auto', 
-                                pt: 2,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between'
-                              }}
-                            >
-                              <Typography 
-                                variant="button" 
-                                sx={{ 
-                                  color: colorPalette.primary,
-                                  fontSize: '0.875rem',
-                                  fontWeight: 600,
-                                  textTransform: 'none',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 0.5
-                                }}
-                              >
-                                {t('home.learnMore')} →
-                              </Typography>
-                            </Box>
-                          </>
-                        )}
-                      </CardContent>
+                        p: 2.25,
+                        borderRadius: radii.card,
+                        backgroundColor: colors.surface,
+                        boxShadow: shadows.card,
+                        border: '1px solid rgba(46, 125, 50, 0.08)',
+                      }}
+                    >
+                      <Icon sx={{ color: colors.primaryLight, mb: 1 }} />
+                      <Typography
+                        sx={{
+                          color: colors.muted,
+                          fontFamily: fonts.body,
+                          fontSize: '0.9rem',
+                          lineHeight: 1.55,
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {item}
+                      </Typography>
                     </Box>
-                  </Card>
+                  </motion.div>
+                );
+              })}
+            </Box>
+          </motion.div>
+        </Container>
+      </Box>
+
+      <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 8 } }}>
+        <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.15 }}>
+          <motion.div variants={itemVariants}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { sm: 'flex-end' },
+                justifyContent: 'space-between',
+                gap: 2,
+                mb: 4,
+              }}
+            >
+              <Typography
+                variant="h4"
+                component="h2"
+                sx={{
+                  color: colors.primary,
+                  fontFamily: fonts.heading,
+                  fontWeight: 800,
+                  fontSize: { xs: '1.55rem', md: '2rem' },
+                }}
+              >
+                {t('home.featuredProjects')}
+              </Typography>
+              <Button
+                component={Link}
+                to="/projects"
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontFamily: fonts.heading,
+                  color: colors.primary,
+                  borderRadius: radii.pill,
+                  '&:hover': { backgroundColor: 'rgba(46, 125, 50, 0.08)' },
+                }}
+              >
+                {t('home.viewAllProjects')} →
+              </Button>
+            </Box>
+          </motion.div>
+
+          {featured && (
+            <Box
+              sx={{
+                display: 'grid',
+                gap: { xs: 2, md: 2.5 },
+                gridTemplateColumns: { xs: '1fr', md: '1.15fr 0.9fr 1.25fr' },
+                gridTemplateAreas: {
+                  xs: `"one" "two" "three" "four" "five"`,
+                  md: `"one one two" "one one three" "four five five"`,
+                },
+                minHeight: { md: 620 },
+              }}
+            >
+              <Box sx={{ gridArea: 'one', minHeight: { md: 0 }, '& > *': { height: '100%' } }}>
+                <motion.div variants={itemVariants} style={{ height: '100%' }}>
+                  {renderProjectCard(featured, 'featured')}
                 </motion.div>
-              </Grid>
-            ))}
-          </Grid>
+              </Box>
+              {rest.map((project, index) => (
+                <Box
+                  key={project.id}
+                  sx={{
+                    gridArea: ['two', 'three', 'four', 'five'][index],
+                    '& > *': { height: '100%' },
+                  }}
+                >
+                  <motion.div variants={itemVariants} style={{ height: '100%' }}>
+                    {renderProjectCard(
+                      project,
+                      isMobile ? 'compact' : variantsByIndex[index]
+                    )}
+                  </motion.div>
+                </Box>
+              ))}
+            </Box>
+          )}
         </motion.div>
       </Container>
+
+      <Box
+        sx={{
+          background: `linear-gradient(120deg, ${colors.primary} 0%, ${colors.primaryLight} 55%, ${colors.accent} 140%)`,
+          py: { xs: 6, md: 8 },
+        }}
+      >
+        <Container maxWidth="md" sx={{ textAlign: 'center' }}>
+          <Typography
+            variant="h4"
+            component="h2"
+            sx={{
+              color: '#fff',
+              fontFamily: fonts.heading,
+              fontWeight: 800,
+              mb: 1.5,
+              fontSize: { xs: '1.5rem', md: '1.9rem' },
+            }}
+          >
+            {t('home.ctaHeading')}
+          </Typography>
+          <Typography sx={{ color: 'rgba(255,255,255,0.92)', fontFamily: fonts.body, mb: 3.5, lineHeight: 1.7, fontSize: { xs: '1rem', md: '1.05rem' } }}>
+            {t('home.ctaText')}
+          </Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+            <Button
+              component={Link}
+              to="/donate"
+              variant="contained"
+              sx={donateButtonSx}
+            >
+              {t('home.donateNow')}
+            </Button>
+            <Button
+              component={Link}
+              to="/about"
+              variant="outlined"
+              sx={{
+                ...pillButtonSx,
+                boxShadow: 'none',
+                borderColor: 'rgba(255,255,255,0.7)',
+                color: '#fff',
+                '&:hover': {
+                  borderColor: '#fff',
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                },
+              }}
+            >
+              {t('about.title')}
+            </Button>
+          </Box>
+        </Container>
+      </Box>
     </Box>
   );
 }
