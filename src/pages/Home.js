@@ -550,10 +550,11 @@ function Home() {
                 ...pillButtonSx,
                 boxShadow: 'none',
                 borderColor: 'rgba(255,255,255,0.7)',
-                color: '#fff',
+                color: '#fff !important',
                 '&:hover': {
                   borderColor: '#fff',
                   backgroundColor: 'rgba(255,255,255,0.1)',
+                  color: '#fff !important',
                 },
               }}
             >

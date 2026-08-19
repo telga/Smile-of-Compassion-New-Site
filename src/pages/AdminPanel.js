@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Container, Card, Tabs, Tab, Box, TextField, Button, Stack, Typography, IconButton, InputAdornment, Divider, Alert, Snackbar, Checkbox, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress } from '@mui/material';
 import { auth } from '../firebase/config';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -24,6 +24,18 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import DonationsDataTable from '../components/DonationsDataTable';
 import { pagePalette, fonts } from '../theme/tokens';
+import { importFacebookPost } from '../lib/facebookImport';
+
+const textToEditorContent = (text) => {
+  const paragraphs = (text || '').split(/\n+/);
+  return {
+    type: 'doc',
+    content: (paragraphs.length ? paragraphs : ['']).map((paragraph) => ({
+      type: 'paragraph',
+      content: paragraph ? [{ type: 'text', text: paragraph }] : [],
+    })),
+  };
+};
 
 const transformToSlateAST = (editorContent) => {
   if (!editorContent || !editorContent.content) {
@@ -509,6 +521,9 @@ function AdminPanel() {
     },
   });
   const [refreshKey] = useState(0);
+  const [facebookUrl, setFacebookUrl] = useState('');
+  const [facebookImporting, setFacebookImporting] = useState(false);
+  const pendingImportContent = useRef(null);
   const [cropModalOpen, setCropModalOpen] = useState(false);
   const [tempImage, setTempImage] = useState(null);
   const [crop, setCrop] = useState({
@@ -612,6 +627,55 @@ function AdminPanel() {
   const handleSubTabChange = (event, newValue) => {
     setActiveSubTab(newValue);
     localStorage.setItem('adminActiveSubTab', newValue.toString());
+  };
+
+  const handleFacebookImport = async () => {
+    setFacebookImporting(true);
+    try {
+      const imported = await importFacebookPost(facebookUrl);
+      pendingImportContent.current = {
+        en: textToEditorContent(imported.descriptionEn),
+        vn: textToEditorContent(imported.descriptionVn),
+      };
+      setFormData({
+        titleEn: imported.titleEn,
+        titleVn: imported.titleVn,
+        descriptionEn: imported.descriptionEn,
+        descriptionVn: imported.descriptionVn,
+        date: imported.date,
+        image: imported.featuredFile,
+        images: imported.galleryFiles,
+        slugEn: generateSlug(imported.titleEn),
+        slugVn: generateSlug(imported.titleVn),
+      });
+      setPreviews({
+        image: imported.featuredFile ? URL.createObjectURL(imported.featuredFile) : null,
+        images: imported.galleryFiles.map((file) => URL.createObjectURL(file)),
+      });
+      setActiveTab(0);
+      setActiveSubTab(0);
+      localStorage.setItem('adminActiveTab', '0');
+      localStorage.setItem('adminActiveSubTab', '0');
+      const imageNote = imported.imageCount
+        ? `Imported ${imported.imageCount} image${imported.imageCount === 1 ? '' : 's'}.`
+        : 'No images were found (common for some Facebook posts on GitHub Pages).';
+      const translationNote = imported.translationFailed
+        ? ' Translation failed — fill the other language manually.'
+        : '';
+      setSnackbar({
+        open: true,
+        message: `Review the Add Post form, then save as draft. ${imageNote}${translationNote}`,
+        severity: imported.translationFailed || !imported.imageCount ? 'warning' : 'success',
+      });
+    } catch (error) {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Facebook import failed. Use Manual Posting instead.',
+        severity: 'error',
+      });
+    } finally {
+      setFacebookImporting(false);
+    }
   };
 
   const handleInputChange = (field, value) => {
@@ -870,6 +934,14 @@ function AdminPanel() {
       handleInputChange('descriptionVn', editor.getJSON());
     },
   });
+
+  useEffect(() => {
+    if (activeTab !== 0 || activeSubTab !== 0 || !pendingImportContent.current) return;
+    if (!editorEn || !editorVn) return;
+    editorEn.commands.setContent(pendingImportContent.current.en);
+    editorVn.commands.setContent(pendingImportContent.current.vn);
+    pendingImportContent.current = null;
+  }, [activeTab, activeSubTab, editorEn, editorVn]);
 
   const handleTogglePassword = () => setShowPassword(prev => !prev);
 
@@ -3032,8 +3104,41 @@ function AdminPanel() {
               )}
               {activeTab === 1 && (
                 <Box>
-                  <Typography variant="h6" sx={{ mb: 3 }}>Facebook Posting</Typography>
-                  {/* Facebook posting content will go here */}
+                  <Typography variant="h6" sx={{ mb: 1 }}>Facebook Posting</Typography>
+                  <Typography sx={{ mb: 3, color: 'text.secondary' }}>
+                    Paste a public Facebook post URL. Import fills the Add Post form so you can review, edit, and save as draft the same way as a manual post. GitHub Pages often cannot scrape Facebook; if this fails, use Manual Posting.
+                  </Typography>
+                  <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'flex-start' }}>
+                    <TextField
+                      fullWidth
+                      label="Facebook post URL"
+                      placeholder="https://www.facebook.com/.../posts/..."
+                      value={facebookUrl}
+                      onChange={(e) => setFacebookUrl(e.target.value)}
+                      disabled={facebookImporting}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={handleFacebookImport}
+                      disabled={facebookImporting || !facebookUrl.trim()}
+                      sx={{
+                        minWidth: 200,
+                        py: 1.5,
+                        whiteSpace: 'nowrap',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                      }}
+                    >
+                      {facebookImporting ? (
+                        <CircularProgress size={22} color="inherit" />
+                      ) : (
+                        'Import from Facebook'
+                      )}
+                    </Button>
+                  </Stack>
+                  <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary' }}>
+                    After a successful import you are taken to Manual Posting → Add Post. Review the filled form, then save as draft.
+                  </Typography>
                 </Box>
               )}
               {activeTab === 2 && (
