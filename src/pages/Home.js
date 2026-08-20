@@ -139,6 +139,7 @@ function Home() {
           flexDirection: isHorizontal ? 'row' : 'column',
           height: '100%',
           minHeight: isFeatured ? { md: 520 } : undefined,
+          maxHeight: isFeatured ? { md: 640 } : undefined,
           textDecoration: 'none',
           borderRadius: isFeatured ? radii.bar : radii.card,
           overflow: 'hidden',
@@ -157,13 +158,14 @@ function Home() {
             height: isHorizontal
               ? { xs: 120, sm: 140 }
               : isFeatured
-                ? { xs: 240, md: 'auto' }
+                ? { xs: 220, md: 340 }
                 : variant === 'landscape'
                   ? { xs: 160, md: 180 }
                   : { xs: 170, md: 160 },
-            minHeight: isFeatured ? { md: 280 } : undefined,
+            maxHeight: isFeatured ? { xs: 240, md: 360 } : undefined,
             objectFit: 'cover',
-            flex: isFeatured && !isHorizontal ? { md: '1 1 58%' } : undefined,
+            objectPosition: 'center',
+            flexShrink: 0,
           }}
         />
         <CardContent
