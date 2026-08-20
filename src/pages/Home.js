@@ -138,8 +138,7 @@ function Home() {
           display: 'flex',
           flexDirection: isHorizontal ? 'row' : 'column',
           height: '100%',
-          minHeight: isFeatured ? { md: 520 } : undefined,
-          maxHeight: isFeatured ? { md: 640 } : undefined,
+          minHeight: isFeatured ? { md: 0 } : undefined,
           textDecoration: 'none',
           borderRadius: isFeatured ? radii.bar : radii.card,
           overflow: 'hidden',
@@ -149,32 +148,56 @@ function Home() {
           ...cardHoverSx,
         }}
       >
-        <CardMedia
-          component="img"
-          image={getProjectImage(project)}
-          alt={title}
-          sx={{
-            width: isHorizontal ? { xs: 120, sm: 150 } : '100%',
-            height: isHorizontal
-              ? { xs: 120, sm: 140 }
-              : isFeatured
-                ? { xs: 220, md: 340 }
+        {isFeatured && !isHorizontal ? (
+          <Box
+            sx={{
+              flex: { xs: '0 0 auto', md: '1 1 0%' },
+              height: { xs: 220, md: 'auto' },
+              minHeight: { xs: 220, md: 0 },
+              overflow: 'hidden',
+              position: 'relative',
+            }}
+          >
+            <Box
+              component="img"
+              src={getProjectImage(project)}
+              alt={title}
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center',
+                display: 'block',
+                position: { md: 'absolute' },
+                inset: { md: 0 },
+              }}
+            />
+          </Box>
+        ) : (
+          <CardMedia
+            component="img"
+            image={getProjectImage(project)}
+            alt={title}
+            sx={{
+              width: isHorizontal ? { xs: 120, sm: 150 } : '100%',
+              height: isHorizontal
+                ? { xs: 120, sm: 140 }
                 : variant === 'landscape'
                   ? { xs: 160, md: 180 }
                   : { xs: 170, md: 160 },
-            maxHeight: isFeatured ? { xs: 240, md: 360 } : undefined,
-            objectFit: 'cover',
-            objectPosition: 'center',
-            flexShrink: 0,
-          }}
-        />
+              objectFit: 'cover',
+              objectPosition: 'center',
+              flexShrink: 0,
+            }}
+          />
+        )}
         <CardContent
           sx={{
             p: isHorizontal ? 2 : isFeatured ? 3 : 2.25,
             display: 'flex',
             flexDirection: 'column',
             gap: 1,
-            flexGrow: 1,
+            flexGrow: isFeatured ? 0 : 1,
             justifyContent: 'space-between',
           }}
         >
@@ -479,11 +502,13 @@ function Home() {
                 display: 'grid',
                 gap: { xs: 2, md: 2.5 },
                 gridTemplateColumns: { xs: '1fr', md: '1.15fr 0.9fr 1.25fr' },
+                gridTemplateRows: { md: 'minmax(0, 1fr) minmax(0, 1fr) auto' },
                 gridTemplateAreas: {
                   xs: `"one" "two" "three" "four" "five"`,
                   md: `"one one two" "one one three" "four five five"`,
                 },
-                minHeight: { md: 620 },
+                alignItems: 'stretch',
+                minHeight: { md: 600 },
               }}
             >
               <Box sx={{ gridArea: 'one', minHeight: { md: 0 }, '& > *': { height: '100%' } }}>
