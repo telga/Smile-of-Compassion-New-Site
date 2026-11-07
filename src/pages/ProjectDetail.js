@@ -195,7 +195,7 @@ function ProjectDetail() {
       sx={{
         height: { xs: 220, sm: 380, md: 460 },
         width: '100%',
-        backgroundColor: colors.sage,
+        backgroundColor: colors.surface,
         display: 'flex !important',
         alignItems: 'center',
         justifyContent: 'center',
@@ -208,7 +208,7 @@ function ProjectDetail() {
         style={{
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
           objectPosition: 'center',
         }}
       />
@@ -298,7 +298,7 @@ function ProjectDetail() {
               width: '100%',
               overflow: 'hidden',
               borderRadius: radii.bar,
-              backgroundColor: colors.sage,
+              backgroundColor: colors.surface,
               '& .slick-slider': {
                 overflow: 'hidden',
               },

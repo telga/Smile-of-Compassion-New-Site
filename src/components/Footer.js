@@ -96,15 +96,21 @@ function Footer() {
                 fontSize: '1.05rem',
               }}
             >
-              Smile of Compassion
+              Smile of Compassion Projects
             </Typography>
             <Typography sx={{ fontFamily: fonts.body, color: colors.footerMuted, lineHeight: 1.7 }}>
               {'Copyright © '}
               <Link color="inherit" href="https://www.facebook.com/smileofcompassionprojects" underline="hover">
-                Smile of Compassion
+                Smile of Compassion Projects
               </Link>
               {` ${new Date().getFullYear()}. Developed by `}
-              <Link color="inherit" href="https://brianguyen.works" underline="hover">
+              <Link
+                href="https://briangn.runs-on.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                underline="always"
+                sx={{ color: '#fff', textDecorationColor: colors.accent, fontWeight: 600 }}
+              >
                 Brian Nguyen
               </Link>
               .
